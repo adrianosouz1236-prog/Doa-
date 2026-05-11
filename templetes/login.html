@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Doa+</title>
+    <link rel="stylesheet" href="login.css">
+   
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+</span>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Início</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main style="min-height: calc(100vh - 200px); display: flex; align-items: center; justify-content: center; padding: 2rem;">
+        <div class="form-container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Acessar Plataforma</h2>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" required placeholder="seu@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required placeholder="********">
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo de Conta</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="radio" name="tipo" value="doador" checked> Doador
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="radio" name="tipo" value="ong"> ONG
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 1.5rem;">
+                Não tem uma conta? <a href="/cadastro">Cadastre-se</a>
+            </p>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-bottom">
+            <p>&copy; 2024 Doa+ - Todos os direitos reservados</p>
+        </div>
+    </footer>
+    
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+    
+    <script>
+        // UTILS
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = toast.querySelector('.toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast toast-${type}`;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // API
+        const API_BASE_URL = window.location.origin + '/api';
+
+        class API {
+            constructor() {
+                this.token = localStorage.getItem('token');
+            }
+
+            getHeaders(includeAuth = true) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                if (includeAuth && this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+                
+                return headers;
+            }
+
+            async handleResponse(response) {
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                        throw new Error('Sessão expirada. Faça login novamente.');
+                    }
+                    throw new Error(data.error || 'Erro na requisição');
+                }
+                
+                return data;
+            }
+
+            async get(endpoint, params = null) {
+                let url = `${API_BASE_URL}${endpoint}`;
+                
+                if (params) {
+                    const queryParams = new URLSearchParams(params).toString();
+                    url += `?${queryParams}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async post(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async put(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'PUT',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async delete(endpoint) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'DELETE',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async login(email, senha, tipo) {
+                const data = await this.post('/auth/login', { email, senha, tipo });
+                if (data.token) {
+                    this.token = data.token;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.usuario));
+                    localStorage.setItem('userType', data.tipo);
+                }
+                return data;
+            }
+
+            async cadastrarOng(dados) {
+                return this.post('/auth/cadastro/ong', dados);
+            }
+
+            async cadastrarDoador(dados) {
+                return this.post('/auth/cadastro/doador', dados);
+            }
+
+            logout() {
+                this.token = null;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+            }
+
+            async listarNecessidades(filtros = {}) {
+                return this.get('/necessidades', filtros);
+            }
+
+            async buscarNecessidadePorId(id) {
+                return this.get(`/necessidades/${id}`);
+            }
+
+            async registrarDoacao(dados) {
+                return this.post('/doacoes', dados);
+            }
+
+            async listarMinhasDoacoes(status = null, limite = 10, offset = 0) {
+                const params = { limite, offset };
+                if (status) params.status = status;
+                return this.get('/doacoes/minhas', params);
+            }
+
+            async confirmarDoacao(doacaoId) {
+                return this.put(`/doacoes/${doacaoId}/confirmar`);
+            }
+
+            async listarOngs(filtros = {}) {
+                return this.get('/ongs', filtros);
+            }
+
+            async buscarOngPorId(id) {
+                return this.get(`/ongs/${id}`);
+            }
+
+            async obterEstatisticas() {
+                return this.get('/dashboard/stats');
+            }
+
+            async obterLogsSeguranca(limite = 50) {
+                return this.get('/security/logs', { limite });
+            }
+        }
+
+        const api = new API();
+
+        // AUTH MANAGER SIMPLIFICADO
+        class AuthManager {
+            constructor() {
+                this.isAuthenticated = !!localStorage.getItem('token');
+                this.user = JSON.parse(localStorage.getItem('user') || 'null');
+                this.userType = localStorage.getItem('userType');
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', this.handleLogin.bind(this));
+                }
+            }
+            
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const senha = document.getElementById('senha').value;
+                const tipo = document.querySelector('input[name="tipo"]:checked')?.value || 'doador';
+                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Entrando...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const result = await api.login(email, senha, tipo);
+                    showToast('Login realizado com sucesso!', 'success');
+                    
+                    this.isAuthenticated = true;
+                    this.user = result.usuario;
+                    this.userType = tipo;
+                    
+                    setTimeout(() => {
+                        window.location.href = tipo === 'ong' ? '/dashboard-ong' : '/dashboard';
+                    }, 1000);
+                    
+                } catch (error) {
+                    showToast(error.message, 'error');
+                } finally {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        const auth = new AuthManager();
+    </script>
+</body>
+</html>

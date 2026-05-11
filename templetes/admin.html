@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Doa+</title>
+    
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+ Admin</span>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/admin" class="nav-link active">Dashboard</a></li>
+                <li><a href="/admin/ongs" class="nav-link">ONGs</a></li>
+                <li><a href="/admin/doadores" class="nav-link">Doadores</a></li>
+                <li><a href="/admin/logs" class="nav-link">Logs</a></li>
+            </ul>
+            <div class="user-menu">
+                <span>Admin</span>
+                <div class="dropdown-menu">
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main class="dashboard">
+        <div class="dashboard-header">
+            <h1>Painel Administrativo</h1>
+            <p>Gerencie ONGs, doadores e acompanhe as métricas da plataforma</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="admin-stat-ongs">0</div>
+                <div class="stat-title">ONGs Cadastradas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="admin-stat-doadores">0</div>
+                <div class="stat-title">Doadores</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="admin-stat-doacoes">0</div>
+                <div class="stat-title">Total de Doações</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="admin-stat-itens">0</div>
+                <div class="stat-title">Itens Doados</div>
+            </div>
+        </div>
+        
+        <div class="section-header">
+            <h2>Últimos Logs de Segurança</h2>
+        </div>
+        
+        <div style="background: white; border-radius: 8px; overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Evento</th>
+                        <th>IP</th>
+                        <th>Gravidade</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-table-body">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 2rem;">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+    
+    <script>
+        // UTILS
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = toast.querySelector('.toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast toast-${type}`;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // API
+        const API_BASE_URL = window.location.origin + '/api';
+
+        class API {
+            constructor() {
+                this.token = localStorage.getItem('token');
+            }
+
+            getHeaders(includeAuth = true) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                if (includeAuth && this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+                
+                return headers;
+            }
+
+            async handleResponse(response) {
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                        throw new Error('Sessão expirada. Faça login novamente.');
+                    }
+                    throw new Error(data.error || 'Erro na requisição');
+                }
+                
+                return data;
+            }
+
+            async get(endpoint, params = null) {
+                let url = `${API_BASE_URL}${endpoint}`;
+                
+                if (params) {
+                    const queryParams = new URLSearchParams(params).toString();
+                    url += `?${queryParams}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async post(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async put(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'PUT',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async delete(endpoint) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'DELETE',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async login(email, senha, tipo) {
+                const data = await this.post('/auth/login', { email, senha, tipo });
+                if (data.token) {
+                    this.token = data.token;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.usuario));
+                    localStorage.setItem('userType', data.tipo);
+                }
+                return data;
+            }
+
+            async cadastrarOng(dados) {
+                return this.post('/auth/cadastro/ong', dados);
+            }
+
+            async cadastrarDoador(dados) {
+                return this.post('/auth/cadastro/doador', dados);
+            }
+
+            logout() {
+                this.token = null;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+            }
+
+            async listarNecessidades(filtros = {}) {
+                return this.get('/necessidades', filtros);
+            }
+
+            async buscarNecessidadePorId(id) {
+                return this.get(`/necessidades/${id}`);
+            }
+
+            async registrarDoacao(dados) {
+                return this.post('/doacoes', dados);
+            }
+
+            async listarMinhasDoacoes(status = null, limite = 10, offset = 0) {
+                const params = { limite, offset };
+                if (status) params.status = status;
+                return this.get('/doacoes/minhas', params);
+            }
+
+            async confirmarDoacao(doacaoId) {
+                return this.put(`/doacoes/${doacaoId}/confirmar`);
+            }
+
+            async listarOngs(filtros = {}) {
+                return this.get('/ongs', filtros);
+            }
+
+            async buscarOngPorId(id) {
+                return this.get(`/ongs/${id}`);
+            }
+
+            async obterEstatisticas() {
+                return this.get('/dashboard/stats');
+            }
+
+            async obterLogsSeguranca(limite = 50) {
+                return this.get('/security/logs', { limite });
+            }
+        }
+
+        const api = new API();
+
+        // AUTH MANAGER SIMPLIFICADO
+        class AuthManager {
+            constructor() {
+                this.isAuthenticated = !!localStorage.getItem('token');
+                this.user = JSON.parse(localStorage.getItem('user') || 'null');
+                this.userType = localStorage.getItem('userType');
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.logout();
+                    });
+                }
+            }
+            
+            logout() {
+                api.logout();
+                this.isAuthenticated = false;
+                this.user = null;
+                this.userType = null;
+                showToast('Logout realizado com sucesso', 'info');
+                window.location.href = '/';
+            }
+            
+            checkAuth(redirectIfNot = true) {
+                if (!this.isAuthenticated && redirectIfNot) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                return this.isAuthenticated;
+            }
+        }
+
+        const auth = new AuthManager();
+
+        // ADMIN SPECIFIC
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAdminStats();
+            loadSecurityLogs();
+        });
+
+        async function loadAdminStats() {
+            try {
+                const stats = await api.obterEstatisticas();
+                
+                const statOngs = document.getElementById('admin-stat-ongs');
+                const statDoadores = document.getElementById('admin-stat-doadores');
+                const statDoacoes = document.getElementById('admin-stat-doacoes');
+                const statItens = document.getElementById('admin-stat-itens');
+                
+                if (statOngs) statOngs.textContent = stats.total_ongs || 0;
+                if (statDoadores) statDoadores.textContent = stats.total_doadores || 0;
+                if (statDoacoes) statDoacoes.textContent = stats.total_doacoes || 0;
+                if (statItens) statItens.textContent = stats.total_itens || 0;
+                
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        async function loadSecurityLogs() {
+            const tbody = document.getElementById('logs-table-body');
+            
+            try {
+                const data = await api.obterLogsSeguranca(20);
+                const logs = data.logs || [];
+                
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Nenhum log encontrado</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${new Date(log.data).toLocaleString('pt-BR')}</td>
+                        <td>${escapeHtml(log.evento)}</td>
+                        <td>${escapeHtml(log.ip || 'N/A')}</td>
+                        <td>
+                            <span style="
+                                padding: 0.3rem 0.5rem;
+                                border-radius: 3px;
+                                background: ${log.gravidade === 'alta' ? '#e74c3c' : log.gravidade === 'media' ? '#f39c12' : '#27ae60'};
+                                color: white;
+                                font-size: 0.8rem;
+                            ">
+                                ${log.gravidade || 'baixa'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Erro ao carregar logs:', error);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Erro ao carregar logs</td></tr>';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

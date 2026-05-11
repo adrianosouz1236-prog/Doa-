@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Doa+</title>
+    <link rel="stylesheet" href="dashboard_ong.css">
+
+  </head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+</span>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Início</a></li>
+                <li><a href="/dashboard" class="nav-link active">Dashboard</a></li>
+                <li><a href="/necessidades" class="nav-link">Minhas Necessidades</a></li>
+            </ul>
+            <div class="user-menu">
+                <span id="user-name"></span>
+                <div class="dropdown-menu">
+                    <a href="/perfil">Meu Perfil</a>
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main class="dashboard">
+        <div class="dashboard-header">
+            <h1>Painel da ONG</h1>
+            <p>Bem-vindo de volta, <span id="ong-nome"></span>!</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-necessidades">0</div>
+                <div class="stat-title">Necessidades Abertas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-doacoes">0</div>
+                <div class="stat-title">Doações Recebidas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-itens">0</div>
+                <div class="stat-title">Itens Arrecadados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-doadores">0</div>
+                <div class="stat-title">Doadores</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <a href="/cadastrar-necessidade" class="btn btn-primary">+ Cadastrar Nova Necessidade</a>
+        </div>
+        
+        <div class="section-header">
+            <h2>Doações Recentes</h2>
+        </div>
+        
+        <div class="cards-container" id="doacoes-container">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Carregando doações...</p>
+            </div>
+        </div>
+    </main>
+    
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+    
+    <script>
+        // UTILS
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = toast.querySelector('.toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast toast-${type}`;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // API
+        const API_BASE_URL = window.location.origin + '/api';
+
+        class API {
+            constructor() {
+                this.token = localStorage.getItem('token');
+            }
+
+            getHeaders(includeAuth = true) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                if (includeAuth && this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+                
+                return headers;
+            }
+
+            async handleResponse(response) {
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                        throw new Error('Sessão expirada. Faça login novamente.');
+                    }
+                    throw new Error(data.error || 'Erro na requisição');
+                }
+                
+                return data;
+            }
+
+            async get(endpoint, params = null) {
+                let url = `${API_BASE_URL}${endpoint}`;
+                
+                if (params) {
+                    const queryParams = new URLSearchParams(params).toString();
+                    url += `?${queryParams}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async post(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async put(endpoint, data) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'PUT',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(data)
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async delete(endpoint) {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'DELETE',
+                    headers: this.getHeaders()
+                });
+                
+                return this.handleResponse(response);
+            }
+
+            async login(email, senha, tipo) {
+                const data = await this.post('/auth/login', { email, senha, tipo });
+                if (data.token) {
+                    this.token = data.token;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.usuario));
+                    localStorage.setItem('userType', data.tipo);
+                }
+                return data;
+            }
+
+            async cadastrarOng(dados) {
+                return this.post('/auth/cadastro/ong', dados);
+            }
+
+            async cadastrarDoador(dados) {
+                return this.post('/auth/cadastro/doador', dados);
+            }
+
+            logout() {
+                this.token = null;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+            }
+
+            async listarNecessidades(filtros = {}) {
+                return this.get('/necessidades', filtros);
+            }
+
+            async buscarNecessidadePorId(id) {
+                return this.get(`/necessidades/${id}`);
+            }
+
+            async registrarDoacao(dados) {
+                return this.post('/doacoes', dados);
+            }
+
+            async listarMinhasDoacoes(status = null, limite = 10, offset = 0) {
+                const params = { limite, offset };
+                if (status) params.status = status;
+                return this.get('/doacoes/minhas', params);
+            }
+
+            async confirmarDoacao(doacaoId) {
+                return this.put(`/doacoes/${doacaoId}/confirmar`);
+            }
+
+            async listarOngs(filtros = {}) {
+                return this.get('/ongs', filtros);
+            }
+
+            async buscarOngPorId(id) {
+                return this.get(`/ongs/${id}`);
+            }
+
+            async obterEstatisticas() {
+                return this.get('/dashboard/stats');
+            }
+
+            async obterLogsSeguranca(limite = 50) {
+                return this.get('/security/logs', { limite });
+            }
+        }
+
+        const api = new API();
+
+        // AUTH MANAGER
+        class AuthManager {
+            constructor() {
+                this.isAuthenticated = !!localStorage.getItem('token');
+                this.user = JSON.parse(localStorage.getItem('user') || 'null');
+                this.userType = localStorage.getItem('userType');
+                
+                this.init();
+            }
+            
+            init() {
+                this.updateUI();
+                this.setupEventListeners();
+            }
+            
+            updateUI() {
+                const userNameSpan = document.getElementById('user-name');
+                const ongNomeSpan = document.getElementById('ong-nome');
+                
+                if (this.isAuthenticated && this.user) {
+                    if (userNameSpan) userNameSpan.textContent = this.user.nome.split(' ')[0];
+                    if (ongNomeSpan) ongNomeSpan.textContent = this.user.nome;
+                }
+            }
+            
+            setupEventListeners() {
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.logout();
+                    });
+                }
+            }
+            
+            logout() {
+                api.logout();
+                this.isAuthenticated = false;
+                this.user = null;
+                this.userType = null;
+                showToast('Logout realizado com sucesso', 'info');
+                window.location.href = '/';
+            }
+            
+            checkAuth(redirectIfNot = true) {
+                if (!this.isAuthenticated && redirectIfNot) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                return this.isAuthenticated;
+            }
+        }
+
+        const auth = new AuthManager();
+
+        // DASHBOARD FUNCTIONS
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            loadDoacoesRecentes();
+        });
+
+        async function loadDashboardStats() {
+            try {
+                const stats = await api.obterEstatisticas();
+                
+                const statNecessidades = document.getElementById('stat-necessidades');
+                const statDoacoes = document.getElementById('stat-doacoes');
+                const statItens = document.getElementById('stat-itens');
+                const statDoadores = document.getElementById('stat-doadores');
+                
+                if (statNecessidades) statNecessidades.textContent = stats.minhas_necessidades || 0;
+                if (statDoacoes) statDoacoes.textContent = stats.minhas_doacoes || 0;
+                if (statItens) statItens.textContent = stats.meus_itens || 0;
+                if (statDoadores) statDoadores.textContent = stats.meus_doadores || 0;
+                
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        async function loadDoacoesRecentes() {
+            const container = document.getElementById('doacoes-container');
+            
+            try {
+                const data = await api.listarMinhasDoacoes(null, 10, 0);
+                const doacoes = data.doacoes || [];
+                
+                if (doacoes.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>📦 Nenhuma doação recebida</h3>
+                            <p>Cadastre necessidades para começar a receber doações!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = doacoes.map(doacao => `
+                    <div class="card">
+                        <h3>${escapeHtml(doacao.item || 'Doação')}</h3>
+                        <p class="doador">👤 ${escapeHtml(doacao.doador_nome || 'Anônimo')}</p>
+                        <p class="quantidade">${doacao.quantidade} itens</p>
+                        <p class="item">📋 ${escapeHtml(doacao.necessidade_titulo || 'Sem necessidade específica')}</p>
+                        <p class="data">📅 ${new Date(doacao.data).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Erro ao carregar doações:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Erro ao carregar doações</h3>
+                        <p>Tente novamente mais tarde.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
