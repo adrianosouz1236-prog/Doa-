@@ -6,7 +6,6 @@
     <meta name="description" content="Plataforma de conexão entre doadores e ONGs">
     <title>Doa+ - Conectando Doadores e ONGs</title>
     
-    <link rel="stylesheet" href="login.html">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -26,14 +25,14 @@
             </ul>
             
             <div class="nav-buttons" id="nav-buttons">
-                <a href="/login" class="btn btn-outline">Entrar</a>
-                <a href="/cadastro" class="btn btn-primary">Cadastrar</a>
+                <a href="/login.html" class="btn btn-outline">Entrar</a>
+                <a href="/cadastro.html" class="btn btn-primary">Cadastrar</a>
             </div>
             
             <div class="user-menu" id="user-menu" style="display: none;">
                 <span id="user-name" style="color: white;"></span>
                 <div class="dropdown-menu">
-                    <a href="/dashboard">Dashboard</a>
+                    <a href="/dashboard_ong.html">Dashboard</a>
                     <a href="/minhas-doacoes">Minhas Doações</a>
                     <a href="#" id="logout-btn">Sair</a>
                 </div>
@@ -174,7 +173,7 @@
     </div>
     
     <script>
-        // ============ API ============
+        // Configuração da API
         const API_BASE_URL = window.location.origin + '/api';
 
         const api = {
@@ -193,8 +192,8 @@
                 if (!response.ok) {
                     if (response.status === 401) {
                         localStorage.clear();
-                        window.location.href = '/login';
-                        throw new Error('Sessão expirada');
+                        window.location.href = '/login.html';
+                        throw new Error('Sua sessão expirou. Faça login novamente.');
                     }
                     throw new Error(data.error || 'Erro na requisição');
                 }
@@ -240,7 +239,7 @@
             registrarDoacao(dados) { return this.post('/doacoes', dados); }
         };
 
-        // ============ UTILS ============
+        // Funções auxiliares
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -260,7 +259,7 @@
             return div.innerHTML;
         }
 
-        // ============ AUTH ============
+        // Controle de autenticação
         const auth = {
             isAuthenticated: !!localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -295,7 +294,7 @@
                         this.user = null;
                         this.userType = null;
                         this.updateUI();
-                        showToast('Logout realizado com sucesso', 'info');
+                        showToast('Você saiu do sistema', 'info');
                         setTimeout(() => { window.location.href = '/'; }, 500);
                     });
                 }
@@ -310,7 +309,7 @@
             }
         };
 
-        // ============ MAIN ============
+        // Funcionalidades principais
         let currentPage = 1;
         let isLoading = false;
         let hasMore = true;
@@ -318,12 +317,12 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             auth.setup();
-            loadEstatisticas();
-            loadNecessidades();
-            setupEventListeners();
+            carregarEstatisticas();
+            carregarNecessidades();
+            configurarEventos();
         });
 
-        function setupEventListeners() {
+        function configurarEventos() {
             const btnBuscar = document.getElementById('btn-buscar');
             const searchCidade = document.getElementById('search-cidade');
             const searchCategoria = document.getElementById('search-categoria');
@@ -344,7 +343,7 @@
                     currentFilters.status = btn.dataset.filter;
                     currentPage = 1;
                     hasMore = true;
-                    loadNecessidades();
+                    carregarNecessidades();
                 });
             });
 
@@ -356,7 +355,7 @@
             });
         }
 
-        async function loadEstatisticas() {
+        async function carregarEstatisticas() {
             try {
                 const stats = await api.obterEstatisticas();
                 document.getElementById('stat-ongs').textContent = stats.total_ongs || 0;
@@ -367,7 +366,7 @@
             }
         }
 
-        async function loadNecessidades(append = false) {
+        async function carregarNecessidades(append = false) {
             if (isLoading) return;
             isLoading = true;
             
@@ -393,22 +392,22 @@
                 hasMore = necessidades.length === 10;
 
                 if (!append) {
-                    renderNecessidades(necessidades);
+                    renderizarNecessidades(necessidades);
                 } else {
-                    appendNecessidades(necessidades);
+                    adicionarNecessidades(necessidades);
                 }
 
                 document.getElementById('btn-load-more').style.display = hasMore ? 'block' : 'none';
             } catch (error) {
                 if (!append) {
-                    container.innerHTML = '<div class="error-message"><p>Erro ao carregar. Tente novamente.</p><button onclick="loadNecessidades()" class="btn btn-secondary">Tentar Novamente</button></div>';
+                    container.innerHTML = '<div class="error-message"><p>Erro ao carregar. Tente novamente.</p><button onclick="location.reload()" class="btn btn-secondary">Tentar Novamente</button></div>';
                 }
             } finally {
                 isLoading = false;
             }
         }
 
-        function renderNecessidades(necessidades) {
+        function renderizarNecessidades(necessidades) {
             const container = document.getElementById('necessidades-container');
             if (!container) return;
 
@@ -417,14 +416,14 @@
                 return;
             }
 
-            container.innerHTML = necessidades.map(nec => createCardHtml(nec)).join('');
+            container.innerHTML = necessidades.map(nec => criarCardHtml(nec)).join('');
             
             document.querySelectorAll('.btn-doar').forEach(btn => {
-                btn.addEventListener('click', () => openDoacaoModal(btn.dataset.id));
+                btn.addEventListener('click', () => abrirModalDoacao(btn.dataset.id));
             });
         }
 
-        function createCardHtml(nec) {
+        function criarCardHtml(nec) {
             const percentual = nec.quantidade_necessaria > 0 
                 ? (nec.quantidade_recebida / nec.quantidade_necessaria) * 100 
                 : 0;
@@ -448,10 +447,10 @@
             `;
         }
 
-        function openDoacaoModal(necessidadeId) {
+        function abrirModalDoacao(necessidadeId) {
             if (!auth.isAuthenticated) {
                 showToast('Faça login para realizar uma doação', 'warning');
-                setTimeout(() => { window.location.href = '/login'; }, 1500);
+                setTimeout(() => { window.location.href = '/login.html'; }, 1500);
                 return;
             }
 
@@ -474,6 +473,7 @@
             }
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
+            const textoOriginal = submitBtn.textContent;
             submitBtn.textContent = 'Processando...';
             submitBtn.disabled = true;
 
@@ -482,11 +482,11 @@
                 showToast('Doação registrada com sucesso!', 'success');
                 document.getElementById('doacao-modal').style.display = 'none';
                 currentPage = 1;
-                loadNecessidades();
+                carregarNecessidades();
             } catch (error) {
                 showToast(error.message, 'error');
             } finally {
-                submitBtn.textContent = 'Confirmar Doação';
+                submitBtn.textContent = textoOriginal;
                 submitBtn.disabled = false;
             }
         }
@@ -494,16 +494,16 @@
         async function loadMore() {
             if (!hasMore || isLoading) return;
             currentPage++;
-            await loadNecessidades(true);
+            await carregarNecessidades(true);
         }
 
-        function appendNecessidades(necessidades) {
+        function adicionarNecessidades(necessidades) {
             const container = document.getElementById('necessidades-container');
-            const html = necessidades.map(nec => createCardHtml(nec)).join('');
+            const html = necessidades.map(nec => criarCardHtml(nec)).join('');
             container.insertAdjacentHTML('beforeend', html);
             
             document.querySelectorAll('.btn-doar').forEach(btn => {
-                btn.addEventListener('click', () => openDoacaoModal(btn.dataset.id));
+                btn.addEventListener('click', () => abrirModalDoacao(btn.dataset.id));
             });
         }
 
@@ -512,7 +512,7 @@
             currentFilters.categoria = document.getElementById('search-categoria')?.value || '';
             currentPage = 1;
             hasMore = true;
-            loadNecessidades();
+            carregarNecessidades();
         }
     </script>
 </body>

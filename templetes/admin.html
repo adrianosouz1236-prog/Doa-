@@ -83,7 +83,7 @@
     </div>
     
     <script>
-        // UTILS
+        // Funções auxiliares
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             const toastMessage = toast.querySelector('.toast-message');
@@ -97,7 +97,7 @@
             }, 3000);
         }
 
-        // API
+        // Configuração da API
         const API_BASE_URL = window.location.origin + '/api';
 
         class API {
@@ -245,7 +245,7 @@
 
         const api = new API();
 
-        // AUTH MANAGER SIMPLIFICADO
+        // Controle de autenticação
         class AuthManager {
             constructor() {
                 this.isAuthenticated = !!localStorage.getItem('token');
@@ -289,13 +289,13 @@
 
         const auth = new AuthManager();
 
-        // ADMIN SPECIFIC
+        // Funções específicas do admin
         document.addEventListener('DOMContentLoaded', () => {
-            loadAdminStats();
-            loadSecurityLogs();
+            carregarEstatisticasAdmin();
+            carregarLogsSeguranca();
         });
 
-        async function loadAdminStats() {
+        async function carregarEstatisticasAdmin() {
             try {
                 const stats = await api.obterEstatisticas();
                 
@@ -314,7 +314,7 @@
             }
         }
 
-        async function loadSecurityLogs() {
+        async function carregarLogsSeguranca() {
             const tbody = document.getElementById('logs-table-body');
             
             try {

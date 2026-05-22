@@ -1,0 +1,8 @@
+2026-05-22 07:52:30,999 ERROR: Erro ao servir index.html: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again. [in /home/adriano/MEUS PROGRAMAS/PROJETO2/app.py:153]
+2026-05-22 07:54:34,208 ERROR: Erro ao servir index.html: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again. [in /home/adriano/MEUS PROGRAMAS/PROJETO2/app.py:153]
+2026-05-22 08:22:36,734 ERROR: Erro ao servir index.html: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again. [in /home/adriano/MEUS PROGRAMAS/PROJETO2/app.py:153]
+2026-05-22 08:24:35,661 ERROR: Erro ao servir index.html: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again. [in /home/adriano/MEUS PROGRAMAS/PROJETO2/app.py:153]
+2026-05-22 08:38:19,138 INFO: LOG: Tentativa de login falha: ong@solidaria.org - Usuário: None
+2026-05-22 08:38:48,478 INFO: LOG: Login realizado: ong@solidaria.org - Usuário: ong@solidaria.org
+2026-05-22 08:40:06,652 INFO: LOG: Login realizado: joao@email.com - Usuário: joao@email.com
+2026-05-22 08:40:54,243 INFO: LOG: Login realizado: admin@doamais.org - Usuário: admin@doamais.org

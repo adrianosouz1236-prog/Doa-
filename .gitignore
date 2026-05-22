@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Flask
+instance/
+.webassets-cache
+.env
+.flaskenv
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos de configuração local
+.env.local
+.env.production
+config.local.py
+secret_key.txt
+
+# IDE e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos de backup
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Testes
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Front-end (se houver build)
+node_modules/
+package-lock.json
+yarn.lock
+dist/
+build/
+*.min.js
+*.min.css
+
+# Arquivos específicos do projeto
+templetes/*.css.map
+templetes/*.js.map
+uploads/
+temp/
+*.pyc
+
+# Relatórios
+*.pdf
+*.xlsx
+*.docx
+
+# Chaves e certificados
+*.pem
+*.key
+*.crt
+*.p12
+
+# Arquivos grandes
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
