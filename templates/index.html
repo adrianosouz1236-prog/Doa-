@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Plataforma de conexão entre doadores e ONGs">
+    <title>Doa+ - Conectando Doadores e ONGs</title>
+    <link rel="stylesheet" href="estilos.css/index.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+</span>
+                </a>
+            </div>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/" class="nav-link active">Início</a></li>
+                <li><a href="/necessidades" class="nav-link">Necessidades</a></li>
+                <li><a href="/ongs" class="nav-link">ONGs</a></li>
+                <li><a href="/sobre" class="nav-link">Sobre</a></li>
+            </ul>
+            <div class="nav-buttons" id="nav-buttons">
+                <a href="/login.html" class="btn btn-outline">Entrar</a>
+                <a href="/cadastro.html" class="btn btn-primary">Cadastrar</a>
+            </div>
+            <div class="user-menu" id="user-menu" style="display: none;">
+                <span id="user-name"></span>
+                <div class="dropdown-menu">
+                    <a href="/dashboard_ong.html">Dashboard</a>
+                    <a href="/feedback.html">📝 Feedback</a>
+                    <a href="/suporte.html">🆘 Suporte</a>
+                    <a href="/central_ajuda.html">📚 Central de Ajuda</a>
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Transforme vidas através da doação</h1>
+            <p>Conectamos quem quer ajudar com quem realmente precisa</p>
+            <div class="search-box">
+                <input type="text" id="search-cidade" placeholder="Digite sua cidade" class="search-input">
+                <select id="search-categoria" class="search-select">
+                    <option value="">Todas as categorias</option>
+                    <option value="alimentos">Alimentos</option>
+                    <option value="roupas">Roupas</option>
+                    <option value="medicamentos">Medicamentos</option>
+                    <option value="higiene">Produtos de Higiene</option>
+                    <option value="voluntariado">Voluntariado</option>
+                </select>
+                <button id="btn-buscar" class="btn btn-search">Buscar</button>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-number" id="stat-ongs">0</span>
+                <span class="stat-label">ONGs Parceiras</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number" id="stat-doacoes">0</span>
+                <span class="stat-label">Doações Realizadas</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number" id="stat-itens">0</span>
+                <span class="stat-label">Itens Doados</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Eventos -->
+    <section class="eventos">
+        <div class="container">
+            <div class="section-header">
+                <h2>📅 Próximos Eventos Solidários</h2>
+                <p>Participe dos eventos das ONGs e faça a diferença</p>
+            </div>
+            <div id="eventos-container" class="eventos-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando eventos...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Necessidades -->
+    <section class="necessidades">
+        <div class="container">
+            <div class="section-header">
+                <h2>Necessidades Próximas</h2>
+                <p>Veja o que as ONGs da sua região estão precisando</p>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todas</button>
+                <button class="filter-btn" data-filter="urgente">Urgentes</button>
+                <button class="filter-btn" data-filter="alimentos">Alimentos</button>
+                <button class="filter-btn" data-filter="roupas">Roupas</button>
+                <button class="filter-btn" data-filter="medicamentos">Medicamentos</button>
+            </div>
+            <div class="cards-container" id="necessidades-container">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando necessidades...</p>
+                </div>
+            </div>
+            <div class="load-more">
+                <button id="btn-load-more" class="btn btn-secondary" style="display: none;">Carregar Mais</button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Doa+</h3>
+                    <p>Plataforma de conexão entre doadores e ONGs para um mundo mais solidário.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links Rápidos</h4>
+                    <ul>
+                        <li><a href="/">Início</a></li>
+                        <li><a href="/necessidades">Necessidades</a></li>
+                        <li><a href="/ongs">ONGs</a></li>
+                        <li><a href="/sobre">Sobre</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Ajuda</h4>
+                    <ul>
+                        <li><a href="/central_ajuda.html">📚 Central de Ajuda</a></li>
+                        <li><a href="/feedback.html">📝 Feedback</a></li>
+                        <li><a href="/suporte.html">🆘 Suporte</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contato</h4>
+                    <p>Email: contato@doamais.org</p>
+                    <p>Telefone: (11) 99999-9999</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Doa+ - Todos os direitos reservados</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal de Doação -->
+    <div id="doacao-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Confirmar Doação</h3>
+            <form id="form-doacao">
+                <input type="hidden" id="modal-necessidade-id">
+                <div class="form-group">
+                    <label for="modal-quantidade">Quantidade:</label>
+                    <input type="number" id="modal-quantidade" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="modal-mensagem">Mensagem (opcional):</label>
+                    <textarea id="modal-mensagem" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Confirmar Doação</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+
+    <script src="javascript.js/index.js"></script>
+</body>
+</html>

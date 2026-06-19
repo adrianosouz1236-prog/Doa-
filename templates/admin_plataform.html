@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Plataforma - Doa+</title>
+    
+    <link rel="stylesheet" href="estilos.css/admin_plataform.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/admin_plataform.html">Doa+ <span>Admin Plataforma</span></a>
+            </div>
+            <ul class="nav-menu">
+                <li><a class="nav-link active" onclick="mostrarAba('dashboard')">📊 Dashboard</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('anuncios')">📢 Anúncios</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('ongs')">🏢 ONGs</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('doadores')">👥 Doadores</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('doacoes')">📦 Doações</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('feedback')">📝 Feedback</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('suporte')">🆘 Suporte</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('logs')">📋 Logs</a></li>
+                <li><a class="nav-link" onclick="mostrarAba('politicas')">⚖️ Políticas</a></li>
+            </ul>
+            <div class="user-menu">
+                <span id="admin-name">Admin</span>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="mostrarAba('politicas')">Políticas</a>
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <!-- Aba Dashboard -->
+        <div id="aba-dashboard" class="tab-content">
+            <div class="dashboard-header">
+                <h1>Painel Administrativo da Plataforma</h1>
+                <p>Gerencie anúncios, ONGs, doadores e monitore a segurança da plataforma</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total de ONGs</h3><div class="stat-value" id="total-ongs">0</div></div>
+                <div class="stat-card"><h3>Total de Doadores</h3><div class="stat-value" id="total-doadores">0</div></div>
+                <div class="stat-card"><h3>Anúncios Ativos</h3><div class="stat-value" id="total-anuncios">0</div></div>
+                <div class="stat-card"><h3>Anúncios com Advertência</h3><div class="stat-value" id="total-advertencias">0</div></div>
+                <div class="stat-card"><h3>Total de Doações</h3><div class="stat-value" id="total-doacoes">0</div></div>
+                <div class="stat-card"><h3>Feedback</h3><div class="stat-value" id="total-feedback">0</div></div>
+                <div class="stat-card"><h3>Suporte</h3><div class="stat-value" id="total-suporte">0</div></div>
+                <div class="stat-card"><h3>ONGs Bloqueadas</h3><div class="stat-value" id="ongs-bloqueadas">0</div></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <h2>📊 Atividade Recente</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Data</th><th>Evento</th><th>Usuário</th><th>IP</th></tr></thead>
+                        <tbody id="logs-recentes"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Anúncios (Necessidades) -->
+        <div id="aba-anuncios" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📢 Gerenciar Anúncios de ONGs</h2>
+                <div class="search-bar">
+                    <input type="text" id="buscar-anuncio" placeholder="Buscar anúncio..." onkeyup="filtrarAnuncios()">
+                    <select id="filtro-status-anuncio" onchange="filtrarAnuncios()">
+                        <option value="todos">Todos os status</option>
+                        <option value="normal">Normais</option>
+                        <option value="advertencia">Com Advertência</option>
+                        <option value="excluido">Excluídos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>ONG</th><th>Título</th><th>Categoria</th><th>Urgência</th>
+                                <th>Status</th><th>Advertências</th><th>Data</th><th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anuncios-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba ONGs -->
+        <div id="aba-ongs" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>🏢 Gerenciar ONGs</h2>
+                <div class="search-bar">
+                    <input type="text" id="buscar-ong" placeholder="Buscar ONG..." onkeyup="filtrarOngs()">
+                    <button class="btn btn-outline btn-sm" onclick="exportarOngs()">📥 Exportar</button>
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Nome</th><th>CNPJ</th><th>Email</th><th>Cidade</th><th>Status</th><th>Advertências</th><th>Data</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody id="ongs-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Doadores -->
+        <div id="aba-doadores" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>👥 Gerenciar Doadores</h2>
+                <div class="search-bar">
+                    <input type="text" id="buscar-doador" placeholder="Buscar doador..." onkeyup="filtrarDoadores()">
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Telefone</th><th>Total Doações</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+                        <tbody id="doadores-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Doações -->
+        <div id="aba-doacoes" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📦 Histórico de Doações</h2>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Data</th><th>Doador</th><th>ONG</th><th>Item</th><th>Quantidade</th><th>Status</th></tr></thead>
+                        <tbody id="doacoes-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Feedback -->
+        <div id="aba-feedback" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📝 Feedback dos Usuários</h2>
+                <div class="search-bar">
+                    <select id="filtro-status-feedback" onchange="carregarFeedbacksAdmin()">
+                        <option value="todos">Todos</option>
+                        <option value="pendente">Pendentes</option>
+                        <option value="respondido">Respondidos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Usuário</th>
+                                <th>Tipo</th>
+                                <th>Mensagem</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-admin-tbody">
+                            <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Suporte -->
+        <div id="aba-suporte" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>🆘 Solicitações de Suporte</h2>
+                <div class="search-bar">
+                    <select id="filtro-status-suporte" onchange="carregarSuportesAdmin()">
+                        <option value="todos">Todos</option>
+                        <option value="aberto">Abertos</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="resolvido">Resolvidos</option>
+                        <option value="fechado">Fechados</option>
+                    </select>
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Usuário</th>
+                                <th>Categoria</th>
+                                <th>Assunto</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suporte-admin-tbody">
+                            <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Logs -->
+        <div id="aba-logs" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📋 Logs de Segurança</h2>
+                <button class="btn btn-outline btn-sm" onclick="exportarLogs()">📥 Exportar Logs</button>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Data</th><th>Evento</th><th>Usuário</th><th>IP</th><th>Gravidade</th></tr></thead>
+                        <tbody id="logs-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Políticas -->
+        <div id="aba-politicas" class="tab-content" style="display: none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2>⚖️ Políticas da Plataforma</h2>
+                </div>
+                
+                <div class="section">
+                    <h3>Regras para Anúncios</h3>
+                    <ul style="margin-left: 1.5rem; color: #555;">
+                        <li>Não pode conter conteúdo ofensivo ou discriminatório</li>
+                        <li>Não pode promover violência ou ilegalidades</li>
+                        <li>Não pode conter informações falsas ou enganosas</li>
+                        <li>Não pode solicitar doações financeiras sem comprovação</li>
+                        <li>Anúncios com advertências serão revisados automaticamente</li>
+                        <li>ONGs com 3 advertências serão bloqueadas automaticamente</li>
+                    </ul>
+                </div>
+                
+                <div class="section">
+                    <h3>Sistema de Advertências</h3>
+                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="stat-card"><h3>1ª Advertência</h3><div class="stat-value" style="color: #f39c12;">Alerta</div><p>Notificação para a ONG</p></div>
+                        <div class="stat-card"><h3>2ª Advertência</h3><div class="stat-value" style="color: #e67e22;">Atenção</div><p>Anúncio removido + Notificação</p></div>
+                        <div class="stat-card"><h3>3ª Advertência</h3><div class="stat-value" style="color: #e74c3c;">Bloqueio</div><p>ONG bloqueada da plataforma</p></div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Configurações da Plataforma</h3>
+                    <form id="form-config">
+                        <div class="form-group">
+                            <label>Email do Administrador</label>
+                            <input type="email" id="admin-email" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Limite de Advertências antes do Bloqueio</label>
+                            <input type="number" id="limite-advertencias" value="3" min="1" max="5">
+                        </div>
+                        <div class="form-group">
+                            <label>Modo de Manutenção</label>
+                            <select id="manutencao">
+                                <option value="false">Desativado</option>
+                                <option value="true">Ativado</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Advertência para Anúncio -->
+    <div id="modal-advertencia" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Adicionar Advertência</h3>
+                <span class="modal-close" onclick="fecharModal('modal-advertencia')">&times;</span>
+            </div>
+            <form id="form-advertencia">
+                <input type="hidden" id="advertencia-anuncio-id">
+                <input type="hidden" id="advertencia-ong-id">
+                <div class="form-group">
+                    <label>Motivo da Advertência *</label>
+                    <select id="motivo-advertencia" required>
+                        <option value="">Selecione um motivo</option>
+                        <option value="conteudo_ofensivo">Conteúdo ofensivo ou discriminatório</option>
+                        <option value="informacao_falsa">Informação falsa ou enganosa</option>
+                        <option value="fora_das_politicas">Fora das políticas da plataforma</option>
+                        <option value="conteudo_inadequado">Conteúdo inadequado</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descrição detalhada *</label>
+                    <textarea id="descricao-advertencia" rows="3" required placeholder="Explique o motivo da advertência..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ações Adicionais</label>
+                    <select id="acao-advertencia">
+                        <option value="apenas_advertir">Apenas Advertir</option>
+                        <option value="remover_anuncio">Remover Anúncio + Advertir</option>
+                        <option value="bloquear_ong">Bloquear ONG + Advertir</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-warning" style="width: 100%;">Aplicar Advertência</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Ver Detalhes do Anúncio -->
+    <div id="modal-anuncio" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📢 Detalhes do Anúncio</h3>
+                <span class="modal-close" onclick="fecharModal('modal-anuncio')">&times;</span>
+            </div>
+            <div id="anuncio-detalhes"></div>
+            <div id="anuncio-advertencias" style="margin-top: 1rem;"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-warning" onclick="abrirModalAdvertencia()">⚠️ Adicionar Advertência</button>
+                <button class="btn btn-danger" onclick="excluirAnuncio()">🗑️ Excluir Anúncio</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Ver ONG -->
+    <div id="modal-ong" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🏢 Detalhes da ONG</h3>
+                <span class="modal-close" onclick="fecharModal('modal-ong')">&times;</span>
+            </div>
+            <div id="ong-detalhes"></div>
+            <div id="ong-advertencias" style="margin-top: 1rem;"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-danger" id="btn-bloquear-ong" onclick="bloquearOng()">🔒 Bloquear ONG</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Responder Feedback -->
+    <div id="modal-responder-feedback" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 Responder Feedback</h3>
+                <span class="modal-close" onclick="fecharModal('modal-responder-feedback')">&times;</span>
+            </div>
+            <div id="feedback-detalhes"></div>
+            <form id="form-responder-feedback">
+                <input type="hidden" id="feedback-id">
+                <div class="form-group">
+                    <label>Resposta *</label>
+                    <textarea id="feedback-resposta" rows="4" required placeholder="Digite sua resposta..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Enviar Resposta</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Responder Suporte -->
+    <div id="modal-responder-suporte" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🆘 Responder Suporte</h3>
+                <span class="modal-close" onclick="fecharModal('modal-responder-suporte')">&times;</span>
+            </div>
+            <div id="suporte-detalhes"></div>
+            <form id="form-responder-suporte">
+                <input type="hidden" id="suporte-id">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="suporte-status">
+                        <option value="aberto">Aberto</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="resolvido">Resolvido</option>
+                        <option value="fechado">Fechado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Resposta *</label>
+                    <textarea id="suporte-resposta" rows="4" required placeholder="Digite sua resposta..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Enviar Resposta</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast" style="display: none;"><span class="toast-message"></span></div>
+    
+    <script src="javascript.js/admin_plataform.js"></script>
+</body>
+</html>

@@ -2,10 +2,10 @@
 # monitor.sh - Script de monitoramento do sistema
 
 # Cores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+VERMELHO='\033[0;31m'
+VERDE='\033[0;32m'
+AMARELO='\033[1;33m'
+AZUL='\033[0;34m'
 NC='\033[0m'
 
 # Configurações
@@ -35,9 +35,9 @@ check_cpu() {
     
     if (( $(echo "$CPU_USAGE > $THRESHOLD_CPU" | bc -l) )); then
         send_alert "Alerta de CPU - Doa+" "CPU está em ${CPU_USAGE}% (limite: ${THRESHOLD_CPU}%)"
-        echo -e "${RED}⚠️  CPU: ${CPU_USAGE}% (ALERTA)${NC}"
+        echo -e "${VERMELHO}⚠️  CPU: ${CPU_USAGE}% (ALERTA)${NC}"
     else
-        echo -e "${GREEN}✅ CPU: ${CPU_USAGE}%${NC}"
+        echo -e "${VERDE}✅ CPU: ${CPU_USAGE}%${NC}"
     fi
 }
 
@@ -49,9 +49,9 @@ check_memory() {
     
     if (( $(echo "$MEM_USAGE > $THRESHOLD_MEM" | bc -l) )); then
         send_alert "Alerta de Memória - Doa+" "Memória está em ${MEM_USAGE}% (limite: ${THRESHOLD_MEM}%)"
-        echo -e "${RED}⚠️  Memória: ${MEM_USAGE}% (ALERTA)${NC}"
+        echo -e "${VERMELHO}⚠️  Memória: ${MEM_USAGE}% (ALERTA)${NC}"
     else
-        echo -e "${GREEN}✅ Memória: ${MEM_USAGE}%${NC}"
+        echo -e "${VERDE}✅ Memória: ${MEM_USAGE}%${NC}"
     fi
 }
 
@@ -61,9 +61,9 @@ check_disk() {
     
     if [ $DISK_USAGE -gt $THRESHOLD_DISK ]; then
         send_alert "Alerta de Disco - Doa+" "Disco está em ${DISK_USAGE}% (limite: ${THRESHOLD_DISK}%)"
-        echo -e "${RED}⚠️  Disco: ${DISK_USAGE}% (ALERTA)${NC}"
+        echo -e "${VERMELHO}⚠️  Disco: ${DISK_USAGE}% (ALERTA)${NC}"
     else
-        echo -e "${GREEN}✅ Disco: ${DISK_USAGE}%${NC}"
+        echo -e "${VERDE}✅ Disco: ${DISK_USAGE}%${NC}"
     fi
 }
 
@@ -74,19 +74,19 @@ check_connections() {
     
     if [ $CONNECTIONS -gt 500 ]; then
         send_alert "Muitas conexões - Doa+" "Conexões ativas: $CONNECTIONS"
-        echo -e "${RED}⚠️  Conexões: $CONNECTIONS (ALERTA)${NC}"
+        echo -e "${VERMELHO}⚠️  Conexões: $CONNECTIONS (ALERTA)${NC}"
     else
-        echo -e "${GREEN}✅ Conexões: $CONNECTIONS${NC}"
+        echo -e "${VERDE}✅ Conexões: $CONNECTIONS${NC}"
     fi
 }
 
 # Verificar status da aplicação
 check_app_status() {
     if curl -f http://localhost:5000/health &> /dev/null; then
-        echo -e "${GREEN}✅ Aplicação: ONLINE${NC}"
+        echo -e "${VERDE}✅ Aplicação: ONLINE${NC}"
     else
         send_alert "Aplicação OFFLINE - Doa+" "A aplicação não está respondendo ao health check"
-        echo -e "${RED}❌ Aplicação: OFFLINE${NC}"
+        echo -e "${VERDE}❌ Aplicação: OFFLINE${NC}"
     fi
 }
 
@@ -96,9 +96,9 @@ check_services() {
     
     for service in "${services[@]}"; do
         if systemctl is-active --quiet $service; then
-            echo -e "${GREEN}✅ $service: ativo${NC}"
+            echo -e "${VERMELHO}✅ $service: ativo${NC}"
         else
-            echo -e "${RED}❌ $service: inativo${NC}"
+            echo -e "${VERMELHO}❌ $service: inativo${NC}"
             send_alert "Serviço $service parado" "O serviço $service não está rodando"
         fi
     done
@@ -109,18 +109,18 @@ check_error_logs() {
     local errors=$(grep -c "ERROR" /var/log/doacoes/app.log 2>/dev/null || echo "0")
     
     if [ $errors -gt 50 ]; then
-        echo -e "${RED}⚠️  Erros no log: $errors nas últimas 24h${NC}"
+        echo -e "${VERMELHO}⚠️  Erros no log: $errors nas últimas 24h${NC}"
     else
-        echo -e "${GREEN}✅ Erros no log: $errors${NC}"
+        echo -e "${VERDE}✅ Erros no log: $errors${NC}"
     fi
 }
 
 # Exibir resumo
 show_summary() {
-    echo -e "\n${BLUE}========================================${NC}"
-    echo -e "${BLUE}   Monitoramento - Doa+${NC}"
-    echo -e "${BLUE}   $(date '+%d/%m/%Y %H:%M:%S')${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "\n${AZUL}========================================${NC}"
+    echo -e "${AZUL}   Monitoramento - Doa+${NC}"
+    echo -e "${AZUL}   $(date '+%d/%m/%Y %H:%M:%S')${NC}"
+    echo -e "${AZUL}========================================${NC}"
     
     check_cpu
     check_memory
@@ -132,7 +132,7 @@ show_summary() {
     echo ""
     check_error_logs
     
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${AZUL}========================================${NC}"
 }
 
 # Main

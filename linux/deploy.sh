@@ -4,15 +4,15 @@
 set -e  # Para o script em caso de erro
 
 # Cores para output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+VERMELHO='\033[0;31m'
+VERDE='\033[0;32m'
+AMARELO='\033[1;33m'
+AZUL='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${GREEN}   Plataforma Doa+ - Deploy Automático   ${NC}"
-echo -e "${BLUE}========================================${NC}"
+echo -e "${AZUL}========================================${NC}"
+echo -e "${VERDE}   Plataforma Doa+ - Deploy Automático   ${NC}"
+echo -e "${AZUL}========================================${NC}"
 
 # ==================== CONFIGURAÇÕES ====================
 PROJECT_DIR="/var/www/doacoes"
@@ -26,11 +26,11 @@ APP_USER="www-data"
 # ==================== FUNÇÕES ====================
 
 log() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+    echo -e "${VERDE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
 error() {
-    echo -e "${RED}[ERRO]${NC} $1"
+    echo -e "${VERMELHO}[ERRO]${NC} $1"
     exit 1
 }
 
@@ -200,18 +200,18 @@ health_check() {
 }
 
 show_summary() {
-    echo -e "\n${BLUE}========================================${NC}"
-    echo -e "${GREEN}🎉 DEPLOY CONCLUÍDO COM SUCESSO! 🎉${NC}"
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "Acesse a aplicação: ${GREEN}http://$(hostname -I | awk '{print $1}')${NC}"
-    echo -e "Logs da aplicação: ${YELLOW}$LOG_DIR/app.log${NC}"
-    echo -e "Logs de segurança: ${YELLOW}$LOG_DIR/security.log${NC}"
-    echo -e "Backups: ${YELLOW}$BACKUP_DIR${NC}"
+    echo -e "\n${AZUL}========================================${NC}"
+    echo -e "${VERDE}🎉 DEPLOY CONCLUÍDO COM SUCESSO! 🎉${NC}"
+    echo -e "${AZUL}========================================${NC}"
+    echo -e "Acesse a aplicação: ${VERDE}http://$(hostname -I | awk '{print $1}')${NC}"
+    echo -e "Logs da aplicação: ${AMARELO}$LOG_DIR/app.log${NC}"
+    echo -e "Logs de segurança: ${AMARELO}$LOG_DIR/security.log${NC}"
+    echo -e "Backups: ${AMARELO}$BACKUP_DIR${NC}"
     echo -e "\nComandos úteis:"
     echo -e "  sudo systemctl status doacoes  # Verificar status da aplicação"
     echo -e "  sudo tail -f $LOG_DIR/app.log  # Acompanhar logs"
     echo -e "  $PROJECT_DIR/linux/scripts/backup.sh  # Executar backup manual"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${AZUL}========================================${NC}"
 }
 
 # ==================== MAIN ====================

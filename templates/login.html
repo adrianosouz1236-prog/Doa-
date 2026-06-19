@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Doa+</title>
+
+    <link rel="stylesheet" href="estilos.css/login.css">
+
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+</span>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Início</a></li>
+                <li><a href="/cadastro.html" class="nav-link">Cadastrar</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="form-container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Acesse sua conta</h2>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" required placeholder="Digite seu e-mail">
+                </div>
+                
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required placeholder="Digite sua senha">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tipo">Tipo de conta</label>
+                    <select id="tipo">
+                        <option value="doador">Doador</option>
+                        <option value="ong">ONG</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 1.5rem;">
+                Ainda não tem cadastro? <a href="/cadastro.html">Cadastre-se aqui</a>
+            </p>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Doa+ - Todos os direitos reservados</p>
+    </footer>
+    
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+    
+    <script src="javascript.js/login.js"></script>
+    
+</body>
+</html>

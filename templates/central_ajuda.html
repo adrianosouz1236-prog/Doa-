@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Ajuda - Doa+</title>
+    <link rel="stylesheet" href="estilos.css/central_ajuda.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">❤️ Doa+</span>
+                </a>
+            </div>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/" class="nav-link">Início</a></li>
+                <li><a href="/necessidades" class="nav-link">Necessidades</a></li>
+                <li><a href="/ongs" class="nav-link">ONGs</a></li>
+                <li><a href="/sobre" class="nav-link">Sobre</a></li>
+            </ul>
+            <div class="nav-buttons" id="nav-buttons">
+                <a href="/login.html" class="btn btn-outline">Entrar</a>
+                <a href="/cadastro.html" class="btn btn-primary">Cadastrar</a>
+            </div>
+            <div class="user-menu" id="user-menu" style="display: none;">
+                <span id="user-name"></span>
+                <div class="dropdown-menu">
+                    <a href="/dashboard_ong.html">Dashboard</a>
+                    <a href="/feedback.html">📝 Feedback</a>
+                    <a href="/suporte.html">🆘 Suporte</a>
+                    <a href="/central_ajuda.html">📚 Central de Ajuda</a>
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1>📚 Central de Ajuda</h1>
+                <p>Encontre respostas para suas dúvidas</p>
+            </div>
+
+            <div class="help-filters">
+                <button class="filter-btn active" data-categoria="todos">Todos</button>
+                <button class="filter-btn" data-categoria="geral">Geral</button>
+                <button class="filter-btn" data-categoria="doador">Doador</button>
+                <button class="filter-btn" data-categoria="ong">ONG</button>
+                <button class="filter-btn" data-categoria="suporte">Suporte</button>
+                <button class="filter-btn" data-categoria="feedback">Feedback</button>
+            </div>
+
+            <div id="artigos-container" class="artigos-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando artigos...</p>
+                </div>
+            </div>
+
+            <div class="help-footer">
+                <div class="card">
+                    <h3>❓ Não encontrou o que procurava?</h3>
+                    <p>Entre em contato conosco através do <a href="/suporte.html">Suporte</a> ou envie um <a href="/feedback.html">Feedback</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Doa+ - Todos os direitos reservados</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+
+    <script src="javascript.js/central_ajuda.js"></script>
+</body>
+</html>

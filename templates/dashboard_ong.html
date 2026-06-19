@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da ONG - Doa+</title>
+    <link rel="stylesheet" href="estilos.css/dashboard_ong.css">
+    <!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCKZQCsdjJCM7YdrEMW_Xa3MCtP6LhHGws&libraries=places" async defer></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/dashboard_ong.html">❤️ Doa+ ONG</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/dashboard_ong.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="#" class="nav-link" onclick="abrirModalNecessidade()">➕ Nova Necessidade</a></li>
+                <li><a href="#" class="nav-link" onclick="abrirModalEvento()">📅 Novo Evento</a></li>
+                <li><a href="#" class="nav-link" onclick="abrirModalParceria()">🤝 Nova Parceria</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarMinhasNecessidades()">📋 Necessidades</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarMeusEventos()">🎪 Eventos</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarMinhasParcerias()">🤝 Parcerias</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarDoacoesRecebidas()">📦 Doações</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarPerfilOng()">⚙️ Configurações</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarFotosOng()">📸 Fotos</a></li>
+                <li><a href="#" class="nav-link" onclick="carregarLocalizacaoOng()">📍 Localização</a></li>
+                <li><a href="#" class="nav-link" onclick="window.location.href='/feedback.html'">📝 Feedback</a></li>
+                <li><a href="#" class="nav-link" onclick="window.location.href='/suporte.html'">🆘 Suporte</a></li>
+                <li><a href="#" class="nav-link" onclick="window.location.href='/central_ajuda.html'">📚 Ajuda</a></li>
+            </ul>
+            <div class="user-menu">
+                <span id="user-name">ONG</span>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="carregarPerfilOng()">Meu Perfil</a>
+                    <a href="#" onclick="window.location.href='/perfil_ong.html?id=' + getOngId()">Ver Perfil Público</a>
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>Painel da ONG</h1>
+            <p>Gerencie suas necessidades, eventos, parcerias, fotos, localização e doações</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Necessidades Ativas</h3>
+                <div class="stat-value" id="stat-necessidades">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Doações Recebidas</h3>
+                <div class="stat-value" id="stat-doacoes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Itens Arrecadados</h3>
+                <div class="stat-value" id="stat-itens">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Doadores Únicos</h3>
+                <div class="stat-value" id="stat-doadores">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Eventos</h3>
+                <div class="stat-value" id="stat-eventos">0</div>
+            </div>
+        </div>
+        
+        <!-- Necessidades Section -->
+        <div class="section" id="necessidades-section">
+            <div class="section-header">
+                <h2>📋 Minhas Necessidades</h2>
+                <button class="btn btn-primary" onclick="abrirModalNecessidade()">+ Nova Necessidade</button>
+            </div>
+            <div class="table-container">
+                <table id="necessidades-table">
+                    <thead><tr><th>Título</th><th>Categoria</th><th>Quantidade</th><th>Arrecadado</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="necessidades-tbody"><tr><td colspan="6" style="text-align: center;">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Doações Section -->
+        <div class="section" id="doacoes-section">
+            <div class="section-header">
+                <h2>📦 Doações Recentes</h2>
+                <button class="btn btn-outline" onclick="carregarDoacoesRecebidas()">Atualizar</button>
+            </div>
+            <div class="table-container">
+                <table id="doacoes-table">
+                    <thead><tr><th>Data</th><th>Doador</th><th>Item</th><th>Quantidade</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="doacoes-tbody"><tr><td colspan="6" style="text-align: center;">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Nova Necessidade -->
+    <div id="necessidade-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-title">Cadastrar Nova Necessidade</h3><span class="modal-close" onclick="fecharModal('necessidade-modal')">&times;</span></div>
+            <form id="necessidade-form">
+                <input type="hidden" id="necessidade-id">
+                <div class="form-group"><label>Título *</label><input type="text" id="titulo" required></div>
+                <div class="form-group"><label>Categoria *</label><select id="categoria" required>
+                    <option value="alimentos">Alimentos</option><option value="roupas">Roupas</option>
+                    <option value="medicamentos">Medicamentos</option><option value="higiene">Higiene</option>
+                    <option value="material_escolar">Material Escolar</option><option value="voluntariado">Voluntariado</option>
+                </select></div>
+                <div class="form-group"><label>Descrição *</label><textarea id="descricao" rows="3" required></textarea></div>
+                <div class="form-group"><label>Quantidade Necessária *</label><input type="number" id="quantidade_necessaria" min="1" required></div>
+                <div class="form-group"><label>Urgência</label><select id="urgencia"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option></select></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Novo Evento -->
+    <div id="evento-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Cadastrar Novo Evento</h3><span class="modal-close" onclick="fecharModal('evento-modal')">&times;</span></div>
+            <form id="evento-form">
+                <input type="hidden" id="evento-id">
+                <div class="form-group"><label>Título do Evento *</label><input type="text" id="evento-titulo" required></div>
+                <div class="form-group"><label>Descrição</label><textarea id="evento-descricao" rows="3"></textarea></div>
+                <div class="form-group"><label>Data e Hora *</label><input type="datetime-local" id="evento-data" required></div>
+                <div class="form-group"><label>Local do Evento</label><input type="text" id="evento-local"></div>
+                <div class="form-group"><label>Endereço</label><input type="text" id="evento-endereco"></div>
+                <div class="form-group"><label>Cidade</label><input type="text" id="evento-cidade"></div>
+                <div class="form-group"><label>UF</label><input type="text" id="evento-uf" maxlength="2"></div>
+                <div class="form-group"><label>URL da Imagem (opcional)</label><input type="text" id="evento-imagem" placeholder="https://..."></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Evento</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Nova Parceria -->
+    <div id="parceria-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Adicionar Parceria</h3><span class="modal-close" onclick="fecharModal('parceria-modal')">&times;</span></div>
+            <form id="parceria-form">
+                <input type="hidden" id="parceria-id">
+                <div class="form-group"><label>Nome do Parceiro *</label><input type="text" id="parceria-nome" required></div>
+                <div class="form-group"><label>Tipo de Parceria</label><select id="parceria-tipo"><option value="empresa">Empresa</option><option value="instituicao">Instituição</option><option value="governo">Governo</option><option value="outro">Outro</option></select></div>
+                <div class="form-group"><label>Descrição</label><textarea id="parceria-descricao" rows="3"></textarea></div>
+                <div class="form-group"><label>Logo URL</label><input type="text" id="parceria-logo" placeholder="https://..."></div>
+                <div class="form-group"><label>Website</label><input type="url" id="parceria-website" placeholder="https://..."></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Parceria</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Configurações -->
+    <div id="perfil-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Configurações da ONG</h3><span class="modal-close" onclick="fecharModal('perfil-modal')">&times;</span></div>
+            <form id="perfil-form">
+                <div class="form-group"><label>Nome da ONG</label><input type="text" id="ong-nome" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="ong-email" required></div>
+                <div class="form-group"><label>Telefone</label><input type="text" id="ong-telefone"></div>
+                <div class="form-group"><label>Endereço</label><input type="text" id="ong-endereco"></div>
+                <div class="form-group"><label>Cidade</label><input type="text" id="ong-cidade"></div>
+                <div class="form-group"><label>UF</label><input type="text" id="ong-uf" maxlength="2"></div>
+                <div class="form-group"><label>Descrição</label><textarea id="ong-descricao" rows="3"></textarea></div>
+                <div class="form-group"><label>Logo URL</label><input type="text" id="ong-logo" placeholder="https://..."></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Atualizar Perfil</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Fotos da ONG -->
+    <div id="fotos-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>📸 Fotos da ONG (Máx. 3)</h3><span class="modal-close" onclick="fecharModal('fotos-modal')">&times;</span></div>
+            <div id="fotos-lista" style="margin-bottom: 1rem;"></div>
+            <form id="fotos-form">
+                <div class="form-group"><label>URL da Foto *</label><input type="text" id="foto-url" placeholder="https://..." required></div>
+                <div class="form-group"><label>Descrição</label><input type="text" id="foto-descricao" placeholder="Breve descrição da foto"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Adicionar Foto</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Localização -->
+    <div id="localizacao-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header"><h3>📍 Localização da ONG</h3><span class="modal-close" onclick="fecharModal('localizacao-modal')">&times;</span></div>
+            <form id="localizacao-form">
+                <div class="form-group">
+                    <label>Endereço Completo</label>
+                    <input type="text" id="loc-endereco" placeholder="Digite o endereço completo" required>
+                </div>
+                <div class="form-group">
+                    <label>Buscar no Google Maps</label>
+                    <input type="text" id="loc-search" placeholder="Pesquisar local..." class="form-control">
+                    <small style="color: #7f8c8d;">Digite um endereço e clique em "Buscar"</small>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <button type="button" class="btn btn-primary" onclick="buscarLocalizacao()">🔍 Buscar</button>
+                    <button type="button" class="btn btn-outline" onclick="obterLocalizacaoAtual()">📍 Minha Localização</button>
+                </div>
+                <div id="mapa-container" style="width: 100%; height: 300px; border-radius: 10px; margin-bottom: 1rem; background: #ecf0f1;"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Latitude</label><input type="text" id="loc-latitude" readonly></div>
+                    <div class="form-group"><label>Longitude</label><input type="text" id="loc-longitude" readonly></div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Localização</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast" style="display: none;"><span class="toast-message"></span></div>
+    
+    <script src="javascript.js/dashboard_ong.js"></script>
+</body>
+</html>

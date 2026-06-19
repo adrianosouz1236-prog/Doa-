@@ -1,0 +1,500 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f6fa;
+}
+
+/* Header - Mesmo estilo do feedback */
+.header {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.logo a {
+    color: white;
+    text-decoration: none;
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    font-weight: bold;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background 0.3s;
+    font-size: clamp(0.75rem, 3vw, 1rem);
+}
+
+.nav-link:hover {
+    background: #34495e;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    color: white;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    min-width: 180px;
+    z-index: 50;
+}
+
+.user-menu:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 0.8rem 1rem;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.dropdown-menu a:hover {
+    background: #f5f5f5;
+    color: #27ae60;
+}
+
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: white;
+    margin: 5px 0;
+    transition: all 0.3s;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: clamp(0.75rem, 3vw, 0.9rem);
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #229954;
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    border: 2px solid #27ae60;
+    background: transparent;
+    color: #27ae60;
+}
+
+.btn-outline:hover {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+}
+
+main {
+    min-height: calc(100vh - 200px);
+    padding: clamp(1rem, 4vw, 2rem) 0;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    color: #2c3e50;
+}
+
+.page-header p {
+    color: #7f8c8d;
+    font-size: clamp(0.875rem, 4vw, 1.1rem);
+}
+
+/* Suporte Grid */
+.suporte-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+/* Cards */
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: clamp(1.5rem, 4vw, 2rem);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+    color: #2c3e50;
+    font-size: clamp(1.1rem, 4vw, 1.3rem);
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 0.5rem;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 0.875rem;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #27ae60;
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.form-group small {
+    display: block;
+    color: #7f8c8d;
+    font-size: 0.7rem;
+    margin-top: 0.3rem;
+}
+
+/* Suporte Items */
+.suporte-item {
+    border: 1px solid #ecf0f1;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s;
+}
+
+.suporte-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.suporte-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.suporte-categoria {
+    display: inline-block;
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.suporte-status {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.suporte-status.aberto { color: #f39c12; }
+.suporte-status.em_andamento { color: #e67e22; }
+.suporte-status.resolvido { color: #27ae60; }
+.suporte-status.fechado { color: #7f8c8d; }
+
+.suporte-data {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+}
+
+.suporte-assunto {
+    color: #2c3e50;
+    margin: 0.3rem 0;
+    font-size: 1rem;
+}
+
+.suporte-mensagem {
+    color: #555;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+}
+
+.suporte-resposta {
+    background: #f8f9fa;
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    border-left: 3px solid #27ae60;
+}
+
+.suporte-resposta p {
+    margin: 0.3rem 0;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.suporte-resposta small {
+    color: #7f8c8d;
+    font-size: 0.7rem;
+}
+
+.suporte-aguardando {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #fff3cd;
+    border-radius: 5px;
+    color: #856404;
+    font-size: 0.85rem;
+}
+
+.quick-help {
+    margin-top: 2rem;
+}
+
+.quick-help .card {
+    text-align: center;
+    background: #e8f5e9;
+}
+
+.quick-help .card h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.quick-help .card a {
+    color: #27ae60;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.quick-help .card a:hover {
+    text-decoration: underline;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #27ae60;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.empty-state,
+.error-state {
+    text-align: center;
+    padding: 2rem;
+    color: #7f8c8d;
+}
+
+.error-state {
+    color: #e74c3c;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #333;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 5px;
+    z-index: 2000;
+    animation: slideIn 0.3s ease;
+    max-width: 90%;
+    width: 400px;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-success { background: #27ae60; }
+.toast-error { background: #e74c3c; }
+.toast-warning { background: #f39c12; }
+.toast-info { background: #2980b9; }
+
+/* Footer */
+.footer {
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 3rem;
+}
+
+.footer-bottom {
+    border-top: 1px solid #34495e;
+    padding-top: 1.5rem;
+    color: #7f8c8d;
+    font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: #2c3e50;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0;
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .nav-menu li {
+        width: 100%;
+    }
+
+    .nav-link {
+        display: block;
+        text-align: center;
+    }
+
+    .suporte-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .suporte-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        width: auto;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem;
+    }
+
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+        padding: 0.6rem;
+    }
+
+    .suporte-item {
+        padding: 0.8rem;
+    }
+}
