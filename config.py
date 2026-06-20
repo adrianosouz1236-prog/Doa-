@@ -44,6 +44,9 @@ class Config:
     # ==================== LOGS ====================
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
     LOG_FILE = os.getenv('LOG_FILE', 'logs/app.log')
+    
+    # ==================== GOOGLE MAPS ====================
+    GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
 
 # Configuração para desenvolvimento
 class DevelopmentConfig(Config):

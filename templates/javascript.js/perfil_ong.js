@@ -1,3 +1,143 @@
+// ==================== GOOGLE MAPS HELPER ====================
+let googleMapsLoaded = false;
+let googleMapsLoading = false;
+
+async function carregarGoogleMapsApi() {
+    if (googleMapsLoaded && typeof google !== 'undefined' && google.maps) {
+        return true;
+    }
+    
+    if (googleMapsLoading) {
+        return new Promise((resolve) => {
+            const checkLoaded = setInterval(() => {
+                if (googleMapsLoaded && typeof google !== 'undefined' && google.maps) {
+                    clearInterval(checkLoaded);
+                    resolve(true);
+                }
+            }, 200);
+        });
+    }
+    
+    googleMapsLoading = true;
+    
+    try {
+        const response = await fetch('/api/config/google-maps-key');
+        const data = await response.json();
+        
+        if (!data.api_key) {
+            console.warn('⚠️ Chave do Google Maps não configurada');
+            googleMapsLoading = false;
+            return false;
+        }
+        
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => {
+                console.log('✅ Google Maps carregado com sucesso');
+                googleMapsLoaded = true;
+                googleMapsLoading = false;
+                resolve(true);
+            };
+            script.onerror = () => {
+                console.error('❌ Erro ao carregar Google Maps');
+                googleMapsLoading = false;
+                reject(new Error('Falha ao carregar Google Maps'));
+            };
+            document.head.appendChild(script);
+        });
+    } catch (error) {
+        console.error('❌ Erro ao buscar chave do Google Maps:', error);
+        googleMapsLoading = false;
+        return false;
+    }
+}
+
+// Modifique a função carregarPerfilOng para carregar o mapa após a API estar disponível
+async function carregarPerfilOng() {
+    const ongId = getOngIdFromUrl();
+    if (!ongId) {
+        showToast('ONG não identificada', 'error');
+        window.location.href = '/';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/ongs/${ongId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Erro ao carregar perfil');
+        }
+
+        document.getElementById('page-title').textContent = `${data.nome} - Doa+`;
+        document.getElementById('ong-nome').textContent = data.nome;
+        document.getElementById('ong-cidade').textContent = `${data.cidade || ''}${data.uf ? `/${data.uf}` : ''}`;
+        document.getElementById('ong-telefone').textContent = data.telefone || 'Não informado';
+        document.getElementById('ong-email').textContent = data.email;
+        document.getElementById('ong-descricao').textContent = data.descricao || 'Sem descrição disponível.';
+        document.getElementById('sobre-texto').textContent = data.descricao || 'Sem descrição disponível.';
+        document.getElementById('ong-endereco').textContent = data.endereco || 'Não informado';
+        document.getElementById('ong-cidade-uf').textContent = `${data.cidade || ''}${data.uf ? ` - ${data.uf}` : ''}`;
+        document.getElementById('ong-endereco-completo').textContent = data.endereco_completo || data.endereco || 'Endereço não informado';
+        
+        if (data.logo_url) {
+            document.getElementById('ong-logo').src = data.logo_url;
+        } else {
+            document.getElementById('ong-logo').src = 'https://via.placeholder.com/120?text=ONG';
+        }
+
+        // Carregar necessidades
+        if (data.necessidades && data.necessidades.length > 0) {
+            renderizarNecessidades(data.necessidades);
+        } else {
+            document.getElementById('necessidades-container').innerHTML = '<p>Nenhuma necessidade ativa no momento.</p>';
+        }
+
+        // Carregar eventos
+        if (data.eventos && data.eventos.length > 0) {
+            renderizarEventos(data.eventos);
+        } else {
+            document.getElementById('eventos-container').innerHTML = '<p>Nenhum evento programado no momento.</p>';
+        }
+
+        // Carregar parcerias
+        if (data.parcerias && data.parcerias.length > 0) {
+            renderizarParcerias(data.parcerias);
+        } else {
+            document.getElementById('parcerias-container').innerHTML = '<p>Nenhuma parceria registrada.</p>';
+        }
+
+        // Carregar fotos
+        if (data.fotos && data.fotos.length > 0) {
+            renderizarFotos(data.fotos);
+        } else {
+            document.getElementById('fotos-container').innerHTML = '<p>Nenhuma foto na galeria.</p>';
+        }
+
+        // Carregar localização no mapa
+        if (data.latitude && data.longitude) {
+            // Garantir que a API do Google Maps está carregada
+            if (typeof google === 'undefined' || !google.maps) {
+                await carregarGoogleMapsApi();
+            }
+            setTimeout(() => {
+                inicializarMapa(data.latitude, data.longitude);
+            }, 500);
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('perfil-content').style.display = 'block';
+
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast(error.message, 'error');
+        document.getElementById('loading').innerHTML = `<p style="color: red;">Erro ao carregar perfil: ${error.message}</p>`;
+    }
+}
+
 const API_BASE_URL = window.location.origin + '/api';
 let mapInstance = null;
 

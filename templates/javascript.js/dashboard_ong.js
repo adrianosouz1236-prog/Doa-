@@ -1,3 +1,99 @@
+// ==================== GOOGLE MAPS HELPER ====================
+let googleMapsLoaded = false;
+let googleMapsLoading = false;
+
+async function carregarGoogleMapsApi() {
+    // Se já carregou, retorna true
+    if (googleMapsLoaded && typeof google !== 'undefined' && google.maps) {
+        return true;
+    }
+    
+    // Se já está carregando, aguarda
+    if (googleMapsLoading) {
+        return new Promise((resolve) => {
+            const checkLoaded = setInterval(() => {
+                if (googleMapsLoaded && typeof google !== 'undefined' && google.maps) {
+                    clearInterval(checkLoaded);
+                    resolve(true);
+                }
+            }, 200);
+        });
+    }
+    
+    googleMapsLoading = true;
+    
+    try {
+        const response = await fetch('/api/config/google-maps-key');
+        const data = await response.json();
+        
+        if (!data.api_key) {
+            console.warn('⚠️ Chave do Google Maps não configurada');
+            googleMapsLoading = false;
+            return false;
+        }
+        
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => {
+                console.log('✅ Google Maps carregado com sucesso');
+                googleMapsLoaded = true;
+                googleMapsLoading = false;
+                resolve(true);
+            };
+            script.onerror = () => {
+                console.error('❌ Erro ao carregar Google Maps');
+                googleMapsLoading = false;
+                reject(new Error('Falha ao carregar Google Maps'));
+            };
+            document.head.appendChild(script);
+        });
+    } catch (error) {
+        console.error('❌ Erro ao buscar chave do Google Maps:', error);
+        googleMapsLoading = false;
+        return false;
+    }
+}
+
+// Modifique a função carregarLocalizacaoOng
+window.carregarLocalizacaoOng = async function() {
+    try {
+        // Garantir que a API do Google Maps está carregada
+        if (typeof google === 'undefined' || !google.maps) {
+            const loaded = await carregarGoogleMapsApi();
+            if (!loaded) {
+                showToast('Não foi possível carregar o Google Maps', 'error');
+                // Abre o modal mesmo sem mapa, apenas com os campos
+                const data = await apiRequest('/ongs/localizacao');
+                document.getElementById('loc-endereco').value = data.endereco_completo || data.endereco || '';
+                document.getElementById('loc-latitude').value = data.latitude || '';
+                document.getElementById('loc-longitude').value = data.longitude || '';
+                document.getElementById('loc-search').value = '';
+                abrirModal('localizacao-modal');
+                return;
+            }
+            // Aguardar um pouco para a API inicializar
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        const data = await apiRequest('/ongs/localizacao');
+        document.getElementById('loc-endereco').value = data.endereco_completo || data.endereco || '';
+        document.getElementById('loc-latitude').value = data.latitude || '';
+        document.getElementById('loc-longitude').value = data.longitude || '';
+        document.getElementById('loc-search').value = '';
+        
+        abrirModal('localizacao-modal');
+        
+        setTimeout(() => {
+            inicializarMapa(data.latitude, data.longitude);
+        }, 300);
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+};
+
 const API_BASE_URL = window.location.origin + '/api';
 let mapInstance = null;
 let markerInstance = null;

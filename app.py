@@ -7,6 +7,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import hashlib
 import re
+from config import get_config
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -19,12 +20,14 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 app = Flask(__name__, static_folder=TEMPLATES_DIR, static_url_path='')
 
 # ==================== CONFIGURAÇÕES ====================
-app.config['SECRET_KEY'] = 'sua-chave-secreta-aqui-mude-em-producao'
-app.config['JWT_SECRET_KEY'] = 'jwt-chave-secreta-mude'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=2)
-app.config['DEBUG'] = True
-app.config['PORT'] = 5000
-app.config['HOST'] = '0.0.0.0'
+config = get_config()
+app.config['SECRET_KEY'] = config.SECRET_KEY
+app.config['JWT_SECRET_KEY'] = config.JWT_SECRET_KEY
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = config.JWT_ACCESS_TOKEN_EXPIRES
+app.config['DEBUG'] = config.DEBUG
+app.config['PORT'] = config.PORT
+app.config['HOST'] = config.HOST
+app.config['GOOGLE_MAPS_API_KEY'] = config.GOOGLE_MAPS_API_KEY
 
 # Configurar CORS
 CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000'])
@@ -196,6 +199,15 @@ def ongs_page():
 @app.route('/sobre')
 def sobre_page():
     return send_from_directory(TEMPLATES_DIR, 'index.html')
+
+# ==================== ROTA DE CONFIGURAÇÃO DO GOOGLE MAPS ====================
+
+@app.route('/api/config/google-maps-key', methods=['GET'])
+def get_google_maps_key():
+    """Retorna a chave da API do Google Maps para uso no frontend"""
+    return jsonify({
+        'api_key': app.config.get('GOOGLE_MAPS_API_KEY', '')
+    }), 200
 
 # ==================== ROTAS DE API ====================
 
@@ -1821,7 +1833,6 @@ def init_test_data():
         }
         next_parceria_id += 1
         
-        # Feedback de exemplo
         feedback_db[next_feedback_id] = {
             'id': next_feedback_id,
             'user_id': ong_id,
@@ -1854,7 +1865,6 @@ def init_test_data():
         }
         next_feedback_id += 1
         
-        # Suporte de exemplo
         suporte_db[next_suporte_id] = {
             'id': next_suporte_id,
             'user_id': ong_id,

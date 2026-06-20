@@ -13,21 +13,21 @@
             <div class="logo">
                 <a href="/admin_plataform.html">Doa+ <span>Admin Plataforma</span></a>
             </div>
-            <ul class="nav-menu">
-                <li><a class="nav-link active" onclick="mostrarAba('dashboard')">📊 Dashboard</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('anuncios')">📢 Anúncios</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('ongs')">🏢 ONGs</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('doadores')">👥 Doadores</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('doacoes')">📦 Doações</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('feedback')">📝 Feedback</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('suporte')">🆘 Suporte</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('logs')">📋 Logs</a></li>
-                <li><a class="nav-link" onclick="mostrarAba('politicas')">⚖️ Políticas</a></li>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a class="nav-link active" data-aba="dashboard" href="#">📊 Dashboard</a></li>
+                <li><a class="nav-link" data-aba="anuncios" href="#">📢 Anúncios</a></li>
+                <li><a class="nav-link" data-aba="ongs" href="#">🏢 ONGs</a></li>
+                <li><a class="nav-link" data-aba="doadores" href="#">👥 Doadores</a></li>
+                <li><a class="nav-link" data-aba="doacoes" href="#">📦 Doações</a></li>
+                <li><a class="nav-link" data-aba="feedback" href="#">📝 Feedback</a></li>
+                <li><a class="nav-link" data-aba="suporte" href="#">🆘 Suporte</a></li>
+                <li><a class="nav-link" data-aba="logs" href="#">📋 Logs</a></li>
+                <li><a class="nav-link" data-aba="politicas" href="#">⚖️ Políticas</a></li>
             </ul>
             <div class="user-menu">
                 <span id="admin-name">Admin</span>
                 <div class="dropdown-menu">
-                    <a href="#" onclick="mostrarAba('politicas')">Políticas</a>
+                    <a href="#" data-aba="politicas">Políticas</a>
                     <a href="#" id="logout-btn">Sair</a>
                 </div>
             </div>
@@ -36,7 +36,7 @@
     
     <div class="container">
         <!-- Aba Dashboard -->
-        <div id="aba-dashboard" class="tab-content">
+        <div id="aba-dashboard" class="tab-content active">
             <div class="dashboard-header">
                 <h1>Painel Administrativo da Plataforma</h1>
                 <p>Gerencie anúncios, ONGs, doadores e monitore a segurança da plataforma</p>
@@ -333,7 +333,7 @@
             </div>
             <div id="anuncio-detalhes"></div>
             <div id="anuncio-advertencias" style="margin-top: 1rem;"></div>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-warning" onclick="abrirModalAdvertencia()">⚠️ Adicionar Advertência</button>
                 <button class="btn btn-danger" onclick="excluirAnuncio()">🗑️ Excluir Anúncio</button>
             </div>
@@ -349,7 +349,7 @@
             </div>
             <div id="ong-detalhes"></div>
             <div id="ong-advertencias" style="margin-top: 1rem;"></div>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-danger" id="btn-bloquear-ong" onclick="bloquearOng()">🔒 Bloquear ONG</button>
             </div>
         </div>

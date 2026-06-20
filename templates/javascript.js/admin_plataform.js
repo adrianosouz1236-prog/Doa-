@@ -29,34 +29,37 @@ async function requisicaoApi(endpoint, options = {}) {
 
 // ==================== FUNÇÃO MOSTRAR ABA ====================
 function mostrarAba(aba) {
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    console.log('📑 Mostrando aba:', aba);
     
+    // Esconder todas as abas
+    document.querySelectorAll('.tab-content').forEach(t => {
+        t.style.display = 'none';
+        t.classList.remove('active');
+    });
+    
+    // Mostrar a aba selecionada
     const abaElement = document.getElementById(`aba-${aba}`);
     if (abaElement) {
         abaElement.style.display = 'block';
+        abaElement.classList.add('active');
+        console.log('✅ Aba exibida:', aba);
+    } else {
+        console.warn('⚠️ Aba não encontrada:', aba);
     }
     
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    
-    const linkMap = {
-        'dashboard': '📊 Dashboard',
-        'anuncios': '📢 Anúncios',
-        'ongs': '🏢 ONGs',
-        'doadores': '👥 Doadores',
-        'doacoes': '📦 Doações',
-        'feedback': '📝 Feedback',
-        'suporte': '🆘 Suporte',
-        'logs': '📋 Logs',
-        'politicas': '⚖️ Políticas'
-    };
-    
-    const label = linkMap[aba];
+    // Remover classe active de todos os links
     document.querySelectorAll('.nav-link').forEach(l => {
-        if (l.textContent.trim() === label || l.textContent.includes(label)) {
+        l.classList.remove('active');
+    });
+    
+    // Adicionar classe active ao link correspondente
+    document.querySelectorAll('.nav-link').forEach(l => {
+        if (l.dataset.aba === aba) {
             l.classList.add('active');
         }
     });
     
+    // Carregar dados da aba
     if (aba === 'dashboard') carregarDashboard();
     if (aba === 'anuncios') carregarAnuncios();
     if (aba === 'ongs') carregarOngs();
@@ -65,6 +68,31 @@ function mostrarAba(aba) {
     if (aba === 'feedback') carregarFeedbacksAdmin();
     if (aba === 'suporte') carregarSuportesAdmin();
     if (aba === 'logs') carregarLogs();
+}
+
+// ==================== CONFIGURAR EVENTOS DAS ABAS ====================
+function configurarEventosAbas() {
+    // Usar event listener nos links do menu
+    document.querySelectorAll('.nav-link[data-aba]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aba = this.dataset.aba;
+            if (aba) {
+                mostrarAba(aba);
+            }
+        });
+    });
+    
+    // Links do dropdown
+    document.querySelectorAll('.dropdown-menu a[data-aba]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aba = this.dataset.aba;
+            if (aba) {
+                mostrarAba(aba);
+            }
+        });
+    });
 }
 
 // ==================== DASHBOARD ====================
@@ -328,6 +356,14 @@ async function desbloquearOng(id) {
     } catch(e) { showToast(e.message, 'error'); }
 }
 
+function bloquearOng() {
+    // Pega o ID da ONG do modal
+    const ongId = document.querySelector('#ong-detalhes')?.dataset?.ongId;
+    if (ongId) {
+        bloquearOngPorId(parseInt(ongId));
+    }
+}
+
 // ==================== DOADORES ====================
 async function carregarDoadores() {
     try { 
@@ -569,20 +605,42 @@ function fecharModal(id) {
 }
 
 // ==================== EVENTOS INICIAIS ====================
-document.addEventListener('DOMContentLoaded', () => {
-    if (!getToken()) { 
+document.addEventListener('DOMContentLoaded', function() {
+    const token = getToken();
+    if (!token) { 
         window.location.href = '/login.html'; 
         return; 
     }
     
-    carregarDashboard();
+    // Verificar se é admin
+    const userType = localStorage.getItem('userType');
+    if (userType !== 'admin') {
+        window.location.href = '/';
+        return;
+    }
     
-    document.getElementById('logout-btn').addEventListener('click', () => { 
-        localStorage.clear(); 
-        window.location.href = '/'; 
+    // Atualizar nome do admin
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const adminName = document.getElementById('admin-name');
+    if (adminName && user.nome) {
+        adminName.textContent = user.nome || 'Admin';
+    }
+    
+    // Configurar eventos das abas
+    configurarEventosAbas();
+    
+    // Garantir que a aba Dashboard está visível
+    mostrarAba('dashboard');
+    
+    // Evento de logout
+    document.getElementById('logout-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.href = '/';
     });
     
-    document.getElementById('form-advertencia').addEventListener('submit', async (e) => {
+    // Form Advertência
+    document.getElementById('form-advertencia').addEventListener('submit', async function(e) {
         e.preventDefault();
         const dados = {
             anuncio_id: document.getElementById('advertencia-anuncio-id').value,
@@ -603,13 +661,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) { showToast(e.message, 'error'); }
     });
     
-    document.getElementById('form-config')?.addEventListener('submit', async (e) => {
+    // Form Configurações
+    document.getElementById('form-config')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         showToast('Configurações salvas!', 'success');
     });
     
     // Form Responder Feedback
-    document.getElementById('form-responder-feedback')?.addEventListener('submit', async (e) => {
+    document.getElementById('form-responder-feedback')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('feedback-id').value;
         const resposta = document.getElementById('feedback-resposta').value;
@@ -632,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Form Responder Suporte
-    document.getElementById('form-responder-suporte')?.addEventListener('submit', async (e) => {
+    document.getElementById('form-responder-suporte')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('suporte-id').value;
         const resposta = document.getElementById('suporte-resposta').value;
