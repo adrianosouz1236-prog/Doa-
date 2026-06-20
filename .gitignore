@@ -1,10 +1,17 @@
+# Arquivos sensíveis
+.env
+.env.local
+.env.*.local
+generate_admin.py
+admin_*.py
+*_admin.py
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 venv/
 ENV/
 build/
@@ -22,12 +29,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Ambiente
-.env
-.env.local
-.env.*.local
-*.env
 
 # Logs
 logs/
@@ -49,5 +50,5 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Arquivos de Configuração
+# Config
 config.local.py
