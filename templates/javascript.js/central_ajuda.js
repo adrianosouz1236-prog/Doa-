@@ -43,7 +43,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==================== AUTENTICAÇÃO ====================
 function updateAuthUI() {
     const token = getToken();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -65,7 +64,6 @@ function updateAuthUI() {
 
 function setupAuth() {
     updateAuthUI();
-    
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
@@ -74,7 +72,6 @@ function setupAuth() {
             window.location.href = '/';
         });
     }
-
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
     if (hamburger && navMenu) {
@@ -84,33 +81,25 @@ function setupAuth() {
     }
 }
 
-// ==================== CENTRAL DE AJUDA ====================
 let artigosData = [];
 let categoriaAtual = 'todos';
 
 async function carregarArtigos(categoria = 'todos') {
     const container = document.getElementById('artigos-container');
-    
     try {
         const params = categoria !== 'todos' ? `?categoria=${categoria}` : '';
         const data = await apiRequest(`/ajuda${params}`);
         artigosData = data.artigos || [];
-
         if (artigosData.length === 0) {
             container.innerHTML = '<p class="empty-state">Nenhum artigo encontrado para esta categoria</p>';
             return;
         }
-
         container.innerHTML = artigosData.map(artigo => {
             const categoriaIcon = {
-                'geral': '📌',
-                'doador': '🤝',
-                'ong': '🏢',
-                'suporte': '🆘',
-                'feedback': '📝'
+                'geral': '📌', 'doador': '🤝', 'ong': '🏢',
+                'suporte': '🆘', 'feedback': '📝', 'seguranca': '🔒'
             };
             const icon = categoriaIcon[artigo.categoria] || '📄';
-            
             return `
                 <div class="artigo-card" onclick="toggleArtigo(${artigo.id})">
                     <div class="artigo-header">
@@ -124,7 +113,6 @@ async function carregarArtigos(categoria = 'todos') {
                 </div>
             `;
         }).join('');
-
     } catch (error) {
         container.innerHTML = `<p class="error-state">Erro ao carregar artigos: ${error.message}</p>`;
     }
@@ -135,11 +123,6 @@ function toggleArtigo(id) {
     if (conteudo) {
         const isVisible = conteudo.style.display !== 'none';
         conteudo.style.display = isVisible ? 'none' : 'block';
-        
-        // Animação suave
-        if (!isVisible) {
-            conteudo.style.animation = 'slideDown 0.3s ease';
-        }
     }
 }
 
@@ -155,7 +138,6 @@ function setupFilters() {
     });
 }
 
-// ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
     setupAuth();
     carregarArtigos('todos');

@@ -6,6 +6,7 @@
     <meta name="description" content="Plataforma de conexão entre doadores e ONGs">
     <title>Doa+ - Conectando Doadores e ONGs</title>
     <link rel="stylesheet" href="estilos.css/index.css">
+    <link rel="stylesheet" href="estilos.css/badges.css">
 </head>
 <body>
     <header class="header">
@@ -17,22 +18,47 @@
             </div>
             <ul class="nav-menu" id="nav-menu">
                 <li><a href="/" class="nav-link active">Início</a></li>
-                <li><a href="/necessidades" class="nav-link">Necessidades</a></li>
-                <li><a href="/ongs" class="nav-link">ONGs</a></li>
-                <li><a href="/sobre" class="nav-link">Sobre</a></li>
+                <li><a href="#necessidades" class="nav-link" onclick="scrollToSection('necessidades')">🎯 Necessidades</a></li>
+                <li><a href="#ongs-section" class="nav-link" onclick="scrollToSection('ongs-section')">🏢 ONGs</a></li>
+                <li><a href="#voluntariado-section" class="nav-link" onclick="scrollToSection('voluntariado-section')">🤝 Voluntariado</a></li>
+                <li><a href="#ranking-section" class="nav-link" onclick="scrollToSection('ranking-section')">🏆 Ranking</a></li>
+                <li><a href="#eventos" class="nav-link" onclick="scrollToSection('eventos')">📅 Eventos</a></li>
+                <li><a href="/doacoes_financeiras.html" class="nav-link">💰 Doações</a></li>
+                <li><a href="#sobre" class="nav-link" onclick="scrollToSection('sobre')">Sobre</a></li>
             </ul>
-            <div class="nav-buttons" id="nav-buttons">
-                <a href="/login.html" class="btn btn-outline">Entrar</a>
-                <a href="/cadastro.html" class="btn btn-primary">Cadastrar</a>
-            </div>
-            <div class="user-menu" id="user-menu" style="display: none;">
-                <span id="user-name"></span>
-                <div class="dropdown-menu">
-                    <a href="/dashboard_ong.html">Dashboard</a>
-                    <a href="/feedback.html">📝 Feedback</a>
-                    <a href="/suporte.html">🆘 Suporte</a>
-                    <a href="/central_ajuda.html">📚 Central de Ajuda</a>
-                    <a href="#" id="logout-btn">Sair</a>
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 1rem;">
+                <!-- NOTIFICAÇÕES -->
+                <div class="notificacoes" id="notificacoes" style="position: relative; cursor: pointer;" onclick="abrirModalComunicacoes()">
+                    <span style="font-size: 1.5rem;">🔔</span>
+                    <span id="notificacao-badge" class="badge-notificacao" style="display: none; position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.6rem; min-width: 18px; text-align: center; font-weight: bold;">0</span>
+                </div>
+                
+                <!-- CHAT -->
+                <div class="chat-icon" id="chat-icon" style="position: relative; cursor: pointer; display: none;" onclick="abrirChat()">
+                    <span style="font-size: 1.5rem;">💬</span>
+                    <span id="chat-badge" class="badge-notificacao" style="display: none; position: absolute; top: -8px; right: -8px; background: #3498db; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.6rem; min-width: 18px; text-align: center; font-weight: bold;">0</span>
+                </div>
+                
+                <!-- BOTÕES DE NAVEGAÇÃO -->
+                <div class="nav-buttons" id="nav-buttons">
+                    <a href="/login.html" class="btn btn-outline">Entrar</a>
+                    <a href="/cadastro.html" class="btn btn-primary">Cadastrar</a>
+                </div>
+                
+                <!-- MENU DO USUÁRIO ATUALIZADO COM LINK DO PERFIL -->
+                <div class="user-menu" id="user-menu" style="display: none;">
+                    <span id="user-name"></span>
+                    <div class="dropdown-menu">
+                        <a href="/perfil_doador.html">👤 Meu Perfil</a>
+                        <hr style="margin: 0.3rem 0; border-color: #ecf0f1;">
+                        <a href="/dashboard_ong.html">📊 Dashboard (ONG)</a>
+                        <a href="/doacoes_financeiras.html">💰 Doações Financeiras</a>
+                        <a href="/feedback.html">📝 Feedback</a>
+                        <a href="/suporte.html">🆘 Suporte</a>
+                        <a href="/central_ajuda.html">📚 Central de Ajuda</a>
+                        <hr style="margin: 0.3rem 0; border-color: #ecf0f1;">
+                        <a href="#" id="logout-btn">🚪 Sair</a>
+                    </div>
                 </div>
             </div>
             <button class="hamburger" id="hamburger">
@@ -43,13 +69,14 @@
         </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- ==================== HERO SECTION ==================== -->
     <section class="hero">
         <div class="hero-content">
             <h1>Transforme vidas através da doação</h1>
             <p>Conectamos quem quer ajudar com quem realmente precisa</p>
             <div class="search-box">
                 <input type="text" id="search-cidade" placeholder="Digite sua cidade" class="search-input">
+                <input type="text" id="search-texto" placeholder="Buscar por palavra-chave..." class="search-input">
                 <select id="search-categoria" class="search-select">
                     <option value="">Todas as categorias</option>
                     <option value="alimentos">Alimentos</option>
@@ -74,11 +101,70 @@
                 <span class="stat-number" id="stat-itens">0</span>
                 <span class="stat-label">Itens Doados</span>
             </div>
+            <div class="stat">
+                <span class="stat-number" id="stat-voluntarios">0</span>
+                <span class="stat-label">Voluntários</span>
+            </div>
         </div>
     </section>
 
-    <!-- Seção de Eventos -->
-    <section class="eventos">
+    <!-- ==================== BADGES DE SEGURANÇA ==================== -->
+    <section class="badges-section" style="padding: 1rem 0; background: #f8f9fa;">
+        <div class="container">
+            <div class="security-badges-container" id="badges-container"></div>
+        </div>
+    </section>
+
+    <!-- ==================== RANKING SECTION ==================== -->
+    <section class="ranking-section" id="ranking-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>🏆 Top Doadores</h2>
+                <p>Os doadores que mais estão fazendo a diferença</p>
+            </div>
+            <div id="ranking-container" class="ranking-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando ranking...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== VOLUNTARIADO SECTION ==================== -->
+    <section class="voluntariado-section" id="voluntariado-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>🤝 Vagas de Voluntariado</h2>
+                <p>Ajude presencialmente e faça a diferença</p>
+            </div>
+            <div id="voluntariado-container" class="voluntariado-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando vagas...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ONGS SECTION ==================== -->
+    <section class="ongs-section" id="ongs-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>🏢 ONGs Parceiras</h2>
+                <p>Conheça as organizações que estão fazendo a diferença</p>
+            </div>
+            <div id="ongs-container" class="ongs-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando ONGs...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== EVENTOS SECTION ==================== -->
+    <section class="eventos" id="eventos">
         <div class="container">
             <div class="section-header">
                 <h2>📅 Próximos Eventos Solidários</h2>
@@ -93,11 +179,11 @@
         </div>
     </section>
 
-    <!-- Seção de Necessidades -->
-    <section class="necessidades">
+    <!-- ==================== NECESSIDADES SECTION ==================== -->
+    <section class="necessidades" id="necessidades">
         <div class="container">
             <div class="section-header">
-                <h2>Necessidades Próximas</h2>
+                <h2>🎯 Necessidades Próximas</h2>
                 <p>Veja o que as ONGs da sua região estão precisando</p>
             </div>
             <div class="filters">
@@ -119,46 +205,55 @@
         </div>
     </section>
 
-    <footer class="footer">
+    <!-- ==================== RODAPÉ ==================== -->
+    <footer class="footer" id="sobre" style="padding: 0.8rem 2rem 0.5rem; margin-top: 2rem;">
         <div class="container">
-            <div class="footer-content">
+            <div class="footer-content" style="gap: 1rem; margin-bottom: 0.5rem;">
                 <div class="footer-section">
-                    <h3>Doa+</h3>
-                    <p>Plataforma de conexão entre doadores e ONGs para um mundo mais solidário.</p>
+                    <h3 style="margin-bottom: 0.3rem;">Doa+</h3>
+                    <p style="margin-bottom: 0;">Plataforma de conexão entre doadores e ONGs para um mundo mais solidário.</p>
                 </div>
                 <div class="footer-section">
-                    <h4>Links Rápidos</h4>
-                    <ul>
+                    <h4 style="margin-bottom: 0.3rem;">Links Rápidos</h4>
+                    <ul style="margin: 0;">
                         <li><a href="/">Início</a></li>
-                        <li><a href="/necessidades">Necessidades</a></li>
-                        <li><a href="/ongs">ONGs</a></li>
-                        <li><a href="/sobre">Sobre</a></li>
+                        <li><a href="termos_servico.html">📜 Termos de Serviço</a></li>
+                        <li><a href="politicas_privacidade.html">🔒 Política de Privacidade</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Ajuda</h4>
-                    <ul>
+                    <h4 style="margin-bottom: 0.3rem;">Ajuda</h4>
+                    <ul style="margin: 0;">
                         <li><a href="/central_ajuda.html">📚 Central de Ajuda</a></li>
                         <li><a href="/feedback.html">📝 Feedback</a></li>
                         <li><a href="/suporte.html">🆘 Suporte</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Contato</h4>
-                    <p>Email: contato@doamais.org</p>
-                    <p>Telefone: (11) 99999-9999</p>
+                    <h4 style="margin-bottom: 0.3rem;">Contato</h4>
+                    <p style="margin-bottom: 0;">Email: contato@doamais.org</p>
+                    <p style="margin-bottom: 0;">Telefone: (11) 99999-9999</p>
                 </div>
             </div>
-            <div class="footer-bottom">
+            
+            <!-- BADGES NO RODAPÉ -->
+            <div class="footer-badges" style="display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; padding: 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem;">
+                <!-- Os badges serão carregados via JavaScript -->
+                <div id="footer-badges-container"></div>
+            </div>
+
+            <div class="footer-bottom" style="padding-top: 0.3rem; margin-top: 0;">
                 <p>&copy; 2024 Doa+ - Todos os direitos reservados</p>
             </div>
         </div>
     </footer>
 
-    <!-- Modal de Doação -->
+    <!-- ==================== MODAIS ==================== -->
+
+    <!-- Modal Doação -->
     <div id="doacao-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close">&times;</span>
+            <span class="modal-close" onclick="fecharModal()">&times;</span>
             <h3>Confirmar Doação</h3>
             <form id="form-doacao">
                 <input type="hidden" id="modal-necessidade-id">
@@ -175,10 +270,124 @@
         </div>
     </div>
 
+    <!-- Modal Avaliação -->
+    <div id="avaliacao-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="fecharModalAvaliacao()">&times;</span>
+            <h3>⭐ Avaliar ONG</h3>
+            <form id="form-avaliacao">
+                <input type="hidden" id="avaliacao-ong-id">
+                <div class="form-group">
+                    <label>Nota (1-5):</label>
+                    <div class="stars" id="stars-container">
+                        <span class="star" data-value="1" onclick="selecionarEstrela(1)">☆</span>
+                        <span class="star" data-value="2" onclick="selecionarEstrela(2)">☆</span>
+                        <span class="star" data-value="3" onclick="selecionarEstrela(3)">☆</span>
+                        <span class="star" data-value="4" onclick="selecionarEstrela(4)">☆</span>
+                        <span class="star" data-value="5" onclick="selecionarEstrela(5)">☆</span>
+                    </div>
+                    <input type="hidden" id="avaliacao-nota" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Comentário:</label>
+                    <textarea id="avaliacao-comentario" rows="3" placeholder="Compartilhe sua experiência..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Enviar Avaliação</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Inscrição Voluntariado -->
+    <div id="inscricao-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="fecharModalInscricao()">&times;</span>
+            <h3>🤝 Inscrever-se como Voluntário</h3>
+            <form id="form-inscricao">
+                <input type="hidden" id="inscricao-vaga-id">
+                <div class="form-group">
+                    <label>Nome Completo:</label>
+                    <input type="text" id="inscricao-nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone:</label>
+                    <input type="text" id="inscricao-telefone" required>
+                </div>
+                <div class="form-group">
+                    <label>Mensagem (opcional):</label>
+                    <textarea id="inscricao-mensagem" rows="3" placeholder="Conte-nos por que você quer ser voluntário..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Confirmar Inscrição</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Chat -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px; max-height: 80vh;">
+            <div class="modal-header">
+                <h3>💬 Chat</h3>
+                <span class="modal-close" onclick="fecharChat()">&times;</span>
+            </div>
+            <div id="chat-contatos" style="max-height: 400px; overflow-y: auto;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando contatos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Comunicações -->
+    <div id="comunicacoes-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>📨 Minhas Comunicações</h3>
+                <span class="modal-close" onclick="fecharModalComunicacoes()">&times;</span>
+            </div>
+            <div id="comunicacoes-lista" style="max-height: 400px; overflow-y: auto;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando comunicações...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST ==================== -->
     <div id="toast" class="toast" style="display: none;">
         <span class="toast-message"></span>
     </div>
 
+    <!-- ==================== JAVASCRIPT ==================== -->
     <script src="javascript.js/index.js"></script>
+    <script src="javascript.js/badges.js"></script>
+
+    <script>
+        // ==================== INICIALIZAR BADGES ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Badges principais
+            if (document.getElementById('badges-container')) {
+                criarBadgesCompleto('badges-container', {
+                    tipos: ['SSL', 'LGPD', 'PAGAMENTO', 'DOACAO'],
+                    tamanho: 'md',
+                    comTooltip: true,
+                    animado: true
+                });
+            }
+
+            // Badges no rodapé
+            if (document.getElementById('footer-badges-container')) {
+                criarBadgesCompleto('footer-badges-container', {
+                    tipos: ['SSL', 'LGPD', 'PAGAMENTO', 'OPENSOURCE', 'RESPONSIVO'],
+                    tamanho: 'sm',
+                    comTooltip: true,
+                    animado: false
+                });
+            }
+
+            // Verificar SSL
+            verificarSSL();
+        });
+    </script>
 </body>
 </html>

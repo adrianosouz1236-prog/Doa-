@@ -1,0 +1,283 @@
+/* ============================================================
+   BADGES DE SEGURANÇA - Doa+
+   Estilos para os selos de segurança da plataforma
+   ============================================================ */
+
+/* ===== CONTAINER PRINCIPAL ===== */
+.security-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 0.5rem;
+    margin: 1rem 0;
+}
+
+/* ===== BADGE BASE ===== */
+.badge-security {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: default;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    user-select: none;
+}
+
+.badge-security:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.badge-security .badge-icon {
+    font-size: 1.1rem;
+}
+
+.badge-security .badge-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.3px;
+}
+
+/* ===== BADGE SSL ===== */
+.badge-ssl {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.badge-ssl:hover {
+    background: linear-gradient(135deg, #229954, #27ae60);
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+}
+
+/* ===== BADGE LGPD ===== */
+.badge-lgpd {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    color: white;
+}
+
+.badge-lgpd:hover {
+    background: linear-gradient(135deg, #1a6ea3, #2980b9);
+    box-shadow: 0 4px 15px rgba(41, 128, 185, 0.4);
+}
+
+/* ===== BADGE PAGAMENTO SEGURO ===== */
+.badge-pagamento {
+    background: linear-gradient(135deg, #e67e22, #f39c12);
+    color: white;
+}
+
+.badge-pagamento:hover {
+    background: linear-gradient(135deg, #d35400, #e67e22);
+    box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4);
+}
+
+/* ===== BADGE DOAÇÃO SEGURA ===== */
+.badge-doacao {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+}
+
+.badge-doacao:hover {
+    background: linear-gradient(135deg, #7d3c98, #8e44ad);
+    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+}
+
+/* ===== BADGE OPEN SOURCE ===== */
+.badge-opensource {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: white;
+}
+
+.badge-opensource:hover {
+    background: linear-gradient(135deg, #1a252f, #2c3e50);
+    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4);
+}
+
+/* ===== BADGE RESPONSIVO ===== */
+.badge-responsive {
+    background: linear-gradient(135deg, #16a085, #1abc9c);
+    color: white;
+}
+
+.badge-responsive:hover {
+    background: linear-gradient(135deg, #138d72, #16a085);
+    box-shadow: 0 4px 15px rgba(22, 160, 133, 0.4);
+}
+
+/* ===== BADGE COM LINK ===== */
+.badge-security-link {
+    cursor: pointer;
+}
+
+.badge-security-link:hover {
+    transform: translateY(-2px) scale(1.02);
+}
+
+/* ===== TOOLTIP ===== */
+.badge-tooltip {
+    position: relative;
+}
+
+.badge-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.badge-tooltip .tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #2c3e50;
+}
+
+.badge-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ===== BADGE ANIMADO ===== */
+.badge-pulse {
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ===== BADGE PEQUENO ===== */
+.badge-sm {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.65rem;
+}
+
+.badge-sm .badge-icon {
+    font-size: 0.9rem;
+}
+
+.badge-sm .badge-text {
+    font-size: 0.6rem;
+}
+
+/* ===== BADGE GRANDE ===== */
+.badge-lg {
+    padding: 0.7rem 1.8rem;
+    font-size: 1rem;
+}
+
+.badge-lg .badge-icon {
+    font-size: 1.4rem;
+}
+
+.badge-lg .badge-text {
+    font-size: 0.9rem;
+}
+
+/* ===== RODAPÉ - BADGES CENTRALIZADOS ===== */
+.footer-badges {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 768px) {
+    .security-badges-container {
+        gap: 0.5rem;
+        padding: 0.8rem 0.3rem;
+    }
+    
+    .badge-security {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
+    }
+    
+    .badge-security .badge-icon {
+        font-size: 0.9rem;
+    }
+    
+    .badge-security .badge-text {
+        font-size: 0.65rem;
+    }
+    
+    .badge-lg {
+        padding: 0.5rem 1.2rem;
+        font-size: 0.85rem;
+    }
+    
+    .badge-lg .badge-icon {
+        font-size: 1.1rem;
+    }
+    
+    .badge-lg .badge-text {
+        font-size: 0.75rem;
+    }
+    
+    .footer-badges {
+        gap: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .security-badges-container {
+        gap: 0.4rem;
+    }
+    
+    .badge-security {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.6rem;
+        border-radius: 30px;
+    }
+    
+    .badge-security .badge-icon {
+        font-size: 0.7rem;
+    }
+    
+    .badge-security .badge-text {
+        font-size: 0.55rem;
+    }
+    
+    .badge-tooltip .tooltip-text {
+        width: 160px;
+        font-size: 0.65rem;
+        padding: 0.4rem 0.6rem;
+    }
+}

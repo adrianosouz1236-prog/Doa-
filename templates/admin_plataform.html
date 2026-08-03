@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Plataforma - Doa+</title>
-    
     <link rel="stylesheet" href="estilos.css/admin_plataform.css">
 </head>
 <body>
@@ -19,8 +18,11 @@
                 <li><a class="nav-link" data-aba="ongs" href="#">🏢 ONGs</a></li>
                 <li><a class="nav-link" data-aba="doadores" href="#">👥 Doadores</a></li>
                 <li><a class="nav-link" data-aba="doacoes" href="#">📦 Doações</a></li>
+                <li><a class="nav-link" data-aba="financeiro" href="#">💰 Financeiro</a></li>
                 <li><a class="nav-link" data-aba="feedback" href="#">📝 Feedback</a></li>
                 <li><a class="nav-link" data-aba="suporte" href="#">🆘 Suporte</a></li>
+                <li><a class="nav-link" data-aba="comunicacao" href="#">📨 Comunicação</a></li>
+                <li><a class="nav-link" data-aba="exclusoes" href="#">🗑️ Exclusões</a></li>
                 <li><a class="nav-link" data-aba="logs" href="#">📋 Logs</a></li>
                 <li><a class="nav-link" data-aba="politicas" href="#">⚖️ Políticas</a></li>
             </ul>
@@ -35,24 +37,57 @@
     </header>
     
     <div class="container">
-        <!-- Aba Dashboard -->
+        <!-- ABA DASHBOARD -->
         <div id="aba-dashboard" class="tab-content active">
             <div class="dashboard-header">
                 <h1>Painel Administrativo da Plataforma</h1>
                 <p>Gerencie anúncios, ONGs, doadores e monitore a segurança da plataforma</p>
             </div>
-            
             <div class="stats-grid">
                 <div class="stat-card"><h3>Total de ONGs</h3><div class="stat-value" id="total-ongs">0</div></div>
                 <div class="stat-card"><h3>Total de Doadores</h3><div class="stat-value" id="total-doadores">0</div></div>
                 <div class="stat-card"><h3>Anúncios Ativos</h3><div class="stat-value" id="total-anuncios">0</div></div>
-                <div class="stat-card"><h3>Anúncios com Advertência</h3><div class="stat-value" id="total-advertencias">0</div></div>
-                <div class="stat-card"><h3>Total de Doações</h3><div class="stat-value" id="total-doacoes">0</div></div>
-                <div class="stat-card"><h3>Feedback</h3><div class="stat-value" id="total-feedback">0</div></div>
-                <div class="stat-card"><h3>Suporte</h3><div class="stat-value" id="total-suporte">0</div></div>
+                <div class="stat-card"><h3>Advertências</h3><div class="stat-value" id="total-advertencias">0</div></div>
+                <div class="stat-card"><h3>Doações Itens</h3><div class="stat-value" id="total-doacoes">0</div></div>
+                <div class="stat-card"><h3>Doações Financeiras</h3><div class="stat-value" id="total-doacoes-financeiras">0</div></div>
+                <div class="stat-card"><h3>💰 Valor Total</h3><div class="stat-value" id="total-valor-financeiro">R$ 0</div></div>
+                <div class="stat-card"><h3>Comunicações</h3><div class="stat-value" id="total-comunicacoes">0</div></div>
                 <div class="stat-card"><h3>ONGs Bloqueadas</h3><div class="stat-value" id="ongs-bloqueadas">0</div></div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                    <h3 style="color: white;">🗑️ Exclusões Pendentes</h3>
+                    <div class="stat-value" id="solicitacoes-exclusao" style="color: white;">0</div>
+                </div>
             </div>
-            
+
+            <!-- ==================== CARTEIRA DA PLATAFORMA ==================== -->
+            <div class="section" style="margin-top: 1.5rem;">
+                <div class="section-header">
+                    <h2>💰 Carteira da Plataforma</h2>
+                    <button class="btn btn-primary" onclick="abrirModalSaquePlataforma()">💸 Solicitar Saque</button>
+                </div>
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2c3e50, #34495e); color: white;">
+                        <h3 style="color: white;">💰 Saldo Disponível</h3>
+                        <div class="stat-value" id="plataforma-saldo" style="color: #2ecc71;">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;">
+                        <h3 style="color: white;">📊 Total de Taxas</h3>
+                        <div class="stat-value" id="plataforma-total-taxas" style="color: white;">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                        <h3 style="color: white;">💸 Total Sacado</h3>
+                        <div class="stat-value" id="plataforma-total-sacado" style="color: white;">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="info-box" style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+                    <p style="color: #7f8c8d; font-size: 0.9rem;">
+                        <strong>ℹ️ Sobre a Carteira da Plataforma:</strong> Esta carteira armazena as taxas de serviço 
+                        cobradas sobre as doações realizadas via Mercado Pago. A taxa atual é de 
+                        <strong>3,99% + R$ 0,60</strong> por transação.
+                    </p>
+                </div>
+            </div>
+
             <div class="section">
                 <div class="section-header">
                     <h2>📊 Atividade Recente</h2>
@@ -65,8 +100,8 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Anúncios (Necessidades) -->
+
+        <!-- ABA ANÚNCIOS -->
         <div id="aba-anuncios" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>📢 Gerenciar Anúncios de ONGs</h2>
@@ -84,18 +119,15 @@
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr>
-                                <th>ID</th><th>ONG</th><th>Título</th><th>Categoria</th><th>Urgência</th>
-                                <th>Status</th><th>Advertências</th><th>Data</th><th>Ações</th>
-                            </tr>
+                            <tr><th>ID</th><th>ONG</th><th>Título</th><th>Categoria</th><th>Urgência</th><th>Status</th><th>Advertências</th><th>Data</th><th>Ações</th></tr>
                         </thead>
                         <tbody id="anuncios-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
-        <!-- Aba ONGs -->
+
+        <!-- ABA ONGs -->
         <div id="aba-ongs" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>🏢 Gerenciar ONGs</h2>
@@ -108,36 +140,39 @@
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr><th>ID</th><th>Nome</th><th>CNPJ</th><th>Email</th><th>Cidade</th><th>Status</th><th>Advertências</th><th>Data</th><th>Ações</th></tr>
+                            <tr><th>ID</th><th>Nome</th><th>CNPJ</th><th>Email</th><th>Cidade</th><th>Status</th><th>Advertências</th><th>⭐ Avaliação</th><th>💰 Saldo</th><th>Data</th><th>Ações</th></tr>
                         </thead>
                         <tbody id="ongs-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Doadores -->
+
+        <!-- ABA DOADORES -->
         <div id="aba-doadores" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>👥 Gerenciar Doadores</h2>
                 <div class="search-bar">
                     <input type="text" id="buscar-doador" placeholder="Buscar doador..." onkeyup="filtrarDoadores()">
+                    <button class="btn btn-outline btn-sm" onclick="exportarDoadores()">📥 Exportar</button>
                 </div>
             </div>
             <div class="section">
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Telefone</th><th>Total Doações</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+                        <thead>
+                            <tr><th>ID</th><th>Nome</th><th>Email</th><th>Telefone</th><th>Doações</th><th>🏆 Pontos</th><th>Conquistas</th><th>Status</th><th>Data</th><th>Ações</th></tr>
+                        </thead>
                         <tbody id="doadores-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Doações -->
+
+        <!-- ABA DOAÇÕES -->
         <div id="aba-doacoes" class="tab-content" style="display: none;">
             <div class="section-header">
-                <h2>📦 Histórico de Doações</h2>
+                <h2>📦 Histórico de Doações (Itens)</h2>
             </div>
             <div class="section">
                 <div class="table-container">
@@ -148,8 +183,81 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Feedback -->
+
+        <!-- ABA FINANCEIRO -->
+        <div id="aba-financeiro" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>💰 Doações Financeiras</h2>
+                <div class="search-bar">
+                    <select id="filtro-status-financeiro" onchange="carregarDoacoesFinanceiras()">
+                        <option value="todos">Todos</option>
+                        <option value="confirmado">Confirmados</option>
+                        <option value="pendente">Pendentes</option>
+                        <option value="cancelado">Cancelados</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="gerarRelatorioFinanceiro()">📊 Gerar Relatório</button>
+                </div>
+            </div>
+            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="stat-card"><h3>Total Doações</h3><div class="stat-value" id="financeiro-total">0</div></div>
+                <div class="stat-card"><h3>💰 Valor Total</h3><div class="stat-value" id="financeiro-valor-total">R$ 0,00</div></div>
+                <div class="stat-card"><h3>📊 Valor Médio</h3><div class="stat-value" id="financeiro-valor-medio">R$ 0,00</div></div>
+                <div class="stat-card"><h3>🔄 Recorrentes</h3><div class="stat-value" id="financeiro-recorrentes">0</div></div>
+            </div>
+
+            <!-- Carteira da Plataforma (Financeiro) -->
+            <div class="section" style="margin-top: 1.5rem; border-top: 2px solid #ecf0f1; padding-top: 1.5rem;">
+                <div class="section-header">
+                    <h2>💰 Carteira da Plataforma</h2>
+                    <button class="btn btn-primary" onclick="abrirModalSaquePlataforma()">💸 Solicitar Saque</button>
+                </div>
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2c3e50, #34495e); color: white;">
+                        <h3 style="color: white;">💰 Saldo Disponível</h3>
+                        <div class="stat-value" id="plataforma-saldo-financeiro" style="color: #2ecc71;">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;">
+                        <h3 style="color: white;">📊 Total de Taxas</h3>
+                        <div class="stat-value" id="plataforma-total-taxas-financeiro" style="color: white;">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                        <h3 style="color: white;">💸 Total Sacado</h3>
+                        <div class="stat-value" id="plataforma-total-sacado-financeiro" style="color: white;">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="info-box" style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+                    <p style="color: #7f8c8d; font-size: 0.9rem;">
+                        <strong>ℹ️ Sobre a Carteira da Plataforma:</strong> Esta carteira armazena as taxas de serviço 
+                        cobradas sobre as doações realizadas via Mercado Pago. A taxa atual é de 
+                        <strong>3,99% + R$ 0,60</strong> por transação.
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Transação</th><th>Doador</th><th>ONG</th><th>Valor</th><th>Taxa</th><th>Líquido</th><th>Método</th><th>Recorrente</th><th>Status</th><th>Data</th></tr>
+                        </thead>
+                        <tbody id="financeiro-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2>💼 Carteiras das ONGs</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>ONG</th><th>💰 Saldo</th><th>Total Recebido</th><th>Total Sacado</th><th>Última Atualização</th></tr></thead>
+                        <tbody id="carteiras-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA FEEDBACK -->
         <div id="aba-feedback" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>📝 Feedback dos Usuários</h2>
@@ -164,25 +272,14 @@
             <div class="section">
                 <div class="table-container">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Usuário</th>
-                                <th>Tipo</th>
-                                <th>Mensagem</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="feedback-admin-tbody">
-                            <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
-                        </tbody>
+                        <thead><tr><th>Data</th><th>Usuário</th><th>Tipo</th><th>Mensagem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="feedback-admin-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Suporte -->
+
+        <!-- ABA SUPORTE -->
         <div id="aba-suporte" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>🆘 Solicitações de Suporte</h2>
@@ -199,25 +296,57 @@
             <div class="section">
                 <div class="table-container">
                     <table>
+                        <thead><tr><th>Data</th><th>Usuário</th><th>Categoria</th><th>Assunto</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="suporte-admin-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA COMUNICAÇÃO -->
+        <div id="aba-comunicacao" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📨 Comunicação com Usuários</h2>
+                <button class="btn btn-primary" onclick="abrirModalComunicacao()">+ Nova Mensagem</button>
+            </div>
+            <div class="section">
+                <div class="comunicacao-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="stat-card"><h3>Total Enviadas</h3><div class="stat-value" id="total-enviadas">0</div></div>
+                    <div class="stat-card"><h3>Lidas</h3><div class="stat-value" id="total-lidas">0</div></div>
+                    <div class="stat-card"><h3>Não Lidas</h3><div class="stat-value" id="total-nao-lidas">0</div></div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Data</th><th>Título</th><th>Tipo</th><th>Destinatário</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="comunicacoes-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA EXCLUSÕES -->
+        <div id="aba-exclusoes" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>🗑️ Solicitações de Exclusão de Conta</h2>
+                <div class="search-bar">
+                    <input type="text" id="buscar-exclusao" placeholder="Buscar..." onkeyup="filtrarExclusoes()">
+                </div>
+            </div>
+            <div class="section">
+                <div class="table-container">
+                    <table>
                         <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Usuário</th>
-                                <th>Categoria</th>
-                                <th>Assunto</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
+                            <tr><th>Data</th><th>Usuário</th><th>Email</th><th>Tipo</th><th>Status</th><th>Ações</th></tr>
                         </thead>
-                        <tbody id="suporte-admin-tbody">
+                        <tbody id="solicitacoes-exclusao-tbody">
                             <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Logs -->
+
+        <!-- ABA LOGS -->
         <div id="aba-logs" class="tab-content" style="display: none;">
             <div class="section-header">
                 <h2>📋 Logs de Segurança</h2>
@@ -232,14 +361,13 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Aba Políticas -->
+
+        <!-- ABA POLÍTICAS -->
         <div id="aba-politicas" class="tab-content" style="display: none;">
             <div class="section">
                 <div class="section-header">
                     <h2>⚖️ Políticas da Plataforma</h2>
                 </div>
-                
                 <div class="section">
                     <h3>Regras para Anúncios</h3>
                     <ul style="margin-left: 1.5rem; color: #555;">
@@ -251,7 +379,6 @@
                         <li>ONGs com 3 advertências serão bloqueadas automaticamente</li>
                     </ul>
                 </div>
-                
                 <div class="section">
                     <h3>Sistema de Advertências</h3>
                     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
@@ -260,17 +387,29 @@
                         <div class="stat-card"><h3>3ª Advertência</h3><div class="stat-value" style="color: #e74c3c;">Bloqueio</div><p>ONG bloqueada da plataforma</p></div>
                     </div>
                 </div>
-                
+                <div class="section">
+                    <h3>💰 Política de Doações Financeiras</h3>
+                    <ul style="margin-left: 1.5rem; color: #555;">
+                        <li>Taxa de processamento: 3.99% + R$0,60 por transação</li>
+                        <li>Saque mínimo: R$ 10,00</li>
+                        <li>Prazo para saque: até 3 dias úteis</li>
+                        <li>Doações recorrentes podem ser canceladas a qualquer momento</li>
+                    </ul>
+                </div>
                 <div class="section">
                     <h3>Configurações da Plataforma</h3>
                     <form id="form-config">
                         <div class="form-group">
                             <label>Email do Administrador</label>
-                            <input type="email" id="admin-email" class="form-control">
+                            <input type="email" id="admin-email" class="form-control" value="admin@doamais.org">
                         </div>
                         <div class="form-group">
                             <label>Limite de Advertências antes do Bloqueio</label>
                             <input type="number" id="limite-advertencias" value="3" min="1" max="5">
+                        </div>
+                        <div class="form-group">
+                            <label>Taxa de Processamento (%)</label>
+                            <input type="number" id="taxa-processamento" value="3.99" step="0.01" min="0" max="10">
                         </div>
                         <div class="form-group">
                             <label>Modo de Manutenção</label>
@@ -285,14 +424,13 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal Advertência para Anúncio -->
+
+    <!-- ==================== MODAIS ==================== -->
+
+    <!-- Modal Advertência -->
     <div id="modal-advertencia" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>⚠️ Adicionar Advertência</h3>
-                <span class="modal-close" onclick="fecharModal('modal-advertencia')">&times;</span>
-            </div>
+            <div class="modal-header"><h3>⚠️ Adicionar Advertência</h3><span class="modal-close" onclick="fecharModal('modal-advertencia')">&times;</span></div>
             <form id="form-advertencia">
                 <input type="hidden" id="advertencia-anuncio-id">
                 <input type="hidden" id="advertencia-ong-id">
@@ -309,7 +447,7 @@
                 </div>
                 <div class="form-group">
                     <label>Descrição detalhada *</label>
-                    <textarea id="descricao-advertencia" rows="3" required placeholder="Explique o motivo da advertência..."></textarea>
+                    <textarea id="descricao-advertencia" rows="3" required></textarea>
                 </div>
                 <div class="form-group">
                     <label>Ações Adicionais</label>
@@ -323,14 +461,62 @@
             </form>
         </div>
     </div>
-    
-    <!-- Modal Ver Detalhes do Anúncio -->
+
+    <!-- Modal Comunicação -->
+    <div id="modal-comunicacao" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header"><h3>📨 Enviar Comunicação</h3><span class="modal-close" onclick="fecharModal('modal-comunicacao')">&times;</span></div>
+            <form id="form-comunicacao">
+                <div class="form-group">
+                    <label>Enviar para *</label>
+                    <select id="comunicacao-tipo" required onchange="toggleDestinatarioEspecifico()">
+                        <option value="todos">Todos (Doadores + ONGs)</option>
+                        <option value="doadores">Apenas Doadores</option>
+                        <option value="ongs">Apenas ONGs</option>
+                        <option value="especifico">Usuário Específico</option>
+                    </select>
+                </div>
+                <div id="destinatario-especifico" style="display: none;">
+                    <div class="form-group">
+                        <label>Tipo de Usuário</label>
+                        <select id="comunicacao-destinatario-tipo">
+                            <option value="doador">Doador</option>
+                            <option value="ong">ONG</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ID do Usuário</label>
+                        <input type="number" id="comunicacao-destinatario-id" placeholder="Digite o ID do usuário" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Prioridade</label>
+                    <select id="comunicacao-prioridade">
+                        <option value="normal">Normal</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Título *</label>
+                    <input type="text" id="comunicacao-titulo" required>
+                </div>
+                <div class="form-group">
+                    <label>Mensagem *</label>
+                    <textarea id="comunicacao-mensagem" rows="5" required></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">📨 Enviar</button>
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('modal-comunicacao')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ver Anúncio -->
     <div id="modal-anuncio" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>📢 Detalhes do Anúncio</h3>
-                <span class="modal-close" onclick="fecharModal('modal-anuncio')">&times;</span>
-            </div>
+            <div class="modal-header"><h3>📢 Detalhes do Anúncio</h3><span class="modal-close" onclick="fecharModal('modal-anuncio')">&times;</span></div>
             <div id="anuncio-detalhes"></div>
             <div id="anuncio-advertencias" style="margin-top: 1rem;"></div>
             <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
@@ -339,14 +525,11 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Modal Ver ONG -->
     <div id="modal-ong" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>🏢 Detalhes da ONG</h3>
-                <span class="modal-close" onclick="fecharModal('modal-ong')">&times;</span>
-            </div>
+            <div class="modal-header"><h3>🏢 Detalhes da ONG</h3><span class="modal-close" onclick="fecharModal('modal-ong')">&times;</span></div>
             <div id="ong-detalhes"></div>
             <div id="ong-advertencias" style="margin-top: 1rem;"></div>
             <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
@@ -354,54 +537,73 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Modal Responder Feedback -->
     <div id="modal-responder-feedback" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>📝 Responder Feedback</h3>
-                <span class="modal-close" onclick="fecharModal('modal-responder-feedback')">&times;</span>
-            </div>
+            <div class="modal-header"><h3>📝 Responder Feedback</h3><span class="modal-close" onclick="fecharModal('modal-responder-feedback')">&times;</span></div>
             <div id="feedback-detalhes"></div>
             <form id="form-responder-feedback">
                 <input type="hidden" id="feedback-id">
-                <div class="form-group">
-                    <label>Resposta *</label>
-                    <textarea id="feedback-resposta" rows="4" required placeholder="Digite sua resposta..."></textarea>
-                </div>
+                <div class="form-group"><label>Resposta *</label><textarea id="feedback-resposta" rows="4" required></textarea></div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Enviar Resposta</button>
             </form>
         </div>
     </div>
-    
+
     <!-- Modal Responder Suporte -->
     <div id="modal-responder-suporte" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>🆘 Responder Suporte</h3>
-                <span class="modal-close" onclick="fecharModal('modal-responder-suporte')">&times;</span>
-            </div>
+            <div class="modal-header"><h3>🆘 Responder Suporte</h3><span class="modal-close" onclick="fecharModal('modal-responder-suporte')">&times;</span></div>
             <div id="suporte-detalhes"></div>
             <form id="form-responder-suporte">
                 <input type="hidden" id="suporte-id">
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="suporte-status">
-                        <option value="aberto">Aberto</option>
-                        <option value="em_andamento">Em Andamento</option>
-                        <option value="resolvido">Resolvido</option>
-                        <option value="fechado">Fechado</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Resposta *</label>
-                    <textarea id="suporte-resposta" rows="4" required placeholder="Digite sua resposta..."></textarea>
-                </div>
+                <div class="form-group"><label>Status</label><select id="suporte-status"><option value="aberto">Aberto</option><option value="em_andamento">Em Andamento</option><option value="resolvido">Resolvido</option><option value="fechado">Fechado</option></select></div>
+                <div class="form-group"><label>Resposta *</label><textarea id="suporte-resposta" rows="4" required></textarea></div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Enviar Resposta</button>
             </form>
         </div>
     </div>
-    
+
+    <!-- Modal Ver Comunicação -->
+    <div id="modal-ver-comunicacao" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header"><h3>📨 Detalhes da Comunicação</h3><span class="modal-close" onclick="fecharModal('modal-ver-comunicacao')">&times;</span></div>
+            <div id="comunicacao-detalhes"></div>
+        </div>
+    </div>
+
+    <!-- Modal Relatório Financeiro -->
+    <div id="modal-relatorio-financeiro" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header"><h3>📊 Relatório Financeiro</h3><span class="modal-close" onclick="fecharModal('modal-relatorio-financeiro')">&times;</span></div>
+            <div id="relatorio-financeiro-conteudo"><div class="loading-spinner"><div class="spinner"></div><p>Gerando relatório...</p></div></div>
+        </div>
+    </div>
+
+    <!-- Modal Saque Plataforma -->
+    <div id="modal-saque-plataforma" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💸 Saque da Carteira da Plataforma</h3>
+                <span class="modal-close" onclick="fecharModal('modal-saque-plataforma')">&times;</span>
+            </div>
+            <form id="form-saque-plataforma">
+                <div class="form-group">
+                    <label>Valor (R$) *</label>
+                    <input type="number" id="valor-saque-plataforma" min="10" step="0.01" required placeholder="Mínimo R$ 10,00">
+                    <small style="color: #7f8c8d;">Saldo disponível: <span id="saque-plataforma-saldo">R$ 0,00</span></small>
+                </div>
+                <div class="form-group">
+                    <label>Conta Bancária *</label>
+                    <input type="text" id="conta-saque-plataforma" required placeholder="Banco - Agência - Conta">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💸 Solicitar Saque</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
     <div id="toast" class="toast" style="display: none;"><span class="toast-message"></span></div>
     
     <script src="javascript.js/admin_plataform.js"></script>

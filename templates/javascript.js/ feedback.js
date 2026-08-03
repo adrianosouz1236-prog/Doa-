@@ -1,4 +1,16 @@
 const API_BASE_URL = window.location.origin + '/api';
+let csrfToken = '';
+
+async function obterCsrfToken() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        const data = await response.json();
+        csrfToken = data.csrf_token || '';
+        document.getElementById('csrf-token').value = csrfToken;
+    } catch (error) {
+        console.error('Erro ao obter CSRF token:', error);
+    }
+}
 
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
@@ -17,6 +29,7 @@ function getHeaders() {
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
+    headers['X-CSRF-Token'] = csrfToken;
     return headers;
 }
 
@@ -43,7 +56,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==================== AUTENTICAÇÃO ====================
 function updateAuthUI() {
     const token = getToken();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -65,7 +77,6 @@ function updateAuthUI() {
 
 function setupAuth() {
     updateAuthUI();
-    
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
@@ -74,7 +85,6 @@ function setupAuth() {
             window.location.href = '/';
         });
     }
-
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
     if (hamburger && navMenu) {
@@ -84,37 +94,30 @@ function setupAuth() {
     }
 }
 
-// ==================== FEEDBACK ====================
 async function enviarFeedback(e) {
     e.preventDefault();
-    
     const token = getToken();
     if (!token) {
         showToast('Faça login para enviar feedback', 'warning');
         window.location.href = '/login.html';
         return;
     }
-
     const mensagem = document.getElementById('feedback-mensagem').value;
     const tipo = document.getElementById('feedback-tipo').value;
     const anonimo = document.getElementById('feedback-anonimo').checked;
-
     if (!mensagem || mensagem.length < 3) {
         showToast('Mensagem deve ter pelo menos 3 caracteres', 'error');
         return;
     }
-
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
-
     try {
         await apiRequest('/feedback', {
             method: 'POST',
             body: JSON.stringify({ mensagem, tipo, anonimo })
         });
-        
         showToast('Feedback enviado com sucesso!', 'success');
         document.getElementById('feedback-form').reset();
         carregarMeusFeedbacks();
@@ -129,26 +132,21 @@ async function enviarFeedback(e) {
 async function carregarMeusFeedbacks() {
     const container = document.getElementById('meus-feedbacks-container');
     const token = getToken();
-    
     if (!token) {
         container.innerHTML = '<p class="empty-state">Faça login para ver seus feedbacks</p>';
         return;
     }
-
     try {
         const data = await apiRequest('/feedback/meus');
         const feedbacks = data.feedbacks || [];
-
         if (feedbacks.length === 0) {
             container.innerHTML = '<p class="empty-state">Você ainda não enviou nenhum feedback</p>';
             return;
         }
-
         container.innerHTML = feedbacks.map(fb => {
             const dataEnvio = new Date(fb.data);
             const statusClass = fb.status === 'respondido' ? 'respondido' : 'pendente';
             const statusText = fb.status === 'respondido' ? '✅ Respondido' : '⏳ Pendente';
-            
             return `
                 <div class="feedback-item">
                     <div class="feedback-header">
@@ -167,17 +165,15 @@ async function carregarMeusFeedbacks() {
                 </div>
             `;
         }).join('');
-
     } catch (error) {
         container.innerHTML = `<p class="error-state">Erro ao carregar feedbacks: ${error.message}</p>`;
     }
 }
 
-// ==================== INICIALIZAÇÃO ====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await obterCsrfToken();
     setupAuth();
     carregarMeusFeedbacks();
-
     const form = document.getElementById('feedback-form');
     if (form) {
         form.addEventListener('submit', enviarFeedback);

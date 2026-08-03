@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir Senha - Doa+</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="estilos.css/redefinir_senha.css"
+</head>
+<body>
+    <div class="reset-container">
+        <div class="reset-card">
+            <!-- Logo -->
+            <div class="logo">
+                <div class="logo-icon">❤️</div>
+                <h1>Doa<span>+</span></h1>
+                <p>Redefinição de Senha</p>
+            </div>
+
+            <p class="subtitle">Crie uma nova senha para sua conta</p>
+
+            <!-- Mensagens -->
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+
+            <!-- Informações do usuário -->
+            <div id="userInfo" style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 20px; display: none;">
+                <p style="font-size: 14px; color: #2c3e50;">
+                    <i class="fas fa-user"></i> Redefinindo senha para: <strong id="emailDisplay"></strong>
+                </p>
+            </div>
+
+            <!-- Formulário -->
+            <div class="form-group">
+                <label for="novaSenha">Nova senha</label>
+                <div class="input-wrapper">
+                    <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('novaSenha')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <div class="strength-text" id="strengthText"></div>
+                    <div class="password-feedback" id="passwordFeedback"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmarSenha">Confirmar nova senha</label>
+                <div class="input-wrapper">
+                    <input type="password" id="confirmarSenha" placeholder="Confirme sua nova senha" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('confirmarSenha')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="password-requirements" id="passwordRequirements">
+                <strong>📋 Requisitos de senha:</strong>
+                <ul id="requisitosLista">
+                    <li id="req-comprimento" class="invalid">❌ Mínimo de 12 caracteres</li>
+                    <li id="req-maiuscula" class="invalid">❌ Pelo menos 1 letra maiúscula</li>
+                    <li id="req-minuscula" class="invalid">❌ Pelo menos 1 letra minúscula</li>
+                    <li id="req-numero" class="invalid">❌ Pelo menos 1 número</li>
+                    <li id="req-especial" class="invalid">❌ Pelo menos 1 caractere especial (!@#$%^&*)</li>
+                </ul>
+            </div>
+
+            <div class="generated-password">
+                <span>✨ Gerar senha forte:</span>
+                <button class="btn-outline" onclick="gerarSenhaForte()">
+                    <i class="fas fa-sync-alt"></i> Gerar
+                </button>
+                <div class="generated-password-code" id="senhaGeradaDisplay"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="redefinirSenha()">
+                <i class="fas fa-key"></i> Redefinir Senha
+            </button>
+
+            <div class="back-link">
+                <a href="/login.html"><i class="fas fa-arrow-left"></i> Voltar para o login</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="javascript.js/redefinir_senha.js"></script>
+</body>
+</html>

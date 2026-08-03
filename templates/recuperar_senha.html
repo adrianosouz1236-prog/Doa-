@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha - Doa+</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="estilos.css/recuperar_senha.css"
+</head>
+<body>
+    <div class="recovery-container">
+        <div class="recovery-card">
+            <!-- Logo -->
+            <div class="logo">
+                <div class="logo-icon">❤️</div>
+                <h1>Doa<span>+</span></h1>
+                <p>Recuperação de Senha</p>
+            </div>
+
+            <!-- Indicador de etapas -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">E-mail</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Código</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Nova Senha</div>
+                </div>
+            </div>
+
+            <!-- Mensagens -->
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            <div id="infoMessage" class="info-message"></div>
+
+            <!-- ===== ETAPA 1: EMAIL ===== -->
+            <div id="step1Form" class="form-step active">
+                <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">
+                    Digite o e-mail cadastrado na plataforma Doa+ para receber um código de recuperação.
+                </p>
+                <div class="form-group">
+                    <label for="email">E-mail cadastrado</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="email" placeholder="seu@email.com" required>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="solicitarRecuperacao()">
+                    <i class="fas fa-paper-plane"></i> Enviar Código
+                </button>
+            </div>
+
+            <!-- ===== ETAPA 2: CÓDIGO ===== -->
+            <div id="step2Form" class="form-step">
+                <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">
+                    Digite o código de 6 dígitos enviado para seu e-mail.
+                </p>
+                <div class="form-group">
+                    <label for="codigo">Código de verificação</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><i class="fas fa-shield-alt"></i></span>
+                        <input type="text" id="codigo" placeholder="Ex: 123456" maxlength="6" required>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="verificarCodigo()">
+                    <i class="fas fa-check-circle"></i> Verificar Código
+                </button>
+                <div class="timer" id="timer"></div>
+                <div class="resend-link">
+                    <a onclick="reenviarCodigo()">Não recebeu o código? Reenviar</a>
+                </div>
+            </div>
+
+            <!-- ===== ETAPA 3: NOVA SENHA ===== -->
+            <div id="step3Form" class="form-step">
+                <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">
+                    Crie uma nova senha forte para sua conta.
+                </p>
+
+                <div class="form-group">
+                    <label for="novaSenha">Nova senha</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('novaSenha')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="strengthText"></div>
+                        <div class="password-feedback" id="passwordFeedback"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmarSenha">Confirmar nova senha</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><i class="fas fa-check-circle"></i></span>
+                        <input type="password" id="confirmarSenha" placeholder="Confirme sua nova senha" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirmarSenha')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="password-requirements" id="passwordRequirements">
+                    <strong>📋 Requisitos de senha:</strong>
+                    <ul id="requisitosLista">
+                        <li id="req-comprimento" class="invalid">❌ Mínimo de 12 caracteres</li>
+                        <li id="req-maiuscula" class="invalid">❌ Pelo menos 1 letra maiúscula</li>
+                        <li id="req-minuscula" class="invalid">❌ Pelo menos 1 letra minúscula</li>
+                        <li id="req-numero" class="invalid">❌ Pelo menos 1 número</li>
+                        <li id="req-especial" class="invalid">❌ Pelo menos 1 caractere especial (!@#$%^&*)</li>
+                    </ul>
+                </div>
+
+                <div class="generated-password">
+                    <span>✨ Gerar senha forte:</span>
+                    <button class="btn-outline" onclick="gerarSenhaForte()">
+                        <i class="fas fa-sync-alt"></i> Gerar
+                    </button>
+                    <div class="generated-password-code" id="senhaGeradaDisplay"></div>
+                </div>
+
+                <button class="btn btn-primary" onclick="redefinirSenha()">
+                    <i class="fas fa-key"></i> Redefinir Senha
+                </button>
+            </div>
+
+            <div class="back-link">
+                <a href="/login.html"><i class="fas fa-arrow-left"></i> Voltar para o login</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="javascript.js/recuperar_senha.js"></script>
+</body>
+</html>

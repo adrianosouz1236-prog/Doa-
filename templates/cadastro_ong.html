@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de ONG - Doa+</title>
-    
     <link rel="stylesheet" href="estilos.css/cadastro_ong.css">
+    <script src="https://www.google.com/recaptcha/api.js?render=SUA_CHAVE_SITE"></script>
 </head>
 <body>
     <header class="header">
@@ -27,6 +27,9 @@
             <h2 style="text-align: center; margin-bottom: 2rem;">Cadastro de ONG</h2>
             
             <form id="cadastro-ong-form">
+                <input type="hidden" id="csrf-token" value="">
+                <input type="hidden" id="recaptcha-token" value="">
+                
                 <div class="form-group">
                     <label for="nome">Nome da ONG *</label>
                     <input type="text" id="nome" name="nome" required placeholder="Ex: Associação Solidária">
@@ -52,6 +55,7 @@
                     <label for="senha">Senha *</label>
                     <input type="password" id="senha" name="senha" required placeholder="Mínimo 12 caracteres">
                     <small style="color: #7f8c8d;">Mínimo 12 caracteres, com letras maiúsculas, minúsculas, números e caracteres especiais</small>
+                    <div id="senha-forca" style="margin-top: 0.3rem; font-size: 0.8rem;"></div>
                 </div>
                 
                 <div class="form-group">
@@ -68,32 +72,15 @@
                         <label for="uf">UF</label>
                         <select id="uf" name="uf">
                             <option value="">Selecione</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="MG">MG</option>
-                            <option value="RS">RS</option>
-                            <option value="BA">BA</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="CE">CE</option>
-                            <option value="DF">DF</option>
-                            <option value="GO">GO</option>
-                            <option value="AM">AM</option>
-                            <option value="PA">PA</option>
-                            <option value="SC">SC</option>
-                            <option value="ES">ES</option>
-                            <option value="MT">MT</option>
-                            <option value="MS">MS</option>
-                            <option value="AL">AL</option>
-                            <option value="AP">AP</option>
-                            <option value="MA">MA</option>
-                            <option value="PB">PB</option>
-                            <option value="PI">PI</option>
-                            <option value="RN">RN</option>
-                            <option value="RO">RO</option>
-                            <option value="RR">RR</option>
-                            <option value="SE">SE</option>
-                            <option value="TO">TO</option>
+                            <option value="SP">SP</option><option value="RJ">RJ</option><option value="MG">MG</option>
+                            <option value="RS">RS</option><option value="BA">BA</option><option value="PR">PR</option>
+                            <option value="PE">PE</option><option value="CE">CE</option><option value="DF">DF</option>
+                            <option value="GO">GO</option><option value="AM">AM</option><option value="PA">PA</option>
+                            <option value="SC">SC</option><option value="ES">ES</option><option value="MT">MT</option>
+                            <option value="MS">MS</option><option value="AL">AL</option><option value="AP">AP</option>
+                            <option value="MA">MA</option><option value="PB">PB</option><option value="PI">PI</option>
+                            <option value="RN">RN</option><option value="RO">RO</option><option value="RR">RR</option>
+                            <option value="SE">SE</option><option value="TO">TO</option>
                         </select>
                     </div>
                 </div>
@@ -102,6 +89,76 @@
                     <label for="descricao">Descrição da ONG</label>
                     <textarea id="descricao" name="descricao" rows="4" placeholder="Conte um pouco sobre o trabalho da sua organização..."></textarea>
                 </div>
+
+                <div class="form-group">
+                    <label for="conta_bancaria">Conta Bancária (para saques)</label>
+                    <input type="text" id="conta_bancaria" name="conta_bancaria" placeholder="Banco - Agência - Conta">
+                    <small style="color: #7f8c8d;">Ex: Banco do Brasil - Ag: 1234 - CC: 56789-0</small>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- BLOCO DE CONSENTIMENTO LGPD - PARA INSERIR NO CADASTRO      -->
+                <!-- ============================================================ -->
+
+                <div class="form-group consentimento-lgpd">
+                    <div class="consentimento-box">
+                        <div class="consentimento-header">
+                            <span class="consentimento-icon">🔒</span>
+                            <h3>Proteção de Dados (LGPD)</h3>
+                        </div>
+                        
+                        <div class="consentimento-texto">
+                            <p>
+                                A <strong>Doa+</strong> coleta e trata seus dados pessoais para:
+                            </p>
+                            <ul>
+                                <li>✅ Operar a plataforma e processar doações</li>
+                                <li>✅ Comunicar sobre suas doações e interações</li>
+                                <li>✅ Melhorar nossos serviços e sua experiência</li>
+                                <li>✅ Cumprir obrigações legais e fiscais</li>
+                            </ul>
+                            
+                            <p>
+                                Seus dados são armazenados com <strong>segurança e criptografia</strong>.
+                                Você pode acessar, corrigir ou solicitar a exclusão dos seus dados a qualquer momento.
+                            </p>
+                            
+                            <p class="consentimento-destaque">
+                                <strong>Compartilhamento:</strong> Seus dados de pagamento são processados exclusivamente pelo 
+                                <strong>PagSeguro</strong>, nosso parceiro de pagamentos. Seus dados não são vendidos para terceiros.
+                            </p>
+                            
+                            <p class="consentimento-destaque">
+                                <strong>Direitos (LGPD):</strong> Você tem direito a acessar, corrigir, portar e solicitar a exclusão 
+                                dos seus dados a qualquer momento. Entre em contato pelo email: 
+                                <strong>contato@doamais.org</strong>
+                            </p>
+                            
+                            <p class="consentimento-destaque">
+                                <strong>Armazenamento:</strong> Seus dados são mantidos enquanto sua conta estiver ativa. 
+                                Após exclusão, são removidos em até 30 dias, exceto dados fiscais obrigatórios por lei.
+                            </p>
+                        </div>
+                        
+                        <div class="consentimento-checkbox">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="consentimento-lgpd" required>
+                                <span class="checkmark"></span>
+                                <span class="checkbox-text">
+                                    Li e concordo com a 
+                                    <a href="/politicas_privacidade.html" target="_blank" class="link-consentimento">Política de Privacidade</a> 
+                                    e com os 
+                                    <a href="/termos_servico.html" target="_blank" class="link-consentimento">Termos de Serviço</a>.
+                                    Estou ciente de que meus dados serão tratados conforme a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>.
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- FIM DO BLOCO DE CONSENTIMENTO LGPD                          -->
+                <!-- ============================================================ -->
                 
                 <button type="submit" class="btn btn-primary btn-block">Cadastrar ONG</button>
             </form>
@@ -122,7 +179,6 @@
         <span class="toast-message"></span>
     </div>
     
-<script src="javascript.js/cadastro_ong.js"></script>
-
-    </body>
+    <script src="javascript.js/cadastro_ong.js"></script>
+</body>
 </html>

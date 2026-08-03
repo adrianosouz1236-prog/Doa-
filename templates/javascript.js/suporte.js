@@ -1,4 +1,16 @@
 const API_BASE_URL = window.location.origin + '/api';
+let csrfToken = '';
+
+async function obterCsrfToken() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        const data = await response.json();
+        csrfToken = data.csrf_token || '';
+        document.getElementById('csrf-token').value = csrfToken;
+    } catch (error) {
+        console.error('Erro ao obter CSRF token:', error);
+    }
+}
 
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
@@ -17,6 +29,7 @@ function getHeaders() {
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
+    headers['X-CSRF-Token'] = csrfToken;
     return headers;
 }
 
@@ -43,7 +56,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==================== AUTENTICAÇÃO ====================
 function updateAuthUI() {
     const token = getToken();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -65,7 +77,6 @@ function updateAuthUI() {
 
 function setupAuth() {
     updateAuthUI();
-    
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
@@ -74,7 +85,6 @@ function setupAuth() {
             window.location.href = '/';
         });
     }
-
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
     if (hamburger && navMenu) {
@@ -84,42 +94,34 @@ function setupAuth() {
     }
 }
 
-// ==================== SUPORTE ====================
 async function enviarSuporte(e) {
     e.preventDefault();
-    
     const token = getToken();
     if (!token) {
         showToast('Faça login para abrir um chamado', 'warning');
         window.location.href = '/login.html';
         return;
     }
-
     const assunto = document.getElementById('suporte-assunto').value;
     const mensagem = document.getElementById('suporte-mensagem').value;
     const categoria = document.getElementById('suporte-categoria').value;
-
     if (!assunto || assunto.length < 3) {
         showToast('Assunto deve ter pelo menos 3 caracteres', 'error');
         return;
     }
-
     if (!mensagem || mensagem.length < 5) {
         showToast('Mensagem deve ter pelo menos 5 caracteres', 'error');
         return;
     }
-
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
-
     try {
         await apiRequest('/suporte', {
             method: 'POST',
             body: JSON.stringify({ assunto, mensagem, categoria })
         });
-        
         showToast('Solicitação de suporte enviada com sucesso!', 'success');
         document.getElementById('suporte-form').reset();
         carregarMeusSuportes();
@@ -134,21 +136,17 @@ async function enviarSuporte(e) {
 async function carregarMeusSuportes() {
     const container = document.getElementById('meus-suportes-container');
     const token = getToken();
-    
     if (!token) {
         container.innerHTML = '<p class="empty-state">Faça login para ver seus chamados</p>';
         return;
     }
-
     try {
         const data = await apiRequest('/suporte/meus');
         const suportes = data.suportes || [];
-
         if (suportes.length === 0) {
             container.innerHTML = '<p class="empty-state">Você ainda não abriu nenhum chamado</p>';
             return;
         }
-
         container.innerHTML = suportes.map(sp => {
             const dataEnvio = new Date(sp.data);
             const statusMap = {
@@ -159,7 +157,6 @@ async function carregarMeusSuportes() {
             };
             const statusText = statusMap[sp.status] || sp.status;
             const statusClass = sp.status;
-            
             return `
                 <div class="suporte-item">
                     <div class="suporte-header">
@@ -183,17 +180,15 @@ async function carregarMeusSuportes() {
                 </div>
             `;
         }).join('');
-
     } catch (error) {
         container.innerHTML = `<p class="error-state">Erro ao carregar chamados: ${error.message}</p>`;
     }
 }
 
-// ==================== INICIALIZAÇÃO ====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await obterCsrfToken();
     setupAuth();
     carregarMeusSuportes();
-
     const form = document.getElementById('suporte-form');
     if (form) {
         form.addEventListener('submit', enviarSuporte);

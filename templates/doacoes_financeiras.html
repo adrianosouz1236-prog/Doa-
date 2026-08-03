@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doações Financeiras - Doa+</title>
+    <link rel="stylesheet" href="estilos.css/doacoes_financeiras.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">❤️ Doa+</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Início</a></li>
+                <li><a href="/necessidades" class="nav-link">Necessidades</a></li>
+                <li><a href="/ongs" class="nav-link">ONGs</a></li>
+            </ul>
+            <div class="user-menu" id="user-menu">
+                <span id="user-name"></span>
+                <div class="dropdown-menu">
+                    <a href="#" id="logout-btn">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1>💰 Doações Financeiras</h1>
+                <p>Ajude com doações em dinheiro de forma rápida e segura</p>
+            </div>
+
+            <div class="doacoes-grid">
+                <div class="doacao-form card">
+                    <h2>Fazer Doação</h2>
+                    <form id="form-doacao-financeira">
+                        <input type="hidden" id="csrf-token" value="">
+                        <div class="form-group">
+                            <label>ONG *</label>
+                            <select id="ong-select" required>
+                                <option value="">Selecione uma ONG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor (R$) *</label>
+                            <input type="number" id="valor-doacao" min="1" step="0.01" required placeholder="Ex: 50.00">
+                            <div class="valores-sugeridos">
+                                <button type="button" class="btn-sugerido" onclick="setValor(10)">R$ 10</button>
+                                <button type="button" class="btn-sugerido" onclick="setValor(25)">R$ 25</button>
+                                <button type="button" class="btn-sugerido" onclick="setValor(50)">R$ 50</button>
+                                <button type="button" class="btn-sugerido" onclick="setValor(100)">R$ 100</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Método de Pagamento</label>
+                            <select id="metodo-pagamento">
+                                <option value="cartao">💳 Cartão de Crédito</option>
+                                <option value="pix">📱 PIX</option>
+                                <option value="boleto">📄 Boleto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mensagem (opcional)</label>
+                            <textarea id="mensagem-doacao" rows="3" placeholder="Deixe uma mensagem para a ONG..."></textarea>
+                        </div>
+                        <div class="form-group checkbox">
+                            <label>
+                                <input type="checkbox" id="doacao-recorrente">
+                                Tornar doação recorrente (mensal)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">💳 Doar Agora</button>
+                    </form>
+                </div>
+
+                <div class="minhas-doacoes card">
+                    <h2>📋 Minhas Doações</h2>
+                    <div id="minhas-doacoes-container">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="estatisticas card">
+                <h2>📊 Suas Estatísticas</h2>
+                <div class="stats-grid" id="stats-financeiras">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Doado</span>
+                        <span class="stat-value" id="total-doado">R$ 0,00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total de Doações</span>
+                        <span class="stat-value" id="total-doacoes-financeiras">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Média por Doação</span>
+                        <span class="stat-value" id="media-doacao">R$ 0,00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Doações Recorrentes</span>
+                        <span class="stat-value" id="doacoes-recorrentes">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast" style="display: none;">
+        <span class="toast-message"></span>
+    </div>
+
+    <script src="javascript.js/doacoes_financeiras.js"></script>
+</body>
+</html>

@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel da ONG - Doa+</title>
     <link rel="stylesheet" href="estilos.css/dashboard_ong.css">
-    <!-- Google Maps API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCKZQCsdjJCM7YdrEMW_Xa3MCtP6LhHGws&libraries=places" async defer></script>
 </head>
 <body>
     <header class="header">
@@ -14,26 +12,30 @@
             <div class="logo">
                 <a href="/dashboard_ong.html">❤️ Doa+ ONG</a>
             </div>
-            <ul class="nav-menu">
-                <li><a href="/dashboard_ong.html" class="nav-link active">Dashboard</a></li>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/dashboard_ong.html" class="nav-link active">📊 Dashboard</a></li>
+                <li><a href="#necessidades-section" class="nav-link scroll-link" data-target="necessidades-section">📋 Necessidades</a></li>
+                <li><a href="#eventos-section" class="nav-link scroll-link" data-target="eventos-section">📅 Eventos</a></li>
+                <li><a href="#parcerias-section" class="nav-link scroll-link" data-target="parcerias-section">🤝 Parcerias</a></li>
+                <li><a href="#doacoes-section" class="nav-link scroll-link" data-target="doacoes-section">📦 Doações</a></li>
+                <li><a href="#doacoes-financeiras-section" class="nav-link scroll-link" data-target="doacoes-financeiras-section">💰 Doações Financeiras</a></li>
+                <li><a href="#carteira-section" class="nav-link scroll-link" data-target="carteira-section">💳 Carteira</a></li>
+                <li><a href="#fotos-section" class="nav-link scroll-link" data-target="fotos-section">📸 Fotos</a></li>
+                <li><a href="#localizacao-section" class="nav-link scroll-link" data-target="localizacao-section">📍 Localização</a></li>
                 <li><a href="#" class="nav-link" onclick="abrirModalNecessidade()">➕ Nova Necessidade</a></li>
                 <li><a href="#" class="nav-link" onclick="abrirModalEvento()">📅 Novo Evento</a></li>
                 <li><a href="#" class="nav-link" onclick="abrirModalParceria()">🤝 Nova Parceria</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarMinhasNecessidades()">📋 Necessidades</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarMeusEventos()">🎪 Eventos</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarMinhasParcerias()">🤝 Parcerias</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarDoacoesRecebidas()">📦 Doações</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarPerfilOng()">⚙️ Configurações</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarFotosOng()">📸 Fotos</a></li>
-                <li><a href="#" class="nav-link" onclick="carregarLocalizacaoOng()">📍 Localização</a></li>
                 <li><a href="#" class="nav-link" onclick="window.location.href='/feedback.html'">📝 Feedback</a></li>
                 <li><a href="#" class="nav-link" onclick="window.location.href='/suporte.html'">🆘 Suporte</a></li>
                 <li><a href="#" class="nav-link" onclick="window.location.href='/central_ajuda.html'">📚 Ajuda</a></li>
+                <li><a href="#" class="nav-link" onclick="mostrarSeguranca()">🔒 Segurança</a></li>
             </ul>
             <div class="user-menu">
                 <span id="user-name">ONG</span>
                 <div class="dropdown-menu">
                     <a href="#" onclick="carregarPerfilOng()">Meu Perfil</a>
+                    <a href="#carteira-section" class="scroll-link" data-target="carteira-section">💰 Carteira</a>
+                    <a href="#" onclick="mostrarSeguranca()">🔒 Segurança</a>
                     <a href="#" onclick="window.location.href='/perfil_ong.html?id=' + getOngId()">Ver Perfil Público</a>
                     <a href="#" id="logout-btn">Sair</a>
                 </div>
@@ -48,56 +50,153 @@
         </div>
         
         <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Necessidades Ativas</h3>
-                <div class="stat-value" id="stat-necessidades">0</div>
+            <div class="stat-card"><h3>Necessidades Ativas</h3><div class="stat-value" id="stat-necessidades">0</div></div>
+            <div class="stat-card"><h3>Doações Recebidas</h3><div class="stat-value" id="stat-doacoes">0</div></div>
+            <div class="stat-card"><h3>Itens Arrecadados</h3><div class="stat-value" id="stat-itens">0</div></div>
+            <div class="stat-card"><h3>Doadores Únicos</h3><div class="stat-value" id="stat-doadores">0</div></div>
+            <div class="stat-card"><h3>Eventos</h3><div class="stat-value" id="stat-eventos">0</div></div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white;">
+                <h3 style="color: white;">💰 Doações Financeiras</h3>
+                <div class="stat-value" id="stat-doacoes-financeiras" style="color: white;">0</div>
             </div>
-            <div class="stat-card">
-                <h3>Doações Recebidas</h3>
-                <div class="stat-value" id="stat-doacoes">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Itens Arrecadados</h3>
-                <div class="stat-value" id="stat-itens">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Doadores Únicos</h3>
-                <div class="stat-value" id="stat-doadores">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Eventos</h3>
-                <div class="stat-value" id="stat-eventos">0</div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;">
+                <h3 style="color: white;">💳 Saldo Carteira</h3>
+                <div class="stat-value" id="stat-saldo-carteira" style="color: white;">R$ 0,00</div>
             </div>
         </div>
-        
-        <!-- Necessidades Section -->
+
+        <!-- CARTEIRA -->
+        <div class="section" id="carteira-section">
+            <div class="section-header">
+                <h2>💳 Minha Carteira</h2>
+                <button class="btn btn-primary" onclick="abrirModalSaque()">💸 Solicitar Saque</button>
+            </div>
+            <div class="carteira-info" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                <div class="stat-card"><h3>Saldo Disponível</h3><div class="stat-value" id="carteira-saldo" style="color: #27ae60;">R$ 0,00</div></div>
+                <div class="stat-card"><h3>Total Recebido</h3><div class="stat-value" id="carteira-recebido" style="color: #2980b9;">R$ 0,00</div></div>
+                <div class="stat-card"><h3>Total Sacado</h3><div class="stat-value" id="carteira-sacado" style="color: #e74c3c;">R$ 0,00</div></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Data</th><th>Transação</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
+                    <tbody id="carteira-extrato-tbody"><tr><td colspan="5" style="text-align: center;">Carregando extrato...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- NECESSIDADES -->
         <div class="section" id="necessidades-section">
             <div class="section-header">
                 <h2>📋 Minhas Necessidades</h2>
                 <button class="btn btn-primary" onclick="abrirModalNecessidade()">+ Nova Necessidade</button>
             </div>
             <div class="table-container">
-                <table id="necessidades-table">
+                <table>
                     <thead><tr><th>Título</th><th>Categoria</th><th>Quantidade</th><th>Arrecadado</th><th>Status</th><th>Ações</th></tr></thead>
                     <tbody id="necessidades-tbody"><tr><td colspan="6" style="text-align: center;">Carregando...</td></tr></tbody>
                 </table>
             </div>
         </div>
-        
-        <!-- Doações Section -->
+
+        <!-- DOAÇÕES FINANCEIRAS -->
+        <div class="section" id="doacoes-financeiras-section">
+            <div class="section-header">
+                <h2>💰 Doações Financeiras Recebidas</h2>
+                <button class="btn btn-outline" onclick="carregarDoacoesFinanceirasOng()">Atualizar</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Data</th><th>Doador</th><th>Valor Bruto</th><th>Taxa</th><th>Líquido</th><th>Método</th><th>Mensagem</th><th>Status</th></tr></thead>
+                    <tbody id="doacoes-financeiras-tbody"><tr><td colspan="8" style="text-align: center;">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DOAÇÕES (ITENS) -->
         <div class="section" id="doacoes-section">
             <div class="section-header">
-                <h2>📦 Doações Recentes</h2>
+                <h2>📦 Doações Recentes (Itens)</h2>
                 <button class="btn btn-outline" onclick="carregarDoacoesRecebidas()">Atualizar</button>
             </div>
             <div class="table-container">
-                <table id="doacoes-table">
+                <table>
                     <thead><tr><th>Data</th><th>Doador</th><th>Item</th><th>Quantidade</th><th>Status</th><th>Ações</th></tr></thead>
                     <tbody id="doacoes-tbody"><tr><td colspan="6" style="text-align: center;">Carregando...</td></tr></tbody>
                 </table>
             </div>
         </div>
+
+        <!-- EVENTOS -->
+        <div class="section" id="eventos-section">
+            <div class="section-header">
+                <h2>📅 Meus Eventos</h2>
+                <button class="btn btn-primary" onclick="abrirModalEvento()">+ Novo Evento</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Título</th><th>Data</th><th>Local</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="eventos-tbody"><tr><td colspan="5" style="text-align: center;">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PARCERIAS -->
+        <div class="section" id="parcerias-section">
+            <div class="section-header">
+                <h2>🤝 Minhas Parcerias</h2>
+                <button class="btn btn-primary" onclick="abrirModalParceria()">+ Nova Parceria</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Parceiro</th><th>Tipo</th><th>Descrição</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="parcerias-tbody"><tr><td colspan="5" style="text-align: center;">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOTOS -->
+        <div class="section" id="fotos-section">
+            <div class="section-header">
+                <h2>📸 Fotos da ONG</h2>
+                <button class="btn btn-primary" onclick="carregarFotosOng()">+ Adicionar Foto</button>
+            </div>
+            <div id="fotos-lista" style="margin-bottom: 1rem;"><p style="color: #7f8c8d;">Nenhuma foto cadastrada</p></div>
+        </div>
+
+        <!-- LOCALIZAÇÃO -->
+        <div class="section" id="localizacao-section">
+            <div class="section-header">
+                <h2>📍 Localização da ONG</h2>
+                <button class="btn btn-primary" onclick="carregarLocalizacaoOng()">📌 Atualizar Localização</button>
+            </div>
+            <div id="mapa-container" style="width: 100%; height: 300px; border-radius: 10px; margin-bottom: 1rem; background: #ecf0f1; display: flex; align-items: center; justify-content: center;">
+                <p style="color: #7f8c8d;">📍 Localização não definida</p>
+            </div>
+            <p><strong>Endereço:</strong> <span id="ong-endereco-completo">Não informado</span></p>
+        </div>
+
+        <!-- SEGURANÇA -->
+        <div class="section" id="seguranca-section" style="display: none;">
+            <div class="section-header"><h2>🔒 Segurança da Conta</h2></div>
+            <div class="security-card" style="background: white; border-radius: 15px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h3 style="color: #2c3e50; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem;">🔑 Alterar Senha</h3>
+                <form id="form-alterar-senha-ong">
+                    <div class="form-group"><label for="senha-atual-ong">Senha Atual *</label><input type="password" id="senha-atual-ong" required placeholder="Digite sua senha atual"></div>
+                    <div class="form-group"><label for="nova-senha-ong">Nova Senha *</label><input type="password" id="nova-senha-ong" required placeholder="Mínimo 12 caracteres"><div id="senha-forca-ong" style="margin-top: 0.3rem;"></div></div>
+                    <div class="form-group"><label for="confirmar-senha-ong">Confirmar Nova Senha *</label><input type="password" id="confirmar-senha-ong" required placeholder="Confirme a nova senha"></div>
+                    <button type="submit" class="btn btn-primary">🔑 Alterar Senha</button>
+                </form>
+            </div>
+            <div class="security-card" style="background: white; border-radius: 15px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h3 style="color: #2c3e50; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem;">🗑️ Excluir Conta</h3>
+                <p style="color: #e74c3c; margin-bottom: 1rem;"><strong>⚠️ Atenção:</strong> Esta ação é irreversível. Todos os seus dados serão removidos em até 30 dias.</p>
+                <button class="btn btn-danger" onclick="solicitarExclusaoContaOng()">🗑️ Solicitar Exclusão da Conta</button>
+                <div id="status-exclusao-ong" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
     </div>
+    
+    <!-- ==================== MODAIS ==================== -->
     
     <!-- Modal Nova Necessidade -->
     <div id="necessidade-modal" class="modal">
@@ -107,9 +206,12 @@
                 <input type="hidden" id="necessidade-id">
                 <div class="form-group"><label>Título *</label><input type="text" id="titulo" required></div>
                 <div class="form-group"><label>Categoria *</label><select id="categoria" required>
-                    <option value="alimentos">Alimentos</option><option value="roupas">Roupas</option>
-                    <option value="medicamentos">Medicamentos</option><option value="higiene">Higiene</option>
-                    <option value="material_escolar">Material Escolar</option><option value="voluntariado">Voluntariado</option>
+                    <option value="alimentos">Alimentos</option>
+                    <option value="roupas">Roupas</option>
+                    <option value="medicamentos">Medicamentos</option>
+                    <option value="higiene">Higiene</option>
+                    <option value="material_escolar">Material Escolar</option>
+                    <option value="voluntariado">Voluntariado</option>
                 </select></div>
                 <div class="form-group"><label>Descrição *</label><textarea id="descricao" rows="3" required></textarea></div>
                 <div class="form-group"><label>Quantidade Necessária *</label><input type="number" id="quantidade_necessaria" min="1" required></div>
@@ -167,16 +269,20 @@
                 <div class="form-group"><label>UF</label><input type="text" id="ong-uf" maxlength="2"></div>
                 <div class="form-group"><label>Descrição</label><textarea id="ong-descricao" rows="3"></textarea></div>
                 <div class="form-group"><label>Logo URL</label><input type="text" id="ong-logo" placeholder="https://..."></div>
+                <div class="form-group"><label>Conta Bancária (para saques)</label>
+                    <input type="text" id="ong-conta-bancaria" placeholder="Banco - Agência - Conta">
+                    <small style="color: #7f8c8d;">Ex: Banco do Brasil - Ag: 1234 - CC: 56789-0</small>
+                </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Atualizar Perfil</button>
             </form>
         </div>
     </div>
     
-    <!-- Modal Fotos da ONG -->
+    <!-- Modal Fotos -->
     <div id="fotos-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h3>📸 Fotos da ONG (Máx. 3)</h3><span class="modal-close" onclick="fecharModal('fotos-modal')">&times;</span></div>
-            <div id="fotos-lista" style="margin-bottom: 1rem;"></div>
+            <div id="fotos-lista-modal" style="margin-bottom: 1rem;"></div>
             <form id="fotos-form">
                 <div class="form-group"><label>URL da Foto *</label><input type="text" id="foto-url" placeholder="https://..." required></div>
                 <div class="form-group"><label>Descrição</label><input type="text" id="foto-descricao" placeholder="Breve descrição da foto"></div>
@@ -194,16 +300,11 @@
                     <label>Endereço Completo</label>
                     <input type="text" id="loc-endereco" placeholder="Digite o endereço completo" required>
                 </div>
-                <div class="form-group">
-                    <label>Buscar no Google Maps</label>
-                    <input type="text" id="loc-search" placeholder="Pesquisar local..." class="form-control">
-                    <small style="color: #7f8c8d;">Digite um endereço e clique em "Buscar"</small>
-                </div>
                 <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
                     <button type="button" class="btn btn-primary" onclick="buscarLocalizacao()">🔍 Buscar</button>
                     <button type="button" class="btn btn-outline" onclick="obterLocalizacaoAtual()">📍 Minha Localização</button>
                 </div>
-                <div id="mapa-container" style="width: 100%; height: 300px; border-radius: 10px; margin-bottom: 1rem; background: #ecf0f1;"></div>
+                <div id="mapa-container-modal" style="width: 100%; height: 300px; border-radius: 10px; margin-bottom: 1rem; background: #ecf0f1;"></div>
                 <div class="form-row">
                     <div class="form-group"><label>Latitude</label><input type="text" id="loc-latitude" readonly></div>
                     <div class="form-group"><label>Longitude</label><input type="text" id="loc-longitude" readonly></div>
@@ -212,7 +313,31 @@
             </form>
         </div>
     </div>
-    
+
+    <!-- Modal Saque -->
+    <div id="saque-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💸 Solicitar Saque</h3>
+                <span class="modal-close" onclick="fecharModal('saque-modal')">&times;</span>
+            </div>
+            <form id="form-saque">
+                <div class="form-group">
+                    <label>Valor (R$) *</label>
+                    <input type="number" id="valor-saque" min="10" step="0.01" required placeholder="Mínimo R$ 10,00">
+                    <small style="color: #7f8c8d;">Saldo disponível: <span id="saque-saldo-disponivel">R$ 0,00</span></small>
+                </div>
+                <div class="form-group">
+                    <label>Conta Bancária</label>
+                    <input type="text" id="conta-saque" placeholder="Banco - Agência - Conta">
+                    <small style="color: #7f8c8d;">Deixe em branco para usar a conta cadastrada</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💸 Solicitar Saque</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
     <div id="toast" class="toast" style="display: none;"><span class="toast-message"></span></div>
     
     <script src="javascript.js/dashboard_ong.js"></script>
