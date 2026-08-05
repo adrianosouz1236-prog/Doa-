@@ -118,7 +118,7 @@ notificacoes_preferencias_db = {}
 relatorios_anuais_db = {}
 
 # =====================================================================
-# CARTEIRA DA PLATAFORMA - NOVAS VARIÁVEIS
+# CARTEIRA DA PLATAFORMA
 # =====================================================================
 carteira_plataforma = {
     'saldo': 0.0,
@@ -274,9 +274,6 @@ def security_required(f):
 # =====================================================================
 
 def registrar_taxa_plataforma(valor_taxa, transacao_id, descricao):
-    """
-    Registra uma taxa na carteira da plataforma
-    """
     global carteira_plataforma
     
     carteira_plataforma['saldo'] += valor_taxa
@@ -298,9 +295,6 @@ def registrar_taxa_plataforma(valor_taxa, transacao_id, descricao):
     )
 
 def registrar_saque_plataforma(valor, conta_bancaria, descricao):
-    """
-    Registra um saque da carteira da plataforma
-    """
     global carteira_plataforma
     
     if carteira_plataforma['saldo'] < valor:
@@ -331,14 +325,11 @@ def registrar_saque_plataforma(valor, conta_bancaria, descricao):
     return {'success': True, 'saldo_restante': carteira_plataforma['saldo']}
 
 def obter_dados_carteira_plataforma():
-    """
-    Retorna os dados da carteira da plataforma
-    """
     return {
         'saldo': carteira_plataforma['saldo'],
         'total_taxas': carteira_plataforma['total_taxas'],
         'total_sacado': carteira_plataforma['total_sacado'],
-        'extrato': carteira_plataforma['extrato'][-50:],  # Últimas 50 transações
+        'extrato': carteira_plataforma['extrato'][-50:],
         'data_atualizacao': carteira_plataforma['data_atualizacao'].isoformat()
     }
 
@@ -572,6 +563,15 @@ def cadastro_ong():
     conta_bancaria = criptografar(data.get('conta_bancaria', ''))
     recaptcha_token = data.get('recaptcha_token', '')
     
+    # ============================================================
+    # VALIDAÇÃO DO CONSENTIMENTO LGPD - OBRIGATÓRIO
+    # ============================================================
+    consentimento = data.get('consentimento_lgpd', False)
+    if not consentimento:
+        return jsonify({
+            'error': 'É obrigatório concordar com a Política de Privacidade e Termos de Serviço.'
+        }), 400
+    
     if not nome or not cnpj or not email or not senha:
         return jsonify({'error': 'Nome, CNPJ, email e senha são obrigatórios'}), 400
     
@@ -615,8 +615,11 @@ def cadastro_ong():
         'total_avaliacoes': 0,
         'conta_bancaria': conta_bancaria,
         'email_confirmado': False,
-        'consentimento_lgpd': False,
-        'data_consentimento': None
+        'consentimento_lgpd': True,
+        'data_consentimento': datetime.now().isoformat(),
+        'ip_consentimento': request.remote_addr,
+        'user_agent_consentimento': request.headers.get('User-Agent', ''),
+        'versao_termos': 'v1.0'
     }
     
     carteiras_db[ong_id] = {
@@ -652,6 +655,15 @@ def cadastro_doador():
     cpf = sanitizar_string(data.get('cpf', ''))
     recaptcha_token = data.get('recaptcha_token', '')
     
+    # ============================================================
+    # VALIDAÇÃO DO CONSENTIMENTO LGPD - OBRIGATÓRIO
+    # ============================================================
+    consentimento = data.get('consentimento_lgpd', False)
+    if not consentimento:
+        return jsonify({
+            'error': 'É obrigatório concordar com a Política de Privacidade e Termos de Serviço.'
+        }), 400
+    
     if not nome or not email or not senha:
         return jsonify({'error': 'Nome, email e senha são obrigatórios'}), 400
     
@@ -686,8 +698,11 @@ def cadastro_doador():
         'pontuacao': 0,
         'conquistas': [],
         'email_confirmado': False,
-        'consentimento_lgpd': False,
-        'data_consentimento': None,
+        'consentimento_lgpd': True,
+        'data_consentimento': datetime.now().isoformat(),
+        'ip_consentimento': request.remote_addr,
+        'user_agent_consentimento': request.headers.get('User-Agent', ''),
+        'versao_termos': 'v1.0',
         'endereco': None,
         'cidade': None,
         'uf': None,
@@ -1220,7 +1235,6 @@ def update_ong_perfil():
 @app.route('/api/ongs/necessidades', methods=['GET'])
 @token_required
 def listar_necessidades_ong():
-    """Lista todas as necessidades de uma ONG específica"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1247,7 +1261,6 @@ def listar_necessidades_ong():
 @token_required
 @security_required
 def criar_necessidade_ong():
-    """Cria uma nova necessidade para a ONG"""
     global next_necessidade_id
     
     if request.user_payload.get('tipo') != 'ong':
@@ -1298,7 +1311,6 @@ def criar_necessidade_ong():
 @app.route('/api/ongs/necessidades/<int:necessidade_id>', methods=['GET'])
 @token_required
 def obter_necessidade_ong(necessidade_id):
-    """Obtém uma necessidade específica da ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1327,7 +1339,6 @@ def obter_necessidade_ong(necessidade_id):
 @token_required
 @security_required
 def atualizar_necessidade_ong(necessidade_id):
-    """Atualiza uma necessidade existente"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1359,7 +1370,6 @@ def atualizar_necessidade_ong(necessidade_id):
 @token_required
 @security_required
 def encerrar_necessidade_ong(necessidade_id):
-    """Encerra uma necessidade (marca como concluída)"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1383,7 +1393,6 @@ def encerrar_necessidade_ong(necessidade_id):
 @app.route('/api/ongs/doacoes', methods=['GET'])
 @token_required
 def listar_doacoes_ong():
-    """Lista todas as doações recebidas pela ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1411,7 +1420,6 @@ def listar_doacoes_ong():
 @token_required
 @security_required
 def confirmar_doacao_ong(doacao_id):
-    """Confirma uma doação recebida pela ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1435,7 +1443,6 @@ def confirmar_doacao_ong(doacao_id):
 @app.route('/api/doacoes/financeiras/ong', methods=['GET'])
 @token_required
 def listar_doacoes_financeiras_ong():
-    """Lista todas as doações financeiras recebidas pela ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1468,7 +1475,6 @@ def listar_doacoes_financeiras_ong():
 @app.route('/api/ongs/fotos', methods=['GET'])
 @token_required
 def listar_fotos_ong():
-    """Lista todas as fotos da ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1490,7 +1496,6 @@ def listar_fotos_ong():
 @token_required
 @security_required
 def adicionar_foto_ong():
-    """Adiciona uma nova foto para a ONG"""
     global next_foto_id
     
     if request.user_payload.get('tipo') != 'ong':
@@ -1505,7 +1510,6 @@ def adicionar_foto_ong():
     if not foto_url:
         return jsonify({'error': 'URL da foto é obrigatória'}), 400
     
-    # Verificar se a ONG já tem 3 fotos
     fotos_ong = [f for f in ong_fotos_db.values() if f.get('ong_id') == ong_id]
     if len(fotos_ong) >= 3:
         return jsonify({'error': 'Máximo de 3 fotos por ONG'}), 400
@@ -1532,7 +1536,6 @@ def adicionar_foto_ong():
 @token_required
 @security_required
 def remover_foto_ong(foto_id):
-    """Remove uma foto da ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1556,7 +1559,6 @@ def remover_foto_ong(foto_id):
 @app.route('/api/ongs/eventos', methods=['GET'])
 @token_required
 def listar_eventos_ong():
-    """Lista todos os eventos da ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1586,7 +1588,6 @@ def listar_eventos_ong():
 @token_required
 @security_required
 def criar_evento_ong():
-    """Cria um novo evento para a ONG"""
     global next_evento_id
     
     if request.user_payload.get('tipo') != 'ong':
@@ -1641,7 +1642,6 @@ def criar_evento_ong():
 @token_required
 @security_required
 def cancelar_evento_ong(evento_id):
-    """Cancela um evento"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1665,7 +1665,6 @@ def cancelar_evento_ong(evento_id):
 @app.route('/api/ongs/parcerias', methods=['GET'])
 @token_required
 def listar_parcerias_ong():
-    """Lista todas as parcerias da ONG"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1690,7 +1689,6 @@ def listar_parcerias_ong():
 @token_required
 @security_required
 def criar_parceria_ong():
-    """Cria uma nova parceria para a ONG"""
     global next_parceria_id
     
     if request.user_payload.get('tipo') != 'ong':
@@ -1734,7 +1732,6 @@ def criar_parceria_ong():
 @token_required
 @security_required
 def encerrar_parceria_ong(parceria_id):
-    """Encerra uma parceria"""
     if request.user_payload.get('tipo') != 'ong':
         return jsonify({'error': 'Acesso restrito a ONGs'}), 403
     
@@ -1937,9 +1934,6 @@ def criar_doacao_financeira():
     doacao_financeira_id = next_doacao_financeira_id
     next_doacao_financeira_id += 1
     
-    # =====================================================================
-    # REGISTRAR TAXA NA CARTEIRA DA PLATAFORMA
-    # =====================================================================
     registrar_taxa_plataforma(
         valor_taxa=taxa_servico,
         transacao_id=transacao_id,
@@ -3065,9 +3059,6 @@ def admin_dashboard():
 @app.route('/api/admin/carteira', methods=['GET'])
 @token_required
 def admin_carteira_plataforma():
-    """
-    Retorna os dados da carteira da plataforma para o painel administrativo
-    """
     if request.user_payload.get('tipo') != 'admin':
         return jsonify({'error': 'Acesso restrito a administradores'}), 403
     
@@ -3078,9 +3069,6 @@ def admin_carteira_plataforma():
 @token_required
 @security_required
 def admin_sacar_carteira_plataforma():
-    """
-    Realiza um saque da carteira da plataforma
-    """
     if request.user_payload.get('tipo') != 'admin':
         return jsonify({'error': 'Acesso restrito a administradores'}), 403
     
@@ -3126,15 +3114,12 @@ def admin_sacar_carteira_plataforma():
 @app.route('/api/admin/carteira/extrato', methods=['GET'])
 @token_required
 def admin_carteira_extrato_plataforma():
-    """
-    Retorna o extrato da carteira da plataforma
-    """
     if request.user_payload.get('tipo') != 'admin':
         return jsonify({'error': 'Acesso restrito a administradores'}), 403
     
     limit = int(request.args.get('limit', 50))
     extrato = carteira_plataforma['extrato'][-limit:]
-    extrato.reverse()  # Mais recentes primeiro
+    extrato.reverse()
     
     return jsonify({
         'extrato': [{
@@ -3218,7 +3203,11 @@ def admin_ongs():
             'saldo_carteira': carteira.get('saldo', 0),
             'total_recebido': carteira.get('total_recebido', 0),
             'total_sacado': carteira.get('total_sacado', 0),
-            'data_atualizacao': carteira.get('data_atualizacao')
+            'data_atualizacao': carteira.get('data_atualizacao'),
+            'consentimento_lgpd': ong.get('consentimento_lgpd', False),
+            'data_consentimento': ong.get('data_consentimento'),
+            'ip_consentimento': ong.get('ip_consentimento'),
+            'versao_termos': ong.get('versao_termos', 'v1.0')
         })
     
     return jsonify({'ongs': ongs_lista}), 200
@@ -3272,7 +3261,11 @@ def admin_doadores():
             'total_doacoes': doador.get('total_doacoes', 0),
             'pontuacao': doador.get('pontuacao', 0),
             'conquistas': doador.get('conquistas', []),
-            'data_cadastro': doador.get('data_cadastro')
+            'data_cadastro': doador.get('data_cadastro'),
+            'consentimento_lgpd': doador.get('consentimento_lgpd', False),
+            'data_consentimento': doador.get('data_consentimento'),
+            'ip_consentimento': doador.get('ip_consentimento'),
+            'versao_termos': doador.get('versao_termos', 'v1.0')
         })
     
     return jsonify({'doadores': doadores_lista}), 200
@@ -3512,15 +3505,6 @@ def add_security_headers_to_response(response):
 @token_required
 @security_required
 def criar_doacao_mercadopago():
-    """
-    Cria uma doação usando Mercado Pago
-    Body: {
-        "ong_id": 1,
-        "valor": 50.00,
-        "mensagem": "Mensagem opcional",
-        "recorrente": false
-    }
-    """
     if not MERCADO_PAGO_ATIVO:
         return jsonify({'error': 'Mercado Pago não configurado. Configure MP_ACCESS_TOKEN no .env'}), 503
     
@@ -3540,18 +3524,15 @@ def criar_doacao_mercadopago():
         if valor < 1:
             return jsonify({'error': 'Valor mínimo é R$ 1,00'}), 400
         
-        # Buscar ONG
         ong = ongs_db.get(ong_id)
         if not ong or ong.get('status') != 'ativo':
             return jsonify({'error': 'ONG não encontrada ou inativa'}), 404
         
-        # Buscar doador
         doador_id = request.user_payload.get('user_id')
         doador = doadores_db.get(doador_id)
         if not doador:
             return jsonify({'error': 'Doador não encontrado'}), 404
         
-        # Criar preferência no Mercado Pago
         resultado_mp = criar_preferencia_doacao(
             doador_nome=doador.get('nome', 'Doador'),
             doador_email=doador.get('email', ''),
@@ -3568,7 +3549,6 @@ def criar_doacao_mercadopago():
                 'error': f'Erro no Mercado Pago: {resultado_mp.get("error")}'
             }), 400
         
-        # Salvar doação pendente
         global next_doacao_financeira_id, next_transacao_id
         
         transacao_id = resultado_mp.get('external_reference')
@@ -3598,11 +3578,6 @@ def criar_doacao_mercadopago():
         doacao_financeira_id = next_doacao_financeira_id
         next_doacao_financeira_id += 1
         
-        # Registrar taxa na carteira da plataforma (aguardando confirmação)
-        # A taxa só será registrada de fato quando a doação for confirmada
-        # Por enquanto, salvamos para uso posterior
-        
-        # Salvar transação
         transacao = {
             'id': next_transacao_id,
             'transacao_id': transacao_id,
@@ -3645,18 +3620,13 @@ def criar_doacao_mercadopago():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/api/doacoes/mercadopago/status/<transacao_id>', methods=['GET'])
 @token_required
 def verificar_status_doacao_mp(transacao_id):
-    """
-    Verifica o status de uma doação no Mercado Pago
-    """
     if not MERCADO_PAGO_ATIVO:
         return jsonify({'error': 'Mercado Pago não configurado'}), 503
     
     try:
-        # Buscar doação no banco
         doacao = None
         for df in doacoes_financeiras_db.values():
             if df.get('transacao_id') == transacao_id:
@@ -3666,11 +3636,9 @@ def verificar_status_doacao_mp(transacao_id):
         if not doacao:
             return jsonify({'error': 'Doação não encontrada'}), 404
         
-        # Verificar se é doação via Mercado Pago
         if doacao.get('metodo_pagamento') != 'mercadopago':
             return jsonify({'error': 'Doação não foi feita via Mercado Pago'}), 400
         
-        # Buscar status no Mercado Pago
         payment_id = doacao.get('mp_payment_id')
         if not payment_id:
             return jsonify({
@@ -3683,14 +3651,12 @@ def verificar_status_doacao_mp(transacao_id):
         if not resultado.get('success'):
             return jsonify({'error': resultado.get('error')}), 400
         
-        # Atualizar status se necessário
         status_mp = resultado.get('status')
         if status_mp == 'approved' and doacao.get('status') != 'confirmado':
             doacao['status'] = 'confirmado'
             doacao['data_confirmacao'] = datetime.now()
             doacao['mp_status'] = status_mp
             
-            # REGISTRAR TAXA NA CARTEIRA DA PLATAFORMA
             valor_taxa = doacao.get('taxa_servico', 0)
             if valor_taxa > 0:
                 registrar_taxa_plataforma(
@@ -3699,13 +3665,11 @@ def verificar_status_doacao_mp(transacao_id):
                     descricao=f'Taxa de doação via Mercado Pago para {doacao.get("ong_nome")} - Doador: {doacao.get("doador_nome")}'
                 )
             
-            # Atualizar transação
             for t in transacoes_db.values():
                 if t.get('transacao_id') == transacao_id:
                     t['status'] = 'confirmado'
                     t['data_processamento'] = datetime.now()
             
-            # Atualizar carteira da ONG
             ong_id = doacao.get('ong_id')
             valor_liquido = doacao.get('valor_liquido', doacao.get('valor', 0))
             if ong_id in carteiras_db:
@@ -3729,10 +3693,8 @@ def verificar_status_doacao_mp(transacao_id):
         logger.error(f"Erro ao verificar status da doação: {e}")
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/doacao/success')
 def doacao_success():
-    """Callback de sucesso do Mercado Pago"""
     payment_id = request.args.get('payment_id')
     status = request.args.get('status')
     external_reference = request.args.get('external_reference')
@@ -3740,14 +3702,12 @@ def doacao_success():
     
     print(f"✅ DOAÇÃO APROVADA - ref: {external_reference}, status: {status}")
     
-    # Buscar informações da doação
     doacao_info = None
     for df in doacoes_financeiras_db.values():
         if df.get('transacao_id') == external_reference:
             doacao_info = df
             break
     
-    # Atualizar status da doação
     if external_reference:
         for df_id, df in doacoes_financeiras_db.items():
             if df.get('transacao_id') == external_reference:
@@ -3756,7 +3716,6 @@ def doacao_success():
                 df['mp_status'] = status or 'approved'
                 df['mp_payment_id'] = payment_id
                 
-                # REGISTRAR TAXA NA CARTEIRA DA PLATAFORMA
                 valor_taxa = df.get('taxa_servico', 0)
                 if valor_taxa > 0:
                     registrar_taxa_plataforma(
@@ -3765,13 +3724,11 @@ def doacao_success():
                         descricao=f'Taxa de doação via Mercado Pago para {df.get("ong_nome")} - Doador: {df.get("doador_nome")}'
                     )
                 
-                # Atualizar transação
                 for t in transacoes_db.values():
                     if t.get('transacao_id') == external_reference:
                         t['status'] = 'confirmado'
                         t['data_processamento'] = datetime.now()
                 
-                # Atualizar carteira da ONG
                 ong_id = df.get('ong_id')
                 valor_liquido = df.get('valor_liquido', df.get('valor', 0))
                 if ong_id in carteiras_db:
@@ -3783,7 +3740,6 @@ def doacao_success():
                     usuario=df.get('doador_email'),
                     gravidade='alta'
                 )
-                
                 break
     
     params = {
@@ -3797,10 +3753,8 @@ def doacao_success():
     
     return redirect(f'/doacao_aprovada.html?{query_string}')
 
-
 @app.route('/doacao/failure')
 def doacao_failure():
-    """Callback de falha do Mercado Pago"""
     payment_id = request.args.get('payment_id')
     status = request.args.get('status')
     external_reference = request.args.get('external_reference')
@@ -3808,14 +3762,12 @@ def doacao_failure():
     
     print(f"❌ DOAÇÃO RECUSADA - ref: {external_reference}, status: {status}")
     
-    # Buscar informações da doação
     doacao_info = None
     for df in doacoes_financeiras_db.values():
         if df.get('transacao_id') == external_reference:
             doacao_info = df
             break
     
-    # Atualizar status da doação
     if external_reference:
         for df_id, df in doacoes_financeiras_db.items():
             if df.get('transacao_id') == external_reference:
@@ -3823,7 +3775,6 @@ def doacao_failure():
                 df['mp_status'] = status or 'rejected'
                 df['mp_payment_id'] = payment_id
                 
-                # Atualizar transação
                 for t in transacoes_db.values():
                     if t.get('transacao_id') == external_reference:
                         t['status'] = 'cancelado'
@@ -3847,10 +3798,8 @@ def doacao_failure():
     
     return redirect(f'/doacao_recusada.html?{query_string}')
 
-
 @app.route('/doacao/pending')
 def doacao_pending():
-    """Callback de pendência do Mercado Pago"""
     payment_id = request.args.get('payment_id')
     status = request.args.get('status')
     external_reference = request.args.get('external_reference')
@@ -3858,14 +3807,12 @@ def doacao_pending():
     
     print(f"⏳ DOAÇÃO PENDENTE - ref: {external_reference}, status: {status}")
     
-    # Buscar informações da doação
     doacao_info = None
     for df in doacoes_financeiras_db.values():
         if df.get('transacao_id') == external_reference:
             doacao_info = df
             break
     
-    # Atualizar status da doação
     if external_reference:
         for df_id, df in doacoes_financeiras_db.items():
             if df.get('transacao_id') == external_reference:
@@ -3884,12 +3831,8 @@ def doacao_pending():
     
     return redirect(f'/doacao_pendente.html?{query_string}')
 
-
 @app.route('/webhook/mercadopago', methods=['POST', 'GET'])
 def webhook_mercadopago():
-    """
-    Webhook para receber notificações do Mercado Pago
-    """
     if not MERCADO_PAGO_ATIVO:
         return jsonify({"success": False, "error": "Mercado Pago não configurado"}), 503
     
@@ -3913,7 +3856,6 @@ def webhook_mercadopago():
                     external_reference = resultado.get('external_reference')
                     
                     if external_reference:
-                        # Atualizar status da doação
                         for df_id, df in doacoes_financeiras_db.items():
                             if df.get('transacao_id') == external_reference:
                                 df['mp_status'] = status
@@ -3923,7 +3865,6 @@ def webhook_mercadopago():
                                     df['status'] = 'confirmado'
                                     df['data_confirmacao'] = datetime.now()
                                     
-                                    # REGISTRAR TAXA NA CARTEIRA DA PLATAFORMA
                                     valor_taxa = df.get('taxa_servico', 0)
                                     if valor_taxa > 0:
                                         registrar_taxa_plataforma(
@@ -3932,13 +3873,11 @@ def webhook_mercadopago():
                                             descricao=f'Webhook - Taxa de doação para {df.get("ong_nome")} - Doador: {df.get("doador_nome")}'
                                         )
                                     
-                                    # Atualizar transação
                                     for t in transacoes_db.values():
                                         if t.get('transacao_id') == external_reference:
                                             t['status'] = 'confirmado'
                                             t['data_processamento'] = datetime.now()
                                     
-                                    # Atualizar carteira da ONG
                                     ong_id = df.get('ong_id')
                                     valor_liquido = df.get('valor_liquido', df.get('valor', 0))
                                     if ong_id in carteiras_db:
@@ -3970,10 +3909,8 @@ def webhook_mercadopago():
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route('/api/mercadopago/test', methods=['GET'])
 def test_mercadopago():
-    """Endpoint para testar a conexão com o Mercado Pago"""
     if not MERCADO_PAGO_ATIVO:
         return jsonify({'error': 'Mercado Pago não configurado. Configure MP_ACCESS_TOKEN no .env'}), 503
     
@@ -4049,7 +3986,6 @@ def download_relatorio_anual(relatorio_id):
 def init_test_data():
     global next_ong_id, next_doador_id, next_necessidade_id, next_evento_id, next_parceria_id, next_feedback_id, next_suporte_id, next_comunicacao_id, next_carteira_id, next_meta_id, next_vaga_id, next_doacao_financeira_id
     
-    # Criar ONG de teste
     if not ongs_db:
         ong_id = next_ong_id
         ongs_db[ong_id] = {
@@ -4075,7 +4011,10 @@ def init_test_data():
             'conta_bancaria': criptografar('Banco do Brasil - Ag: 1234 - CC: 56789-0'),
             'email_confirmado': True,
             'consentimento_lgpd': True,
-            'data_consentimento': datetime.now()
+            'data_consentimento': datetime.now().isoformat(),
+            'ip_consentimento': '127.0.0.1',
+            'user_agent_consentimento': 'Test',
+            'versao_termos': 'v1.0'
         }
         
         carteiras_db[ong_id] = {
@@ -4089,7 +4028,6 @@ def init_test_data():
         next_carteira_id += 1
         next_ong_id += 1
         
-        # Criar necessidade de teste
         necessidades_db[next_necessidade_id] = {
             'id': next_necessidade_id,
             'ong_id': ong_id,
@@ -4104,7 +4042,6 @@ def init_test_data():
         }
         next_necessidade_id += 1
         
-        # Criar evento de teste
         ong_eventos_db[next_evento_id] = {
             'id': next_evento_id,
             'ong_id': ong_id,
@@ -4118,7 +4055,6 @@ def init_test_data():
         }
         next_evento_id += 1
         
-        # Criar parceria de teste
         ong_parcerias_db[next_parceria_id] = {
             'id': next_parceria_id,
             'ong_id': ong_id,
@@ -4131,7 +4067,6 @@ def init_test_data():
         }
         next_parceria_id += 1
     
-    # Criar doador de teste
     if not doadores_db:
         doador_id = next_doador_id
         doadores_db[doador_id] = {
@@ -4148,7 +4083,10 @@ def init_test_data():
             'conquistas': [],
             'email_confirmado': True,
             'consentimento_lgpd': True,
-            'data_consentimento': datetime.now(),
+            'data_consentimento': datetime.now().isoformat(),
+            'ip_consentimento': '127.0.0.1',
+            'user_agent_consentimento': 'Test',
+            'versao_termos': 'v1.0',
             'endereco': 'Rua das Flores, 123',
             'cidade': 'São Paulo',
             'uf': 'SP',
@@ -4204,6 +4142,7 @@ if __name__ == '__main__':
     print("  🗑️ Solicitação de Exclusão de Conta (LGPD)")
     print("  🔐 Autenticação de Dois Fatores (2FA)")
     print("  💳 MERCADO PAGO - DOAÇÕES ONLINE")
+    print("  📋 RELATÓRIO DE CONSENTIMENTO LGPD")
     print("="*60)
     print("\n⚠️  Use http://localhost:5000 (não https)")
     print("="*60 + "\n")

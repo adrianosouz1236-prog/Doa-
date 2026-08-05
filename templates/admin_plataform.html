@@ -25,6 +25,7 @@
                 <li><a class="nav-link" data-aba="exclusoes" href="#">🗑️ Exclusões</a></li>
                 <li><a class="nav-link" data-aba="logs" href="#">📋 Logs</a></li>
                 <li><a class="nav-link" data-aba="politicas" href="#">⚖️ Políticas</a></li>
+                <li><a class="nav-link" data-aba="relatorios" href="#">📊 Relatórios</a></li>
             </ul>
             <div class="user-menu">
                 <span id="admin-name">Admin</span>
@@ -59,7 +60,7 @@
                 </div>
             </div>
 
-            <!-- ==================== CARTEIRA DA PLATAFORMA ==================== -->
+            <!-- CARTEIRA DA PLATAFORMA -->
             <div class="section" style="margin-top: 1.5rem;">
                 <div class="section-header">
                     <h2>💰 Carteira da Plataforma</h2>
@@ -420,6 +421,67 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Salvar Configurações</button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- ABA RELATÓRIOS - CONSENTIMENTO LGPD                         -->
+        <!-- ============================================================ -->
+        <div id="aba-relatorios" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <h2>📊 Relatórios de Consentimento LGPD</h2>
+                <button class="btn btn-primary" onclick="gerarRelatorioConsentimento()">
+                    📥 Gerar Relatório Completo
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="stat-card">
+                        <h3>Total de Usuários</h3>
+                        <div class="stat-value" id="rel-total-usuarios">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✅ Consentimento Confirmado</h3>
+                        <div class="stat-value" id="rel-consentidos" style="color: #27ae60;">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>❌ Sem Consentimento</h3>
+                        <div class="stat-value" id="rel-nao-consentidos" style="color: #e74c3c;">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📅 Última Atualização</h3>
+                        <div class="stat-value" style="font-size: 1rem;" id="rel-ultima-atualizacao">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>📋 Lista de Consentimentos</h2>
+                    <div class="search-bar">
+                        <input type="text" id="buscar-consentimento" placeholder="Buscar usuário..." onkeyup="filtrarConsentimentos()">
+                        <button class="btn btn-outline btn-sm" onclick="exportarConsentimentosCSV()">📥 Exportar CSV</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Data/Hora</th>
+                                <th>IP</th>
+                                <th>Versão</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="consentimentos-tbody">
+                            <tr><td colspan="7" style="text-align: center;">Carregando...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

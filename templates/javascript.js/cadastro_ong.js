@@ -86,6 +86,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // ============================================================
+            // VALIDAÇÃO DO CONSENTIMENTO LGPD
+            // ============================================================
+            const consentimento = document.getElementById('consentimento-lgpd').checked;
+            if (!consentimento) {
+                showToast('É obrigatório concordar com a Política de Privacidade e Termos de Serviço.', 'error');
+                return;
+            }
+            
             const dados = {
                 nome: document.getElementById('nome').value,
                 cnpj: document.getElementById('cnpj').value,
@@ -96,14 +106,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cidade: document.getElementById('cidade').value,
                 uf: document.getElementById('uf').value,
                 descricao: document.getElementById('descricao').value,
-                conta_bancaria: document.getElementById('conta_bancaria').value
+                conta_bancaria: document.getElementById('conta_bancaria').value,
+                // ============================================================
+                // CAMPO DE CONSENTIMENTO LGPD
+                // ============================================================
+                consentimento_lgpd: consentimento
             };
+            
             const recaptchaToken = await gerarRecaptchaToken();
             dados.recaptcha_token = recaptchaToken;
+            
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const textoOriginal = submitBtn.textContent;
             submitBtn.textContent = 'Cadastrando...';
             submitBtn.disabled = true;
+            
             try {
                 const response = await fetch(`${API_BASE_URL}/auth/cadastro/ong`, {
                     method: 'POST',

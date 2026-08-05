@@ -71,6 +71,7 @@ function mostrarAba(aba) {
     if (aba === 'comunicacao') carregarComunicacoesAdmin();
     if (aba === 'exclusoes') carregarSolicitacoesExclusao();
     if (aba === 'logs') carregarLogs();
+    if (aba === 'relatorios') carregarDadosConsentimento();
 }
 
 function configurarEventosAbas() {
@@ -111,7 +112,6 @@ async function carregarDashboard() {
             `<tr><td>${new Date(l.data).toLocaleString()}</td><td>${l.evento}</td><td>${l.usuario || '-'}</td><td>${l.ip || '-'}</td></tr>`
         ).join('');
 
-        // Carregar carteira da plataforma
         await carregarCarteiraPlataforma();
     } catch(e) { showToast(e.message, 'error'); }
 }
@@ -125,7 +125,6 @@ async function carregarCarteiraPlataforma() {
         const totalTaxas = data.total_taxas || 0;
         const totalSacado = data.total_sacado || 0;
         
-        // Atualizar na dashboard
         const saldoEl = document.getElementById('plataforma-saldo');
         const taxasEl = document.getElementById('plataforma-total-taxas');
         const sacadoEl = document.getElementById('plataforma-total-sacado');
@@ -133,7 +132,6 @@ async function carregarCarteiraPlataforma() {
         if (taxasEl) taxasEl.textContent = `R$ ${totalTaxas.toFixed(2)}`;
         if (sacadoEl) sacadoEl.textContent = `R$ ${totalSacado.toFixed(2)}`;
 
-        // Atualizar na aba financeiro
         const saldoFin = document.getElementById('plataforma-saldo-financeiro');
         const taxasFin = document.getElementById('plataforma-total-taxas-financeiro');
         const sacadoFin = document.getElementById('plataforma-total-sacado-financeiro');
@@ -141,7 +139,6 @@ async function carregarCarteiraPlataforma() {
         if (taxasFin) taxasFin.textContent = `R$ ${totalTaxas.toFixed(2)}`;
         if (sacadoFin) sacadoFin.textContent = `R$ ${totalSacado.toFixed(2)}`;
 
-        // Atualizar saldo no modal
         const saldoModal = document.getElementById('saque-plataforma-saldo');
         if (saldoModal) saldoModal.textContent = `R$ ${saldo.toFixed(2)}`;
 
@@ -151,7 +148,6 @@ async function carregarCarteiraPlataforma() {
 }
 
 function abrirModalSaquePlataforma() {
-    // Remover modal existente se houver
     const modalExistente = document.getElementById('modal-saque-plataforma');
     if (modalExistente) {
         modalExistente.style.display = 'flex';
@@ -185,10 +181,8 @@ function abrirModalSaquePlataforma() {
     `;
     document.body.appendChild(modal);
 
-    // Carregar saldo atual
     carregarCarteiraPlataforma();
 
-    // Configurar submit do formulário
     document.getElementById('form-saque-plataforma').addEventListener('submit', async (e) => {
         e.preventDefault();
         const valor = parseFloat(document.getElementById('valor-saque-plataforma').value);
@@ -888,6 +882,183 @@ async function cancelarExclusao(solicitacaoId) {
     } catch(e) { showToast(e.message, 'error'); }
 }
 
+// ==================== RELATÓRIO DE CONSENTIMENTO LGPD ====================
+
+function carregarDadosConsentimento() {
+    try {
+        // Usar os dados já carregados das abas ONGs e Doadores
+        const doadores = doadoresData || [];
+        const ongs = ongsData || [];
+        
+        const todosUsuarios = [
+            ...doadores.map(d => ({ ...d, tipo: 'doador' })),
+            ...ongs.map(o => ({ ...o, tipo: 'ong' }))
+        ];
+        
+        const consentidos = todosUsuarios.filter(u => u.consentimento_lgpd === true);
+        const naoConsentidos = todosUsuarios.filter(u => u.consentimento_lgpd !== true);
+        
+        const totalElement = document.getElementById('rel-total-usuarios');
+        const consentidosElement = document.getElementById('rel-consentidos');
+        const naoConsentidosElement = document.getElementById('rel-nao-consentidos');
+        const atualizacaoElement = document.getElementById('rel-ultima-atualizacao');
+        
+        if (totalElement) totalElement.textContent = todosUsuarios.length;
+        if (consentidosElement) consentidosElement.textContent = consentidos.length;
+        if (naoConsentidosElement) naoConsentidosElement.textContent = naoConsentidos.length;
+        if (atualizacaoElement) atualizacaoElement.textContent = new Date().toLocaleString();
+        
+        renderizarConsentimentos(consentidos);
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados de consentimento:', error);
+        showToast('Erro ao carregar dados de consentimento', 'error');
+    }
+}
+
+function renderizarConsentimentos(usuarios) {
+    const tbody = document.getElementById('consentimentos-tbody');
+    if (!tbody) return;
+    
+    if (usuarios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum consentimento registrado</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = usuarios.map(u => {
+        const dataConsentimento = u.data_consentimento ? new Date(u.data_consentimento) : null;
+        const dataFormatada = dataConsentimento ? dataConsentimento.toLocaleString('pt-BR') : 'N/A';
+        
+        return `
+            <tr>
+                <td><strong>${escapeHtml(u.nome || 'Não informado')}</strong></td>
+                <td>${escapeHtml(u.email || 'Não informado')}</td>
+                <td><span class="badge badge-info">${u.tipo === 'ong' ? '🏢 ONG' : '👤 Doador'}</span></td>
+                <td>${dataFormatada}</td>
+                <td>${escapeHtml(u.ip_consentimento || 'N/A')}</td>
+                <td><span class="badge badge-active">${escapeHtml(u.versao_termos || 'v1.0')}</span></td>
+                <td><span class="badge badge-success">✅ Concordou</span></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function gerarRelatorioConsentimento() {
+    try {
+        const doadores = doadoresData || [];
+        const ongs = ongsData || [];
+        
+        const todosUsuarios = [
+            ...doadores.map(d => ({ ...d, tipo: 'doador' })),
+            ...ongs.map(o => ({ ...o, tipo: 'ong' }))
+        ];
+        
+        const consentidos = todosUsuarios.filter(u => u.consentimento_lgpd === true);
+        
+        if (consentidos.length === 0) {
+            showToast('Nenhum consentimento registrado para gerar relatório', 'warning');
+            return;
+        }
+        
+        // Gerar relatório em texto
+        let relatorio = `
+============================================================
+RELATÓRIO DE CONSENTIMENTO LGPD - Doa+
+============================================================
+Data de geração: ${new Date().toLocaleString('pt-BR')}
+
+RESUMO:
+Total de Usuários: ${todosUsuarios.length}
+Com Consentimento: ${consentidos.length}
+Sem Consentimento: ${todosUsuarios.length - consentidos.length}
+
+LISTA DE USUÁRIOS QUE CONCORDARAM:
+------------------------------------------------------------
+ID | Nome | Email | Tipo | Data/Hora | IP | Versão
+------------------------------------------------------------
+`;
+        
+        consentidos.forEach((u, index) => {
+            const data = u.data_consentimento ? new Date(u.data_consentimento).toLocaleString('pt-BR') : 'N/A';
+            relatorio += `${index + 1} | ${u.nome || 'N/A'} | ${u.email || 'N/A'} | ${u.tipo || 'N/A'} | ${data} | ${u.ip_consentimento || 'N/A'} | ${u.versao_termos || 'v1.0'}\n`;
+        });
+        
+        relatorio += `
+============================================================
+FIM DO RELATÓRIO
+============================================================
+`;
+        
+        // Criar arquivo para download
+        const blob = new Blob([relatorio], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio_consentimento_${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('✅ Relatório gerado e baixado com sucesso!', 'success');
+        
+    } catch (error) {
+        showToast('Erro ao gerar relatório: ' + error.message, 'error');
+    }
+}
+
+function exportarConsentimentosCSV() {
+    try {
+        const doadores = doadoresData || [];
+        const ongs = ongsData || [];
+        
+        const todosUsuarios = [
+            ...doadores.map(d => ({ ...d, tipo: 'doador' })),
+            ...ongs.map(o => ({ ...o, tipo: 'ong' }))
+        ];
+        
+        const consentidos = todosUsuarios.filter(u => u.consentimento_lgpd === true);
+        
+        if (consentidos.length === 0) {
+            showToast('Nenhum dado para exportar', 'warning');
+            return;
+        }
+        
+        // Cabeçalho CSV
+        let csv = 'Nome,Email,Tipo,Data/Hora Consentimento,IP,Versão Termos\n';
+        
+        consentidos.forEach(u => {
+            const data = u.data_consentimento ? new Date(u.data_consentimento).toLocaleString('pt-BR') : 'N/A';
+            csv += `"${u.nome || 'N/A'}","${u.email || 'N/A'}","${u.tipo || 'N/A'}","${data}","${u.ip_consentimento || 'N/A'}","${u.versao_termos || 'v1.0'}"\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `consentimentos_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('✅ CSV exportado com sucesso!', 'success');
+        
+    } catch (error) {
+        showToast('Erro ao exportar CSV: ' + error.message, 'error');
+    }
+}
+
+function filtrarConsentimentos() {
+    const termo = document.getElementById('buscar-consentimento')?.value?.toLowerCase() || '';
+    const rows = document.querySelectorAll('#consentimentos-tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(termo) ? '' : 'none';
+    });
+}
+
 // ==================== UTILITÁRIOS ====================
 
 function exportarOngs() { 
@@ -1047,7 +1218,11 @@ window.carregarSuportesAdmin = carregarSuportesAdmin;
 window.carregarComunicacoesAdmin = carregarComunicacoesAdmin;
 window.carregarSolicitacoesExclusao = carregarSolicitacoesExclusao;
 window.carregarLogs = carregarLogs;
+window.carregarDadosConsentimento = carregarDadosConsentimento;
 window.gerarRelatorioFinanceiro = gerarRelatorioFinanceiro;
+window.gerarRelatorioConsentimento = gerarRelatorioConsentimento;
+window.exportarConsentimentosCSV = exportarConsentimentosCSV;
+window.filtrarConsentimentos = filtrarConsentimentos;
 window.abrirModalComunicacao = abrirModalComunicacao;
 window.abrirModalAdvertencia = abrirModalAdvertencia;
 window.abrirModalSaquePlataforma = abrirModalSaquePlataforma;
@@ -1074,8 +1249,4 @@ window.filtrarExclusoes = filtrarExclusoes;
 window.exportarOngs = exportarOngs;
 window.exportarDoadores = exportarDoadores;
 window.exportarLogs = exportarLogs;
-window.abrirResponderFeedback = abrirResponderFeedback;
-window.abrirResponderSuporte = abrirResponderSuporte;
-window.toggleDestinatarioEspecifico = toggleDestinatarioEspecifico;
-window.fecharModal = fecharModal;
-window.abrirModal = abrirModal;
+window.abrirResponderFeedback = abrir
