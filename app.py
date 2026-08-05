@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, jsonify, send_from_directory, request, session, make_response, redirect, send_file
 from flask_cors import CORS
 import os
@@ -88,7 +89,7 @@ app.config['GOOGLE_MAPS_API_KEY'] = config.GOOGLE_MAPS_API_KEY
 configurar_sessao_segura(app)
 
 # Configurar CORS
-CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000'])
+CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000', 'https://doa-b988.onrender.com'])
 
 # ==================== BANCO DE DADOS SIMULADO ====================
 ongs_db = {}
@@ -158,7 +159,8 @@ next_relatorio_anual_id = 1
 # ==================== UTILS ====================
 
 def is_development():
-    return os.getenv('FLASK_ENV', 'development') == 'development' or app.config['DEBUG']
+    """Verifica se está em modo desenvolvimento"""
+    return os.getenv('FLASK_ENV', 'development') == 'development'
 
 def gerar_token(usuario_id, email, tipo):
     payload = {
@@ -333,6 +335,146 @@ def obter_dados_carteira_plataforma():
         'data_atualizacao': carteira_plataforma['data_atualizacao'].isoformat()
     }
 
+# =====================================================================
+# DADOS DE TESTE (APENAS DESENVOLVIMENTO)
+# =====================================================================
+
+def init_test_data():
+    """Carrega dados de teste APENAS em desenvolvimento"""
+    
+    # Só carrega dados de teste se estiver em desenvolvimento
+    if not is_development():
+        print("🚀 Modo PRODUÇÃO - Nenhum dado de teste será carregado")
+        return
+    
+    print("🧪 Modo DESENVOLVIMENTO - Carregando dados de teste...")
+    
+    global next_ong_id, next_doador_id, next_necessidade_id, next_evento_id, next_parceria_id
+    
+    # ============================================================
+    # ONG DE TESTE
+    # ============================================================
+    if not ongs_db:
+        ong_id = next_ong_id
+        ongs_db[ong_id] = {
+            'id': ong_id,
+            'nome': 'ONG Solidária Brasil',
+            'cnpj': '12.345.678/0001-90',
+            'email': 'ong@solidaria.org',
+            'senha': hash_senha('Ong@123456'),
+            'telefone': '(11) 99999-9999',
+            'endereco': 'Rua da Solidariedade, 100',
+            'cidade': 'São Paulo',
+            'uf': 'SP',
+            'descricao': 'ONG dedicada a ajudar pessoas em situação de vulnerabilidade social.',
+            'logo_url': None,
+            'status': 'ativo',
+            'data_cadastro': datetime.now(),
+            'total_advertencias': 0,
+            'latitude': -23.550520,
+            'longitude': -46.633308,
+            'endereco_completo': 'Rua da Solidariedade, 100 - São Paulo, SP',
+            'media_avaliacao': 0,
+            'total_avaliacoes': 0,
+            'conta_bancaria': criptografar('Banco do Brasil - Ag: 1234 - CC: 56789-0'),
+            'email_confirmado': True,
+            'consentimento_lgpd': True,
+            'data_consentimento': datetime.now().isoformat(),
+            'ip_consentimento': '127.0.0.1',
+            'user_agent_consentimento': 'Test',
+            'versao_termos': 'v1.0'
+        }
+        
+        carteiras_db[ong_id] = {
+            'ong_id': ong_id,
+            'saldo': 250.50,
+            'total_recebido': 1250.50,
+            'total_sacado': 1000.00,
+            'data_criacao': datetime.now() - timedelta(days=30),
+            'data_atualizacao': datetime.now()
+        }
+        next_ong_id += 1
+        
+        # Necessidade de teste
+        necessidades_db[next_necessidade_id] = {
+            'id': next_necessidade_id,
+            'ong_id': ong_id,
+            'titulo': 'Arrecadação de Alimentos',
+            'descricao': 'Precisamos de alimentos não perecíveis para distribuir para 100 famílias.',
+            'categoria': 'alimentos',
+            'quantidade_necessaria': 500,
+            'quantidade_recebida': 150,
+            'urgencia': 'alta',
+            'status': 'aberta',
+            'data_criacao': datetime.now()
+        }
+        next_necessidade_id += 1
+        
+        # Evento de teste
+        ong_eventos_db[next_evento_id] = {
+            'id': next_evento_id,
+            'ong_id': ong_id,
+            'titulo': 'Dia da Solidariedade',
+            'descricao': 'Venha participar do nosso evento de arrecadação de alimentos e roupas.',
+            'data_evento': datetime.now() + timedelta(days=15),
+            'local_evento': 'Parque da Cidade',
+            'cidade': 'São Paulo',
+            'uf': 'SP',
+            'status': 'ativo'
+        }
+        next_evento_id += 1
+        
+        # Parceria de teste
+        ong_parcerias_db[next_parceria_id] = {
+            'id': next_parceria_id,
+            'ong_id': ong_id,
+            'parceiro_nome': 'Mercado Popular',
+            'tipo_parceria': 'empresa',
+            'descricao': 'Parceiro na arrecadação de alimentos mensalmente.',
+            'logo_url': None,
+            'website_url': 'https://mercadopopular.com.br',
+            'status': 'ativa'
+        }
+        next_parceria_id += 1
+    
+    # ============================================================
+    # DOADOR DE TESTE
+    # ============================================================
+    if not doadores_db:
+        doador_id = next_doador_id
+        doadores_db[doador_id] = {
+            'id': doador_id,
+            'nome': 'João Silva',
+            'email': 'joao@email.com',
+            'senha': hash_senha('Doador@123456'),
+            'telefone': '(11) 98888-7777',
+            'cpf': '123.456.789-00',
+            'status': 'ativo',
+            'data_cadastro': datetime.now(),
+            'total_doacoes': 0,
+            'pontuacao': 0,
+            'conquistas': [],
+            'email_confirmado': True,
+            'consentimento_lgpd': True,
+            'data_consentimento': datetime.now().isoformat(),
+            'ip_consentimento': '127.0.0.1',
+            'user_agent_consentimento': 'Test',
+            'versao_termos': 'v1.0',
+            'endereco': 'Rua das Flores, 123',
+            'cidade': 'São Paulo',
+            'uf': 'SP',
+            'total_itens': 0,
+            '2fa_secret': None,
+            '2fa_ativado': False,
+            'data_atualizacao': datetime.now()
+        }
+        next_doador_id += 1
+    
+    print("✅ Dados de teste carregados com sucesso!")
+    print(f"   🏢 ONG: ong@solidaria.org / Ong@123456")
+    print(f"   👤 Doador: joao@email.com / Doador@123456")
+    print(f"   👑 Admin: admin@doamais.org / admin123 (fallback)")
+
 # ==================== ROTAS DE PÁGINAS HTML ====================
 
 @app.route('/')
@@ -498,15 +640,38 @@ def login():
     usuario = None
     user_id = None
     
+    # ============================================================
+    # ADMIN - Usando variáveis de ambiente (em produção)
+    # ============================================================
     if tipo == 'admin':
-        if email == 'admin@doamais.org' and senha == 'admin123':
-            usuario = {
-                'id': 999,
-                'nome': 'Administrador',
-                'email': email
-            }
-            user_id = 999
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
+        admin_password_hash = os.getenv('ADMIN_PASSWORD_HASH', '')
+        
+        if email == admin_email:
+            # Verifica usando bcrypt (se hash estiver configurado)
+            if admin_password_hash and verificar_senha(senha, admin_password_hash):
+                usuario = {
+                    'id': 999,
+                    'nome': 'Administrador',
+                    'email': email
+                }
+                user_id = 999
+                registrar_log('Admin login bem-sucedido (hash)', usuario=email, ip=ip)
+            # Fallback para desenvolvimento (sem hash)
+            elif is_development() and not admin_password_hash and senha == 'admin123':
+                usuario = {
+                    'id': 999,
+                    'nome': 'Administrador (dev)',
+                    'email': email
+                }
+                user_id = 999
+                registrar_log('Admin login usando fallback (sem hash)', usuario=email, ip=ip, gravidade='media')
+            else:
+                registrar_log('Admin login falhou - senha incorreta', usuario=email, ip=ip, gravidade='media')
     
+    # ============================================================
+    # ONG - Busca no banco de dados
+    # ============================================================
     elif tipo == 'ong':
         for uid, ong in ongs_db.items():
             if ong.get('email') == email:
@@ -515,6 +680,9 @@ def login():
                     user_id = uid
                 break
     
+    # ============================================================
+    # DOADOR - Busca no banco de dados
+    # ============================================================
     elif tipo == 'doador':
         for uid, doador in doadores_db.items():
             if doador.get('email') == email:
@@ -525,7 +693,8 @@ def login():
     
     if not usuario:
         registrar_tentativa_login(ip, sucesso=False)
-        registrar_log(f'Tentativa de login falhou: {email}', usuario=email, ip=ip, gravidade='media')
+        registrar_log(f'Tentativa de login falhou: {email} ({tipo})', 
+                     usuario=email, ip=ip, gravidade='media')
         return jsonify({'error': 'Email ou senha inválidos'}), 401
     
     if tipo == 'ong' and usuario.get('status') == 'bloqueado':
@@ -637,7 +806,7 @@ def cadastro_ong():
     enviar_email(
         email,
         'Bem-vindo à Doa+! Confirme seu cadastro',
-        f'Olá {nome},\n\nSeu cadastro na plataforma Doa+ foi realizado com sucesso!\n\nAcesse: http://localhost:5000/login.html\n\nEquipe Doa+'
+        f'Olá {nome},\n\nSeu cadastro na plataforma Doa+ foi realizado com sucesso!\n\nAcesse: https://doa-b988.onrender.com/login.html\n\nEquipe Doa+'
     )
     
     return jsonify({'message': 'ONG cadastrada com sucesso!', 'ong_id': ong_id}), 201
@@ -718,7 +887,7 @@ def cadastro_doador():
     enviar_email(
         email,
         'Bem-vindo à Doa+! Confirme seu cadastro',
-        f'Olá {nome},\n\nSeu cadastro na plataforma Doa+ foi realizado com sucesso!\n\nAcesse: http://localhost:5000/login.html\n\nEquipe Doa+'
+        f'Olá {nome},\n\nSeu cadastro na plataforma Doa+ foi realizado com sucesso!\n\nAcesse: https://doa-b988.onrender.com/login.html\n\nEquipe Doa+'
     )
     
     return jsonify({'message': 'Doador cadastrado com sucesso!', 'doador_id': doador_id}), 201
@@ -3981,174 +4150,87 @@ def download_relatorio_anual(relatorio_id):
         'relatorio_id': relatorio_id
     }), 200
 
-# ==================== INICIALIZAR DADOS DE TESTE ====================
+# ==================== RELATÓRIO DE CONSENTIMENTO LGPD ====================
 
-def init_test_data():
-    global next_ong_id, next_doador_id, next_necessidade_id, next_evento_id, next_parceria_id, next_feedback_id, next_suporte_id, next_comunicacao_id, next_carteira_id, next_meta_id, next_vaga_id, next_doacao_financeira_id
+@app.route('/api/admin/consentimento/relatorio', methods=['GET'])
+@token_required
+def relatorio_consentimento():
+    if request.user_payload.get('tipo') != 'admin':
+        return jsonify({'error': 'Acesso restrito a administradores'}), 403
     
-    if not ongs_db:
-        ong_id = next_ong_id
-        ongs_db[ong_id] = {
-            'id': ong_id,
-            'nome': 'ONG Solidária Brasil',
-            'cnpj': '12.345.678/0001-90',
-            'email': 'ong@solidaria.org',
-            'senha': hash_senha('Ong@123456'),
-            'telefone': '(11) 99999-9999',
-            'endereco': 'Rua da Solidariedade, 100',
-            'cidade': 'São Paulo',
-            'uf': 'SP',
-            'descricao': 'ONG dedicada a ajudar pessoas em situação de vulnerabilidade social.',
-            'logo_url': None,
-            'status': 'ativo',
-            'data_cadastro': datetime.now(),
-            'total_advertencias': 0,
-            'latitude': -23.550520,
-            'longitude': -46.633308,
-            'endereco_completo': 'Rua da Solidariedade, 100 - São Paulo, SP',
-            'media_avaliacao': 0,
-            'total_avaliacoes': 0,
-            'conta_bancaria': criptografar('Banco do Brasil - Ag: 1234 - CC: 56789-0'),
-            'email_confirmado': True,
-            'consentimento_lgpd': True,
-            'data_consentimento': datetime.now().isoformat(),
-            'ip_consentimento': '127.0.0.1',
-            'user_agent_consentimento': 'Test',
-            'versao_termos': 'v1.0'
-        }
-        
-        carteiras_db[ong_id] = {
-            'ong_id': ong_id,
-            'saldo': 250.50,
-            'total_recebido': 1250.50,
-            'total_sacado': 1000.00,
-            'data_criacao': datetime.now() - timedelta(days=30),
-            'data_atualizacao': datetime.now()
-        }
-        next_carteira_id += 1
-        next_ong_id += 1
-        
-        necessidades_db[next_necessidade_id] = {
-            'id': next_necessidade_id,
-            'ong_id': ong_id,
-            'titulo': 'Arrecadação de Alimentos',
-            'descricao': 'Precisamos de alimentos não perecíveis para distribuir para 100 famílias.',
-            'categoria': 'alimentos',
-            'quantidade_necessaria': 500,
-            'quantidade_recebida': 150,
-            'urgencia': 'alta',
-            'status': 'aberta',
-            'data_criacao': datetime.now()
-        }
-        next_necessidade_id += 1
-        
-        ong_eventos_db[next_evento_id] = {
-            'id': next_evento_id,
-            'ong_id': ong_id,
-            'titulo': 'Dia da Solidariedade',
-            'descricao': 'Venha participar do nosso evento de arrecadação de alimentos e roupas.',
-            'data_evento': datetime.now() + timedelta(days=15),
-            'local_evento': 'Parque da Cidade',
-            'cidade': 'São Paulo',
-            'uf': 'SP',
-            'status': 'ativo'
-        }
-        next_evento_id += 1
-        
-        ong_parcerias_db[next_parceria_id] = {
-            'id': next_parceria_id,
-            'ong_id': ong_id,
-            'parceiro_nome': 'Mercado Popular',
-            'tipo_parceria': 'empresa',
-            'descricao': 'Parceiro na arrecadação de alimentos mensalmente.',
-            'logo_url': None,
-            'website_url': 'https://mercadopopular.com.br',
-            'status': 'ativa'
-        }
-        next_parceria_id += 1
+    todos_usuarios = []
     
-    if not doadores_db:
-        doador_id = next_doador_id
-        doadores_db[doador_id] = {
-            'id': doador_id,
-            'nome': 'João Silva',
-            'email': 'joao@email.com',
-            'senha': hash_senha('Doador@123456'),
-            'telefone': '(11) 98888-7777',
-            'cpf': '123.456.789-00',
-            'status': 'ativo',
-            'data_cadastro': datetime.now(),
-            'total_doacoes': 0,
-            'pontuacao': 0,
-            'conquistas': [],
-            'email_confirmado': True,
-            'consentimento_lgpd': True,
-            'data_consentimento': datetime.now().isoformat(),
-            'ip_consentimento': '127.0.0.1',
-            'user_agent_consentimento': 'Test',
-            'versao_termos': 'v1.0',
-            'endereco': 'Rua das Flores, 123',
-            'cidade': 'São Paulo',
-            'uf': 'SP',
-            'total_itens': 0,
-            '2fa_secret': None,
-            '2fa_ativado': False,
-            'data_atualizacao': datetime.now()
-        }
-        next_doador_id += 1
+    for ong in ongs_db.values():
+        todos_usuarios.append({
+            'id': ong.get('id'),
+            'nome': ong.get('nome'),
+            'email': ong.get('email'),
+            'tipo': 'ong',
+            'consentimento_lgpd': ong.get('consentimento_lgpd', False),
+            'data_consentimento': ong.get('data_consentimento'),
+            'ip_consentimento': ong.get('ip_consentimento'),
+            'versao_termos': ong.get('versao_termos', 'v1.0')
+        })
+    
+    for doador in doadores_db.values():
+        todos_usuarios.append({
+            'id': doador.get('id'),
+            'nome': doador.get('nome'),
+            'email': doador.get('email'),
+            'tipo': 'doador',
+            'consentimento_lgpd': doador.get('consentimento_lgpd', False),
+            'data_consentimento': doador.get('data_consentimento'),
+            'ip_consentimento': doador.get('ip_consentimento'),
+            'versao_termos': doador.get('versao_termos', 'v1.0')
+        })
+    
+    consentidos = [u for u in todos_usuarios if u.get('consentimento_lgpd')]
+    nao_consentidos = [u for u in todos_usuarios if not u.get('consentimento_lgpd')]
+    
+    return jsonify({
+        'total_usuarios': len(todos_usuarios),
+        'consentidos': len(consentidos),
+        'nao_consentidos': len(nao_consentidos),
+        'lista_consentidos': consentidos,
+        'ultima_atualizacao': datetime.now().isoformat()
+    }), 200
 
-init_test_data()
-
-# ==================== EXECUTAR APP ====================
+# ==================== INICIALIZAÇÃO ====================
 
 if __name__ == '__main__':
+    # Carregar dados de teste APENAS em desenvolvimento
+    if is_development():
+        init_test_data()
+    else:
+        print("🚀 Modo PRODUÇÃO - Banco de dados vazio aguardando cadastros reais")
+    
+    # Pega a porta do ambiente (Render) ou usa 5000 como fallback
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Debug apenas em desenvolvimento
+    debug_mode = is_development()
+    
     print("\n" + "="*60)
     print("🚀 Servidor Doa+ iniciado!")
     print("="*60)
     print(f"📁 Servindo arquivos da pasta: {TEMPLATES_DIR}")
-    print(f"📍 Acesse: http://localhost:{app.config['PORT']}")
-    print("\n📝 Credenciais de teste:")
-    print("  🏢 ONG: ong@solidaria.org / Ong@123456")
-    print("  👤 Doador: joao@email.com / Doador@123456")
-    print("  👑 Admin: admin@doamais.org / admin123")
-    print("\n📋 FUNCIONALIDADES IMPLEMENTADAS:")
-    print("  ⭐ Avaliação de ONGs (1-5 estrelas)")
-    print("  📊 Histórico de Doações")
-    print("  🔍 Busca Avançada por texto")
-    print("  🏆 Ranking de Doadores")
-    print("  📧 Notificações por Email")
-    print("  🎯 Sistema de Metas e Campanhas")
-    print("  💬 Chat em Tempo Real")
-    print("  📈 Relatórios para Admin")
-    print("  🤝 Sistema de Voluntariado")
-    print("  💰 Doações Financeiras")
-    print("  💳 Carteira Digital para ONGs")
-    print("  💰 Carteira da Plataforma (Taxas)")
-    print("  📝 Feedback e Suporte")
-    print("  📨 Comunicação em Massa")
-    print("  📅 Eventos")
-    print("  🤝 Parcerias")
-    print("  🔐 reCAPTCHA (com fallback para desenvolvimento)")
-    print("  🔒 Proteção CSRF, SQL Injection, XSS")
-    print("  📋 Logs de Auditoria")
-    print("  🛡️ Rate Limiting")
-    print("  🔑 Hash de senhas com bcrypt")
-    print("  📜 Política de Privacidade (LGPD)")
-    print("  📜 Termos de Uso")
-    print("  🔐 Recuperação de Senha (3 etapas)")
-    print("  👤 Perfil do Doador com Conquistas")
-    print("  📊 Relatório Anual de Doações (PDF)")
-    print("  🔔 Preferências de Notificação (Email/Push)")
-    print("  🗑️ Solicitação de Exclusão de Conta (LGPD)")
-    print("  🔐 Autenticação de Dois Fatores (2FA)")
-    print("  💳 MERCADO PAGO - DOAÇÕES ONLINE")
-    print("  📋 RELATÓRIO DE CONSENTIMENTO LGPD")
-    print("="*60)
-    print("\n⚠️  Use http://localhost:5000 (não https)")
+    print(f"📍 Acesse: http://localhost:{port}")
+    print(f"🔧 Modo: {'DESENVOLVIMENTO' if debug_mode else 'PRODUÇÃO'}")
+    
+    if debug_mode:
+        print("\n📝 Credenciais de teste (APENAS DESENVOLVIMENTO):")
+        print("  🏢 ONG: ong@solidaria.org / Ong@123456")
+        print("  👤 Doador: joao@email.com / Doador@123456")
+        print("  👑 Admin: admin@doamais.org / admin123")
+    else:
+        print("\n📝 Modo PRODUÇÃO - Sem dados de teste")
+        print("   Os usuários devem se cadastrar normalmente")
+        print(f"   👑 Admin: {os.getenv('ADMIN_EMAIL', 'admin@doamais.org')} (com hash configurado)")
+    
     print("="*60 + "\n")
     
     app.run(
         host='0.0.0.0',
-        port=5000,
-        debug=True
+        port=port,
+        debug=debug_mode
     )
