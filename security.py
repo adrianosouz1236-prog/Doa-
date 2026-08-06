@@ -24,11 +24,9 @@ def obter_chave_fernet():
     """Obtém ou gera uma chave Fernet válida"""
     key = os.getenv('FERNET_KEY', '')
     
-    # Se a chave estiver vazia, gera uma nova
     if not key:
         key = Fernet.generate_key().decode()
         print(f"⚠️ GERANDO NOVA CHAVE FERNET: {key}")
-        # Salva no arquivo .env
         try:
             with open('.env', 'a') as f:
                 f.write(f"\nFERNET_KEY={key}\n")
@@ -37,22 +35,16 @@ def obter_chave_fernet():
             print(f"⚠️ Não foi possível salvar a chave no .env: {e}")
         return key
     
-    # Verifica se a chave é válida
     try:
-        # Tenta decodificar a chave para validar
         Fernet(key.encode())
         return key
     except Exception:
-        # Chave inválida - gera uma nova
         print(f"⚠️ Chave Fernet inválida: {key[:10]}...")
         new_key = Fernet.generate_key().decode()
         print(f"⚠️ GERANDO NOVA CHAVE FERNET: {new_key}")
-        
-        # Tenta atualizar o .env
         try:
             with open('.env', 'r') as f:
                 lines = f.readlines()
-            
             with open('.env', 'w') as f:
                 key_updated = False
                 for line in lines:
@@ -66,7 +58,6 @@ def obter_chave_fernet():
             print("✅ Chave Fernet atualizada no .env")
         except Exception as e:
             print(f"⚠️ Não foi possível atualizar a chave no .env: {e}")
-        
         return new_key
 
 FERNET_KEY = obter_chave_fernet()
@@ -85,6 +76,12 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger('security')
+
+# ==================== UTILS ====================
+
+def is_development():
+    """Verifica se está em modo desenvolvimento"""
+    return os.getenv('FLASK_ENV', 'development') == 'development'
 
 # ==================== SANITIZAÇÃO ====================
 
@@ -248,19 +245,29 @@ def verificar_csrf_token(token):
 def verificar_recaptcha(token):
     """
     Verifica o token do reCAPTCHA com o Google
-    Em desenvolvimento, sempre retorna True
-    Em produção, verifica com o Google
+    
+    - Em desenvolvimento: SEMPRE retorna True (não verifica)
+    - Em produção: Verifica com o Google
     """
-    if os.getenv('FLASK_ENV', 'development') == 'development':
+    # ============================================================
+    # DESENVOLVIMENTO: Ignora verificação do reCAPTCHA
+    # ============================================================
+    if is_development():
+        logger.info("🔓 Modo desenvolvimento - reCAPTCHA ignorado")
         return True
     
+    # ============================================================
+    # PRODUÇÃO: Verifica com o Google
+    # ============================================================
     if not token:
+        logger.warning("❌ Token reCAPTCHA não fornecido em produção")
         return False
     
     secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
+    
     if not secret_key:
-        logger.warning("RECAPTCHA_SECRET_KEY não configurada - pulando verificação")
-        return True
+        logger.error("❌ RECAPTCHA_SECRET_KEY não configurada!")
+        return False
     
     try:
         response = requests.post(
@@ -272,9 +279,19 @@ def verificar_recaptcha(token):
             timeout=5
         )
         data = response.json()
-        return data.get('success', False) and data.get('score', 0) > 0.5
+        
+        success = data.get('success', False)
+        score = data.get('score', 0)
+        
+        if success and score >= 0.5:
+            logger.info(f"✅ reCAPTCHA verificado com sucesso (score: {score})")
+            return True
+        else:
+            logger.warning(f"❌ reCAPTCHA falhou (score: {score}, success: {success})")
+            return False
+            
     except Exception as e:
-        logger.error(f"Erro na verificação reCAPTCHA: {e}")
+        logger.error(f"❌ Erro na verificação reCAPTCHA: {e}")
         return False
 
 # ==================== DECORATORS ====================
@@ -305,19 +322,24 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # ============================================================
+    # CSP CORRIGIDA - Permite reCAPTCHA e Font Awesome
+    # ============================================================
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https://via.placeholder.com; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com https://maps.googleapis.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: https://via.placeholder.com https://www.google.com; "
         "connect-src 'self' https://maps.googleapis.com; "
-        "font-src 'self' data:; "
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "frame-src 'self' https://www.google.com; "
         "object-src 'none'; "
         "base-uri 'self'; "
         "form-action 'self'; "
         "upgrade-insecure-requests"
     )
+    
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(self), microphone=(), camera=()'
     
@@ -379,5 +401,6 @@ __all__ = [
     'verificar_recaptcha',
     'registrar_evento_seguranca',
     'configurar_sessao_segura',
+    'is_development',
     'logger'
 ]

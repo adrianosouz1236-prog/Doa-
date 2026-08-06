@@ -21,7 +21,8 @@ from security import (
     verificar_tentativas_login, registrar_tentativa_login,
     gerar_csrf_token, verificar_csrf_token, add_security_headers,
     registrar_evento_seguranca, configurar_sessao_segura, logger,
-    gerar_2fa_secret, gerar_qr_code, verificar_2fa
+    gerar_2fa_secret, gerar_qr_code, verificar_2fa,
+    is_development
 )
 
 # =====================================================================
@@ -157,10 +158,6 @@ next_solicitacao_id = 1
 next_relatorio_anual_id = 1
 
 # ==================== UTILS ====================
-
-def is_development():
-    """Verifica se está em modo desenvolvimento"""
-    return os.getenv('FLASK_ENV', 'development') == 'development'
 
 def gerar_token(usuario_id, email, tipo):
     payload = {
@@ -641,55 +638,160 @@ def login():
     user_id = None
     
     # ============================================================
-    # ADMIN - Usando variáveis de ambiente (em produção)
+    # ADMIN - Usando variáveis de ambiente
     # ============================================================
     if tipo == 'admin':
         admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
         admin_password_hash = os.getenv('ADMIN_PASSWORD_HASH', '')
         
-        if email == admin_email:
-            # Verifica usando bcrypt (se hash estiver configurado)
-            if admin_password_hash and verificar_senha(senha, admin_password_hash):
+        if email == admin_email and admin_password_hash:
+            if verificar_senha(senha, admin_password_hash):
                 usuario = {
                     'id': 999,
                     'nome': 'Administrador',
                     'email': email
                 }
                 user_id = 999
-                registrar_log('Admin login bem-sucedido (hash)', usuario=email, ip=ip)
-            # Fallback para desenvolvimento (sem hash)
-            elif is_development() and not admin_password_hash and senha == 'admin123':
-                usuario = {
-                    'id': 999,
-                    'nome': 'Administrador (dev)',
-                    'email': email
-                }
-                user_id = 999
-                registrar_log('Admin login usando fallback (sem hash)', usuario=email, ip=ip, gravidade='media')
+                registrar_log('Admin login bem-sucedido', usuario=email, ip=ip)
             else:
                 registrar_log('Admin login falhou - senha incorreta', usuario=email, ip=ip, gravidade='media')
     
     # ============================================================
-    # ONG - Busca no banco de dados
+    # ONG - Busca no banco de dados + Variáveis de ambiente
     # ============================================================
     elif tipo == 'ong':
+        # Primeiro tenta encontrar nos dados do banco (ONGs reais)
         for uid, ong in ongs_db.items():
             if ong.get('email') == email:
                 if verificar_senha(senha, ong.get('senha')):
                     usuario = ong
                     user_id = uid
                 break
+        
+        # Se não encontrou, verifica se é a ONG de teste via variável de ambiente
+        if not usuario:
+            ong_test_email = os.getenv('ONG_EMAIL', 'ong@solidaria.org')
+            ong_test_hash = os.getenv('ONG_PASSWORD_HASH', '')
+            
+            if email == ong_test_email and ong_test_hash:
+                if verificar_senha(senha, ong_test_hash):
+                    # Verifica se a ONG já existe no banco, se não, cria
+                    ong_id = None
+                    for uid, ong in ongs_db.items():
+                        if ong.get('email') == email:
+                            ong_id = uid
+                            break
+                    
+                    if not ong_id:
+                        # Cria a ONG de teste se não existir
+                        global next_ong_id
+                        ong_id = next_ong_id
+                        ongs_db[ong_id] = {
+                            'id': ong_id,
+                            'nome': 'ONG Solidária Brasil (Teste)',
+                            'cnpj': '12.345.678/0001-90',
+                            'email': email,
+                            'senha': ong_test_hash,
+                            'telefone': '(11) 99999-9999',
+                            'endereco': 'Rua da Solidariedade, 100',
+                            'cidade': 'São Paulo',
+                            'uf': 'SP',
+                            'descricao': 'ONG de teste para verificação do sistema.',
+                            'logo_url': None,
+                            'status': 'ativo',
+                            'data_cadastro': datetime.now(),
+                            'total_advertencias': 0,
+                            'latitude': -23.550520,
+                            'longitude': -46.633308,
+                            'endereco_completo': 'Rua da Solidariedade, 100 - São Paulo, SP',
+                            'media_avaliacao': 0,
+                            'total_avaliacoes': 0,
+                            'conta_bancaria': None,
+                            'email_confirmado': True,
+                            'consentimento_lgpd': True,
+                            'data_consentimento': datetime.now().isoformat(),
+                            'ip_consentimento': ip,
+                            'user_agent_consentimento': request.headers.get('User-Agent', 'System'),
+                            'versao_termos': 'v1.0'
+                        }
+                        
+                        carteiras_db[ong_id] = {
+                            'ong_id': ong_id,
+                            'saldo': 0,
+                            'total_recebido': 0,
+                            'total_sacado': 0,
+                            'data_criacao': datetime.now(),
+                            'data_atualizacao': datetime.now()
+                        }
+                        next_ong_id += 1
+                        registrar_log('ONG de teste criada via variável de ambiente', usuario=email, ip=ip)
+                    
+                    usuario = ongs_db.get(ong_id)
+                    user_id = ong_id
+                    registrar_log('ONG de teste login bem-sucedido', usuario=email, ip=ip)
     
     # ============================================================
-    # DOADOR - Busca no banco de dados
+    # DOADOR - Busca no banco de dados + Variáveis de ambiente
     # ============================================================
     elif tipo == 'doador':
+        # Primeiro tenta encontrar nos dados do banco (Doadores reais)
         for uid, doador in doadores_db.items():
             if doador.get('email') == email:
                 if verificar_senha(senha, doador.get('senha')):
                     usuario = doador
                     user_id = uid
                 break
+        
+        # Se não encontrou, verifica se é o doador de teste via variável de ambiente
+        if not usuario:
+            doador_test_email = os.getenv('DOADOR_EMAIL', 'joao@email.com')
+            doador_test_hash = os.getenv('DOADOR_PASSWORD_HASH', '')
+            
+            if email == doador_test_email and doador_test_hash:
+                if verificar_senha(senha, doador_test_hash):
+                    # Verifica se o doador já existe no banco, se não, cria
+                    doador_id = None
+                    for uid, doador in doadores_db.items():
+                        if doador.get('email') == email:
+                            doador_id = uid
+                            break
+                    
+                    if not doador_id:
+                        # Cria o doador de teste se não existir
+                        global next_doador_id
+                        doador_id = next_doador_id
+                        doadores_db[doador_id] = {
+                            'id': doador_id,
+                            'nome': 'João Silva (Teste)',
+                            'email': email,
+                            'senha': doador_test_hash,
+                            'telefone': '(11) 98888-7777',
+                            'cpf': '123.456.789-00',
+                            'status': 'ativo',
+                            'data_cadastro': datetime.now(),
+                            'total_doacoes': 0,
+                            'pontuacao': 0,
+                            'conquistas': [],
+                            'email_confirmado': True,
+                            'consentimento_lgpd': True,
+                            'data_consentimento': datetime.now().isoformat(),
+                            'ip_consentimento': ip,
+                            'user_agent_consentimento': request.headers.get('User-Agent', 'System'),
+                            'versao_termos': 'v1.0',
+                            'endereco': 'Rua das Flores, 123',
+                            'cidade': 'São Paulo',
+                            'uf': 'SP',
+                            'total_itens': 0,
+                            '2fa_secret': None,
+                            '2fa_ativado': False,
+                            'data_atualizacao': datetime.now()
+                        }
+                        next_doador_id += 1
+                        registrar_log('Doador de teste criado via variável de ambiente', usuario=email, ip=ip)
+                    
+                    usuario = doadores_db.get(doador_id)
+                    user_id = doador_id
+                    registrar_log('Doador de teste login bem-sucedido', usuario=email, ip=ip)
     
     if not usuario:
         registrar_tentativa_login(ip, sucesso=False)
@@ -1053,10 +1155,18 @@ def get_csrf_token():
 
 @app.route('/api/config/recaptcha-key', methods=['GET'])
 def get_recaptcha_key():
+    """Retorna a chave do reCAPTCHA apenas em produção"""
     site_key = os.getenv('RECAPTCHA_SITE_KEY', '')
-    if is_development() and not site_key:
-        site_key = 'dev-key-not-required'
-    return jsonify({'site_key': site_key}), 200
+    
+    # Em desenvolvimento, retorna uma chave fake
+    if is_development():
+        return jsonify({'site_key': 'dev-key-not-required'}), 200
+    
+    # Em produção, retorna a chave real
+    if site_key:
+        return jsonify({'site_key': site_key}), 200
+    else:
+        return jsonify({'site_key': ''}), 200
 
 # ==================== ROTAS DE NECESSIDADES (PÚBLICAS) ====================
 
@@ -4214,7 +4324,7 @@ if __name__ == '__main__':
     print("🚀 Servidor Doa+ iniciado!")
     print("="*60)
     print(f"📁 Servindo arquivos da pasta: {TEMPLATES_DIR}")
-    print(f"📍 Acesse: http://localhost:{port}")
+    print(f"📍 Acesse: https://doa-b988.onrender.com")
     print(f"🔧 Modo: {'DESENVOLVIMENTO' if debug_mode else 'PRODUÇÃO'}")
     
     if debug_mode:
@@ -4226,6 +4336,8 @@ if __name__ == '__main__':
         print("\n📝 Modo PRODUÇÃO - Sem dados de teste")
         print("   Os usuários devem se cadastrar normalmente")
         print(f"   👑 Admin: {os.getenv('ADMIN_EMAIL', 'admin@doamais.org')} (com hash configurado)")
+        print(f"   🏢 ONG Teste: {os.getenv('ONG_EMAIL', 'ong@solidaria.org')} (com hash configurado)")
+        print(f"   👤 Doador Teste: {os.getenv('DOADOR_EMAIL', 'joao@email.com')} (com hash configurado)")
     
     print("="*60 + "\n")
     

@@ -21,14 +21,19 @@ async function obterCsrfToken() {
 
 function gerarRecaptchaToken() {
     return new Promise((resolve) => {
-        if (typeof grecaptcha !== 'undefined') {
+        const recaptchaInput = document.getElementById('recaptcha-token');
+        const siteKey = recaptchaInput ? recaptchaInput.dataset.siteKey : '';
+        
+        if (typeof grecaptcha !== 'undefined' && siteKey && siteKey !== 'dev-key-not-required') {
             grecaptcha.ready(function() {
-                grecaptcha.execute('SUA_CHAVE_SITE', {action: 'cadastro'}).then(function(token) {
+                grecaptcha.execute(siteKey, {action: 'cadastro'}).then(function(token) {
                     document.getElementById('recaptcha-token').value = token;
                     resolve(token);
                 });
             });
         } else {
+            // Modo desenvolvimento - não precisa de token
+            console.log('🔓 Modo desenvolvimento - reCAPTCHA ignorado');
             resolve('');
         }
     });
@@ -101,9 +106,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 email: document.getElementById('email').value,
                 senha: document.getElementById('senha').value,
                 telefone: document.getElementById('telefone').value,
-                // ============================================================
-                // CAMPO DE CONSENTIMENTO LGPD
-                // ============================================================
                 consentimento_lgpd: consentimento
             };
             
