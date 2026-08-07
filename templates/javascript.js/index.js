@@ -1,3 +1,4 @@
+// index.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -680,22 +681,17 @@ function handleSearch() {
     carregarNecessidades();
 }
 
-// ==================== FUNÇÃO DE SCROLL SUAVE ====================
-
 function scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         const navbarHeight = document.querySelector('.header')?.offsetHeight || 70;
         const sectionPosition = section.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
-        
         window.scrollTo({
             top: sectionPosition,
             behavior: 'smooth'
         });
     }
 }
-
-// ==================== FUNÇÃO PARA MARCAR LINK ATIVO ====================
 
 function updateActiveNavLink() {
     const sections = ['necessidades', 'ongs-section', 'voluntariado-section', 'ranking-section', 'eventos'];
@@ -720,8 +716,6 @@ function updateActiveNavLink() {
         }
     });
 }
-
-// ==================== CONFIGURAÇÃO DE EVENTOS ====================
 
 function configurarEventos() {
     const btnBuscar = document.getElementById('btn-buscar');
@@ -792,12 +786,11 @@ function configurarEventos() {
     }
 }
 
-// ==================== INICIALIZAÇÃO ====================
-
 document.addEventListener('DOMContentLoaded', async () => {
     await obterCsrfToken();
     console.log('🚀 Página carregada!');
     console.log('🔑 Token:', getToken() ? 'Presente' : 'Ausente');
+    
     auth.setup();
     carregarEstatisticas();
     carregarEventos();
@@ -807,15 +800,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     carregarOngs();
     configurarEventos();
     
-    // Atualizar link ativo ao rolar
     document.addEventListener('scroll', updateActiveNavLink);
     updateActiveNavLink();
     
     setInterval(verificarComunicacoesNaoLidas, 30000);
     setInterval(verificarChatNaoLidas, 30000);
 });
-
-// ==================== EXPORTAÇÃO DE FUNÇÕES GLOBAIS ====================
 
 window.carregarNecessidades = carregarNecessidades;
 window.carregarEventos = carregarEventos;
