@@ -2128,13 +2128,18 @@ def atualizar_carteira_ong(ong_id, valor, tipo):
     
     carteira['data_atualizacao'] = datetime.now()
 
-# ==================== ROTAS DE DOAÇÕES FINANCEIRAS ====================
+# ==================== ROTAS DE DOAÇÕES FINANCEIRAS (MERCADO PAGO) ====================
 
 @app.route('/api/doacoes/financeiras/criar', methods=['POST'])
 @token_required
 @security_required
 def criar_doacao_financeira():
-    global next_doacao_financeira_id, next_transacao_id, next_pagamento_id
+    """
+    Cria uma doação financeira via Mercado Pago
+    Redireciona o usuário para o checkout do Mercado Pago
+    """
+    if not MERCADO_PAGO_ATIVO:
+        return jsonify({'error': 'Mercado Pago não configurado. Configure MP_ACCESS_TOKEN no .env'}), 503
     
     if request.user_payload.get('tipo') != 'doador':
         return jsonify({'error': 'Apenas doadores podem fazer doações financeiras'}), 403
@@ -2158,11 +2163,36 @@ def criar_doacao_financeira():
     
     doador_id = request.user_payload.get('user_id')
     doador = doadores_db.get(doador_id)
+    if not doador:
+        return jsonify({'error': 'Doador não encontrado'}), 404
     
-    transacao_id = gerar_id_transacao()
+    # ============================================================
+    # CHAMA O MERCADO PAGO PARA CRIAR A PREFERÊNCIA
+    # ============================================================
+    resultado_mp = criar_preferencia_doacao(
+        doador_nome=doador.get('nome', 'Doador'),
+        doador_email=doador.get('email', ''),
+        doador_cpf=doador.get('cpf', ''),
+        ong_id=ong_id,
+        ong_nome=ong.get('nome'),
+        valor=valor,
+        mensagem=mensagem,
+        recorrente=recorrente
+    )
     
-    taxa_servico = valor * 0.0399 + 0.60
-    valor_liquido = valor - taxa_servico
+    if not resultado_mp.get('sucesso'):
+        return jsonify({
+            'error': f'Erro no Mercado Pago: {resultado_mp.get("error")}'
+        }), 400
+    
+    # ============================================================
+    # SALVA A DOAÇÃO COMO PENDENTE
+    # ============================================================
+    global next_doacao_financeira_id, next_transacao_id
+    
+    transacao_id = resultado_mp.get('external_reference')
+    taxa_servico = resultado_mp.get('taxa_servico', 0)
+    valor_liquido = resultado_mp.get('valor_liquido', valor)
     
     doacao_financeira = {
         'id': next_doacao_financeira_id,
@@ -2175,21 +2205,17 @@ def criar_doacao_financeira():
         'valor_liquido': valor_liquido,
         'taxa_servico': taxa_servico,
         'mensagem': mensagem,
-        'metodo_pagamento': metodo_pagamento,
+        'metodo_pagamento': 'mercadopago',
         'recorrente': recorrente,
         'status': 'pendente',
         'data_criacao': datetime.now(),
-        'data_confirmacao': None
+        'data_confirmacao': None,
+        'mp_preference_id': resultado_mp.get('id_preferencia'),
+        'mp_status': 'pending'
     }
     doacoes_financeiras_db[next_doacao_financeira_id] = doacao_financeira
     doacao_financeira_id = next_doacao_financeira_id
     next_doacao_financeira_id += 1
-    
-    registrar_taxa_plataforma(
-        valor_taxa=taxa_servico,
-        transacao_id=transacao_id,
-        descricao=f'Taxa de doação para {ong.get("nome")} - Doador: {doador.get("nome")}'
-    )
     
     transacao = {
         'id': next_transacao_id,
@@ -2199,67 +2225,36 @@ def criar_doacao_financeira():
         'valor': valor,
         'tipo': 'doacao_financeira',
         'status': 'pendente',
-        'metodo': metodo_pagamento,
+        'metodo': 'mercadopago',
         'data_criacao': datetime.now(),
-        'data_processamento': None
+        'data_processamento': None,
+        'mp_preference_id': resultado_mp.get('id_preferencia'),
+        'taxa_servico': taxa_servico,
+        'valor_liquido': valor_liquido
     }
     transacoes_db[next_transacao_id] = transacao
     transacao_id_db = next_transacao_id
     next_transacao_id += 1
     
-    resultado_pagamento = processar_pagamento_simulado(transacao_id, doacao_financeira_id)
+    registrar_log(
+        f'Doação via Mercado Pago criada: R$ {valor:.2f} para {ong.get("nome")}',
+        usuario=doador.get('email'),
+        gravidade='media'
+    )
     
-    if resultado_pagamento['success']:
-        doacao_financeira['status'] = 'confirmado'
-        doacao_financeira['data_confirmacao'] = datetime.now()
-        transacao['status'] = 'confirmado'
-        transacao['data_processamento'] = datetime.now()
-        
-        atualizar_carteira_ong(ong_id, valor_liquido, 'entrada')
-        
-        registrar_log(
-            f'Doação financeira de R$ {valor:.2f} para {ong.get("nome")}',
-            usuario=doador.get('email'),
-            gravidade='media'
-        )
-        
-        enviar_email(
-            ong.get('email'),
-            f'💰 Nova doação financeira de R$ {valor:.2f}',
-            f'Olá {ong.get("nome")},\n\nVocê recebeu uma doação financeira!\n\nValor: R$ {valor:.2f}\nTaxa: R$ {taxa_servico:.2f}\nValor líquido: R$ {valor_liquido:.2f}\nDoador: {doador.get("nome")}\nMensagem: {mensagem or "Sem mensagem"}'
-        )
-        
-        return jsonify({
-            'message': 'Doação financeira realizada com sucesso!',
-            'transacao_id': transacao_id,
-            'doacao_id': doacao_financeira_id,
-            'status': 'confirmado'
-        }), 201
-    else:
-        doacao_financeira['status'] = 'cancelado'
-        transacao['status'] = 'cancelado'
-        
-        return jsonify({
-            'error': 'Falha no processamento do pagamento',
-            'transacao_id': transacao_id
-        }), 400
-
-def processar_pagamento_simulado(transacao_id, doacao_financeira_id):
-    global next_pagamento_id
-    sucesso = random.random() < 0.95
-    
-    pagamento = {
-        'id': next_pagamento_id,
+    # ============================================================
+    # RETORNA A URL DE REDIRECIONAMENTO PARA O MERCADO PAGO
+    # ============================================================
+    return jsonify({
+        'success': True,
+        'message': 'Doação iniciada!',
+        'redirect_url': resultado_mp.get('url_doacao'),
+        'doacao_id': doacao_financeira_id,
         'transacao_id': transacao_id,
-        'doacao_financeira_id': doacao_financeira_id,
-        'status': 'aprovado' if sucesso else 'recusado',
-        'data_processamento': datetime.now(),
-        'codigo_autorizacao': secrets.token_hex(8).upper() if sucesso else None
-    }
-    pagamentos_db[next_pagamento_id] = pagamento
-    next_pagamento_id += 1
-    
-    return {'success': sucesso, 'pagamento_id': pagamento['id']}
+        'external_reference': transacao_id,
+        'valor': valor,
+        'ong_nome': ong.get('nome')
+    }), 201
 
 @app.route('/api/doacoes/financeiras/minhas', methods=['GET'])
 @token_required
@@ -2323,6 +2318,217 @@ def estatisticas_doacoes_financeiras():
         }), 200
     
     return jsonify({'error': 'Tipo de usuário inválido'}), 400
+
+# ==================== ROTAS DE PÁGINAS DE RETORNO MERCADO PAGO ====================
+
+@app.route('/doacao/success')
+def doacao_success():
+    """Página de sucesso após pagamento no Mercado Pago"""
+    payment_id = request.args.get('payment_id')
+    status = request.args.get('status')
+    external_reference = request.args.get('external_reference')
+    
+    print(f"✅ DOAÇÃO APROVADA - ref: {external_reference}, status: {status}")
+    
+    # Busca a doação no banco
+    doacao_info = None
+    for df in doacoes_financeiras_db.values():
+        if df.get('transacao_id') == external_reference:
+            doacao_info = df
+            break
+    
+    if external_reference and doacao_info:
+        # Atualiza o status da doação
+        for df_id, df in doacoes_financeiras_db.items():
+            if df.get('transacao_id') == external_reference:
+                df['status'] = 'confirmado'
+                df['data_confirmacao'] = datetime.now()
+                df['mp_status'] = 'approved'
+                df['mp_payment_id'] = payment_id
+                
+                # Registrar taxa da plataforma
+                valor_taxa = df.get('taxa_servico', 0)
+                if valor_taxa > 0:
+                    registrar_taxa_plataforma(
+                        valor_taxa=valor_taxa,
+                        transacao_id=external_reference,
+                        descricao=f'Taxa de doação via Mercado Pago para {df.get("ong_nome")}'
+                    )
+                
+                # Atualizar transação
+                for t in transacoes_db.values():
+                    if t.get('transacao_id') == external_reference:
+                        t['status'] = 'confirmado'
+                        t['data_processamento'] = datetime.now()
+                
+                # Atualizar carteira da ONG
+                ong_id = df.get('ong_id')
+                valor_liquido = df.get('valor_liquido', df.get('valor', 0))
+                if ong_id in carteiras_db:
+                    carteiras_db[ong_id]['saldo'] = carteiras_db[ong_id].get('saldo', 0) + valor_liquido
+                    carteiras_db[ong_id]['total_recebido'] = carteiras_db[ong_id].get('total_recebido', 0) + valor_liquido
+                
+                registrar_log(
+                    f'Doação via Mercado Pago confirmada: R$ {df.get("valor"):.2f} para {df.get("ong_nome")}',
+                    usuario=df.get('doador_email'),
+                    gravidade='alta'
+                )
+                break
+    
+    # Redireciona para a página de sucesso
+    params = {
+        'doacao_id': external_reference,
+        'status': 'approved',
+        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
+        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
+    }
+    query_string = '&'.join([f"{k}={v}" for k, v in params.items() if v])
+    return redirect(f'/doacao_aprovada.html?{query_string}')
+
+@app.route('/doacao/failure')
+def doacao_failure():
+    """Página de falha após pagamento no Mercado Pago"""
+    payment_id = request.args.get('payment_id')
+    status = request.args.get('status')
+    external_reference = request.args.get('external_reference')
+    
+    print(f"❌ DOAÇÃO RECUSADA - ref: {external_reference}, status: {status}")
+    
+    # Busca a doação no banco
+    doacao_info = None
+    for df in doacoes_financeiras_db.values():
+        if df.get('transacao_id') == external_reference:
+            doacao_info = df
+            break
+    
+    if external_reference and doacao_info:
+        for df_id, df in doacoes_financeiras_db.items():
+            if df.get('transacao_id') == external_reference:
+                df['status'] = 'cancelado'
+                df['mp_status'] = 'rejected'
+                df['mp_payment_id'] = payment_id
+                break
+    
+    params = {
+        'doacao_id': external_reference,
+        'status': 'rejected',
+        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
+        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
+    }
+    query_string = '&'.join([f"{k}={v}" for k, v in params.items() if v])
+    return redirect(f'/doacao_recusada.html?{query_string}')
+
+@app.route('/doacao/pending')
+def doacao_pending():
+    """Página de pagamento pendente no Mercado Pago"""
+    payment_id = request.args.get('payment_id')
+    status = request.args.get('status')
+    external_reference = request.args.get('external_reference')
+    
+    print(f"⏳ DOAÇÃO PENDENTE - ref: {external_reference}, status: {status}")
+    
+    doacao_info = None
+    for df in doacoes_financeiras_db.values():
+        if df.get('transacao_id') == external_reference:
+            doacao_info = df
+            break
+    
+    if external_reference and doacao_info:
+        for df_id, df in doacoes_financeiras_db.items():
+            if df.get('transacao_id') == external_reference:
+                df['mp_status'] = 'pending'
+                df['mp_payment_id'] = payment_id
+                break
+    
+    params = {
+        'doacao_id': external_reference,
+        'status': 'pending',
+        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
+        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
+    }
+    query_string = '&'.join([f"{k}={v}" for k, v in params.items() if v])
+    return redirect(f'/doacao_pendente.html?{query_string}')
+
+# ==================== WEBHOOK MERCADO PAGO ====================
+
+@app.route('/webhook/mercadopago', methods=['POST', 'GET'])
+def webhook_mercadopago():
+    """Recebe notificações do Mercado Pago sobre pagamentos"""
+    if not MERCADO_PAGO_ATIVO:
+        return jsonify({"success": False, "error": "Mercado Pago não configurado"}), 503
+    
+    try:
+        if request.method == 'GET':
+            topic = request.args.get('topic')
+            payment_id = request.args.get('id')
+            print(f"📩 Webhook GET: topic={topic}, payment_id={payment_id}")
+            return "OK", 200
+        
+        data = request.json
+        print(f"📩 Webhook POST recebido: {data}")
+        
+        if data and data.get('type') == 'payment':
+            payment_id = data.get('data', {}).get('id')
+            if payment_id:
+                resultado = obter_status_doacao(payment_id)
+                
+                if resultado.get('success'):
+                    status = resultado.get('status')
+                    external_reference = resultado.get('external_reference')
+                    
+                    if external_reference:
+                        for df_id, df in doacoes_financeiras_db.items():
+                            if df.get('transacao_id') == external_reference:
+                                df['mp_status'] = status
+                                df['mp_payment_id'] = payment_id
+                                
+                                if status == 'approved' and df.get('status') != 'confirmado':
+                                    df['status'] = 'confirmado'
+                                    df['data_confirmacao'] = datetime.now()
+                                    
+                                    valor_taxa = df.get('taxa_servico', 0)
+                                    if valor_taxa > 0:
+                                        registrar_taxa_plataforma(
+                                            valor_taxa=valor_taxa,
+                                            transacao_id=external_reference,
+                                            descricao=f'Webhook - Taxa de doação para {df.get("ong_nome")} - Doador: {df.get("doador_nome")}'
+                                        )
+                                    
+                                    for t in transacoes_db.values():
+                                        if t.get('transacao_id') == external_reference:
+                                            t['status'] = 'confirmado'
+                                            t['data_processamento'] = datetime.now()
+                                    
+                                    ong_id = df.get('ong_id')
+                                    valor_liquido = df.get('valor_liquido', df.get('valor', 0))
+                                    if ong_id in carteiras_db:
+                                        carteiras_db[ong_id]['saldo'] = carteiras_db[ong_id].get('saldo', 0) + valor_liquido
+                                        carteiras_db[ong_id]['total_recebido'] = carteiras_db[ong_id].get('total_recebido', 0) + valor_liquido
+                                    
+                                    registrar_log(
+                                        f'Webhook: Doação confirmada: R$ {df.get("valor"):.2f} para {df.get("ong_nome")}',
+                                        usuario=df.get('doador_email'),
+                                        gravidade='alta'
+                                    )
+                                    
+                                    print(f"✅ Webhook: Doação {external_reference} CONFIRMADA")
+                                
+                                elif status == 'rejected':
+                                    df['status'] = 'cancelado'
+                                    print(f"❌ Webhook: Doação {external_reference} RECUSADA")
+                                
+                                elif status == 'pending':
+                                    print(f"⏳ Webhook: Doação {external_reference} PENDENTE")
+                                
+                                break
+        
+        return jsonify({"success": True}), 200
+        
+    except Exception as e:
+        print(f"❌ Erro no webhook: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # ==================== ROTAS DE USUÁRIO ====================
 
@@ -3748,417 +3954,7 @@ def admin_logs():
 def add_security_headers_to_response(response):
     return add_security_headers(response)
 
-# =====================================================================
-# ROTAS DE DOAÇÃO COM MERCADO PAGO
-# =====================================================================
-
-@app.route('/api/doacoes/mercadopago/criar', methods=['POST'])
-@token_required
-@security_required
-def criar_doacao_mercadopago():
-    if not MERCADO_PAGO_ATIVO:
-        return jsonify({'error': 'Mercado Pago não configurado. Configure MP_ACCESS_TOKEN no .env'}), 503
-    
-    try:
-        if request.user_payload.get('tipo') != 'doador':
-            return jsonify({'error': 'Apenas doadores podem fazer doações'}), 403
-        
-        data = request.json
-        ong_id = data.get('ong_id')
-        valor = data.get('valor')
-        mensagem = data.get('mensagem', '')
-        recorrente = data.get('recorrente', False)
-        
-        if not ong_id or not valor:
-            return jsonify({'error': 'ONG e valor são obrigatórios'}), 400
-        
-        if valor < 1:
-            return jsonify({'error': 'Valor mínimo é R$ 1,00'}), 400
-        
-        ong = ongs_db.get(ong_id)
-        if not ong or ong.get('status') != 'ativo':
-            return jsonify({'error': 'ONG não encontrada ou inativa'}), 404
-        
-        doador_id = request.user_payload.get('user_id')
-        doador = doadores_db.get(doador_id)
-        if not doador:
-            return jsonify({'error': 'Doador não encontrado'}), 404
-        
-        resultado_mp = criar_preferencia_doacao(
-            doador_nome=doador.get('nome', 'Doador'),
-            doador_email=doador.get('email', ''),
-            doador_cpf=doador.get('cpf', ''),
-            ong_id=ong_id,
-            ong_nome=ong.get('nome'),
-            valor=valor,
-            mensagem=mensagem,
-            recorrente=recorrente
-        )
-        
-        if not resultado_mp.get('sucesso'):
-            return jsonify({
-                'error': f'Erro no Mercado Pago: {resultado_mp.get("error")}'
-            }), 400
-        
-        global next_doacao_financeira_id, next_transacao_id
-        
-        transacao_id = resultado_mp.get('external_reference')
-        taxa_servico = resultado_mp.get('taxa_servico', 0)
-        valor_liquido = resultado_mp.get('valor_liquido', valor)
-        
-        doacao_financeira = {
-            'id': next_doacao_financeira_id,
-            'transacao_id': transacao_id,
-            'doador_id': doador_id,
-            'doador_nome': doador.get('nome', 'Doador'),
-            'ong_id': ong_id,
-            'ong_nome': ong.get('nome'),
-            'valor': valor,
-            'valor_liquido': valor_liquido,
-            'taxa_servico': taxa_servico,
-            'mensagem': mensagem,
-            'metodo_pagamento': 'mercadopago',
-            'recorrente': recorrente,
-            'status': 'pendente',
-            'data_criacao': datetime.now(),
-            'data_confirmacao': None,
-            'mp_preference_id': resultado_mp.get('id_preferencia'),
-            'mp_status': 'pending'
-        }
-        doacoes_financeiras_db[next_doacao_financeira_id] = doacao_financeira
-        doacao_financeira_id = next_doacao_financeira_id
-        next_doacao_financeira_id += 1
-        
-        transacao = {
-            'id': next_transacao_id,
-            'transacao_id': transacao_id,
-            'doador_id': doador_id,
-            'ong_id': ong_id,
-            'valor': valor,
-            'tipo': 'doacao_financeira',
-            'status': 'pendente',
-            'metodo': 'mercadopago',
-            'data_criacao': datetime.now(),
-            'data_processamento': None,
-            'mp_preference_id': resultado_mp.get('id_preferencia'),
-            'taxa_servico': taxa_servico,
-            'valor_liquido': valor_liquido
-        }
-        transacoes_db[next_transacao_id] = transacao
-        transacao_id_db = next_transacao_id
-        next_transacao_id += 1
-        
-        registrar_log(
-            f'Doação via Mercado Pago criada: R$ {valor:.2f} para {ong.get("nome")}',
-            usuario=doador.get('email'),
-            gravidade='media'
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Doação iniciada!',
-            'redirect_url': resultado_mp.get('url_doacao'),
-            'doacao_id': doacao_financeira_id,
-            'transacao_id': transacao_id,
-            'external_reference': transacao_id,
-            'valor': valor,
-            'ong_nome': ong.get('nome')
-        }), 201
-        
-    except Exception as e:
-        logger.error(f"Erro ao criar doação com Mercado Pago: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/doacoes/mercadopago/status/<transacao_id>', methods=['GET'])
-@token_required
-def verificar_status_doacao_mp(transacao_id):
-    if not MERCADO_PAGO_ATIVO:
-        return jsonify({'error': 'Mercado Pago não configurado'}), 503
-    
-    try:
-        doacao = None
-        for df in doacoes_financeiras_db.values():
-            if df.get('transacao_id') == transacao_id:
-                doacao = df
-                break
-        
-        if not doacao:
-            return jsonify({'error': 'Doação não encontrada'}), 404
-        
-        if doacao.get('metodo_pagamento') != 'mercadopago':
-            return jsonify({'error': 'Doação não foi feita via Mercado Pago'}), 400
-        
-        payment_id = doacao.get('mp_payment_id')
-        if not payment_id:
-            return jsonify({
-                'status': doacao.get('status'),
-                'mensagem': 'Aguardando confirmação do pagamento'
-            }), 200
-        
-        resultado = obter_status_doacao(payment_id)
-        
-        if not resultado.get('success'):
-            return jsonify({'error': resultado.get('error')}), 400
-        
-        status_mp = resultado.get('status')
-        if status_mp == 'approved' and doacao.get('status') != 'confirmado':
-            doacao['status'] = 'confirmado'
-            doacao['data_confirmacao'] = datetime.now()
-            doacao['mp_status'] = status_mp
-            
-            valor_taxa = doacao.get('taxa_servico', 0)
-            if valor_taxa > 0:
-                registrar_taxa_plataforma(
-                    valor_taxa=valor_taxa,
-                    transacao_id=transacao_id,
-                    descricao=f'Taxa de doação via Mercado Pago para {doacao.get("ong_nome")} - Doador: {doacao.get("doador_nome")}'
-                )
-            
-            for t in transacoes_db.values():
-                if t.get('transacao_id') == transacao_id:
-                    t['status'] = 'confirmado'
-                    t['data_processamento'] = datetime.now()
-            
-            ong_id = doacao.get('ong_id')
-            valor_liquido = doacao.get('valor_liquido', doacao.get('valor', 0))
-            if ong_id in carteiras_db:
-                carteiras_db[ong_id]['saldo'] = carteiras_db[ong_id].get('saldo', 0) + valor_liquido
-                carteiras_db[ong_id]['total_recebido'] = carteiras_db[ong_id].get('total_recebido', 0) + valor_liquido
-            
-            registrar_log(
-                f'Doação via Mercado Pago confirmada: R$ {doacao.get("valor"):.2f} para {doacao.get("ong_nome")}',
-                usuario=doacao.get('doador_email'),
-                gravidade='alta'
-            )
-        
-        return jsonify({
-            'success': True,
-            'status': doacao.get('status'),
-            'mp_status': status_mp,
-            'detalhes': resultado
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Erro ao verificar status da doação: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/doacao/success')
-def doacao_success():
-    payment_id = request.args.get('payment_id')
-    status = request.args.get('status')
-    external_reference = request.args.get('external_reference')
-    preference_id = request.args.get('preference_id')
-    
-    print(f"✅ DOAÇÃO APROVADA - ref: {external_reference}, status: {status}")
-    
-    doacao_info = None
-    for df in doacoes_financeiras_db.values():
-        if df.get('transacao_id') == external_reference:
-            doacao_info = df
-            break
-    
-    if external_reference:
-        for df_id, df in doacoes_financeiras_db.items():
-            if df.get('transacao_id') == external_reference:
-                df['status'] = 'confirmado'
-                df['data_confirmacao'] = datetime.now()
-                df['mp_status'] = status or 'approved'
-                df['mp_payment_id'] = payment_id
-                
-                valor_taxa = df.get('taxa_servico', 0)
-                if valor_taxa > 0:
-                    registrar_taxa_plataforma(
-                        valor_taxa=valor_taxa,
-                        transacao_id=external_reference,
-                        descricao=f'Taxa de doação via Mercado Pago para {df.get("ong_nome")} - Doador: {df.get("doador_nome")}'
-                    )
-                
-                for t in transacoes_db.values():
-                    if t.get('transacao_id') == external_reference:
-                        t['status'] = 'confirmado'
-                        t['data_processamento'] = datetime.now()
-                
-                ong_id = df.get('ong_id')
-                valor_liquido = df.get('valor_liquido', df.get('valor', 0))
-                if ong_id in carteiras_db:
-                    carteiras_db[ong_id]['saldo'] = carteiras_db[ong_id].get('saldo', 0) + valor_liquido
-                    carteiras_db[ong_id]['total_recebido'] = carteiras_db[ong_id].get('total_recebido', 0) + valor_liquido
-                
-                registrar_log(
-                    f'Doação via Mercado Pago confirmada: R$ {df.get("valor"):.2f} para {df.get("ong_nome")}',
-                    usuario=df.get('doador_email'),
-                    gravidade='alta'
-                )
-                break
-    
-    params = {
-        'doacao_id': external_reference,
-        'status': status or 'approved',
-        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
-        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
-    }
-    params = {k: v for k, v in params.items() if v is not None}
-    query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-    
-    return redirect(f'/doacao_aprovada.html?{query_string}')
-
-@app.route('/doacao/failure')
-def doacao_failure():
-    payment_id = request.args.get('payment_id')
-    status = request.args.get('status')
-    external_reference = request.args.get('external_reference')
-    preference_id = request.args.get('preference_id')
-    
-    print(f"❌ DOAÇÃO RECUSADA - ref: {external_reference}, status: {status}")
-    
-    doacao_info = None
-    for df in doacoes_financeiras_db.values():
-        if df.get('transacao_id') == external_reference:
-            doacao_info = df
-            break
-    
-    if external_reference:
-        for df_id, df in doacoes_financeiras_db.items():
-            if df.get('transacao_id') == external_reference:
-                df['status'] = 'cancelado'
-                df['mp_status'] = status or 'rejected'
-                df['mp_payment_id'] = payment_id
-                
-                for t in transacoes_db.values():
-                    if t.get('transacao_id') == external_reference:
-                        t['status'] = 'cancelado'
-                        t['data_processamento'] = datetime.now()
-                
-                registrar_log(
-                    f'Doação via Mercado Pago recusada: R$ {df.get("valor"):.2f} para {df.get("ong_nome")}',
-                    usuario=df.get('doador_email'),
-                    gravidade='media'
-                )
-                break
-    
-    params = {
-        'doacao_id': external_reference,
-        'status': status or 'rejected',
-        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
-        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
-    }
-    params = {k: v for k, v in params.items() if v is not None}
-    query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-    
-    return redirect(f'/doacao_recusada.html?{query_string}')
-
-@app.route('/doacao/pending')
-def doacao_pending():
-    payment_id = request.args.get('payment_id')
-    status = request.args.get('status')
-    external_reference = request.args.get('external_reference')
-    preference_id = request.args.get('preference_id')
-    
-    print(f"⏳ DOAÇÃO PENDENTE - ref: {external_reference}, status: {status}")
-    
-    doacao_info = None
-    for df in doacoes_financeiras_db.values():
-        if df.get('transacao_id') == external_reference:
-            doacao_info = df
-            break
-    
-    if external_reference:
-        for df_id, df in doacoes_financeiras_db.items():
-            if df.get('transacao_id') == external_reference:
-                df['mp_status'] = status or 'pending'
-                df['mp_payment_id'] = payment_id
-                break
-    
-    params = {
-        'doacao_id': external_reference,
-        'status': status or 'pending',
-        'ong_nome': doacao_info.get('ong_nome', 'ONG') if doacao_info else 'ONG',
-        'valor': f"R$ {doacao_info.get('valor', 0):.2f}" if doacao_info else 'R$ 0,00'
-    }
-    params = {k: v for k, v in params.items() if v is not None}
-    query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-    
-    return redirect(f'/doacao_pendente.html?{query_string}')
-
-@app.route('/webhook/mercadopago', methods=['POST', 'GET'])
-def webhook_mercadopago():
-    if not MERCADO_PAGO_ATIVO:
-        return jsonify({"success": False, "error": "Mercado Pago não configurado"}), 503
-    
-    try:
-        if request.method == 'GET':
-            topic = request.args.get('topic')
-            payment_id = request.args.get('id')
-            print(f"📩 Webhook GET: topic={topic}, payment_id={payment_id}")
-            return "OK", 200
-        
-        data = request.json
-        print(f"📩 Webhook POST recebido: {data}")
-        
-        if data and data.get('type') == 'payment':
-            payment_id = data.get('data', {}).get('id')
-            if payment_id:
-                resultado = obter_status_doacao(payment_id)
-                
-                if resultado.get('success'):
-                    status = resultado.get('status')
-                    external_reference = resultado.get('external_reference')
-                    
-                    if external_reference:
-                        for df_id, df in doacoes_financeiras_db.items():
-                            if df.get('transacao_id') == external_reference:
-                                df['mp_status'] = status
-                                df['mp_payment_id'] = payment_id
-                                
-                                if status == 'approved' and df.get('status') != 'confirmado':
-                                    df['status'] = 'confirmado'
-                                    df['data_confirmacao'] = datetime.now()
-                                    
-                                    valor_taxa = df.get('taxa_servico', 0)
-                                    if valor_taxa > 0:
-                                        registrar_taxa_plataforma(
-                                            valor_taxa=valor_taxa,
-                                            transacao_id=external_reference,
-                                            descricao=f'Webhook - Taxa de doação para {df.get("ong_nome")} - Doador: {df.get("doador_nome")}'
-                                        )
-                                    
-                                    for t in transacoes_db.values():
-                                        if t.get('transacao_id') == external_reference:
-                                            t['status'] = 'confirmado'
-                                            t['data_processamento'] = datetime.now()
-                                    
-                                    ong_id = df.get('ong_id')
-                                    valor_liquido = df.get('valor_liquido', df.get('valor', 0))
-                                    if ong_id in carteiras_db:
-                                        carteiras_db[ong_id]['saldo'] = carteiras_db[ong_id].get('saldo', 0) + valor_liquido
-                                        carteiras_db[ong_id]['total_recebido'] = carteiras_db[ong_id].get('total_recebido', 0) + valor_liquido
-                                    
-                                    registrar_log(
-                                        f'Webhook: Doação confirmada: R$ {df.get("valor"):.2f} para {df.get("ong_nome")}',
-                                        usuario=df.get('doador_email'),
-                                        gravidade='alta'
-                                    )
-                                    
-                                    print(f"✅ Webhook: Doação {external_reference} CONFIRMADA")
-                                
-                                elif status == 'rejected':
-                                    df['status'] = 'cancelado'
-                                    print(f"❌ Webhook: Doação {external_reference} RECUSADA")
-                                
-                                elif status == 'pending':
-                                    print(f"⏳ Webhook: Doação {external_reference} PENDENTE")
-                                
-                                break
-        
-        return jsonify({"success": True}), 200
-        
-    except Exception as e:
-        print(f"❌ Erro no webhook: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"success": False, "error": str(e)}), 500
+# ==================== ROTA MERCADO PAGO TEST ====================
 
 @app.route('/api/mercadopago/test', methods=['GET'])
 def test_mercadopago():

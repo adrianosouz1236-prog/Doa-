@@ -1,3 +1,4 @@
+// perfil_ong.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -28,7 +29,9 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function getToken() { return localStorage.getItem('token'); }
+function getToken() {
+    return localStorage.getItem('token');
+}
 
 function updateAuthUI() {
     const token = getToken();

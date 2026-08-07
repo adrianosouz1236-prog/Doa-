@@ -375,7 +375,6 @@ async function carregarOngs() {
                 </div>
             `;
         }).join('');
-        // Adicionar hover effect
         document.querySelectorAll('.ong-card').forEach(card => {
             card.addEventListener('mouseenter', () => {
                 card.style.transform = 'translateY(-5px)';

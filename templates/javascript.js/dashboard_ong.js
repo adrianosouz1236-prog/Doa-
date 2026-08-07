@@ -1,3 +1,4 @@
+// dashboard_ong.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -68,8 +69,6 @@ function getOngId() {
     return user.id;
 }
 
-// ==================== FUNÇÃO DE SCROLL SUAVE ====================
-
 function scrollToSection(sectionId) {
     const targetId = sectionId.replace('#', '');
     const section = document.getElementById(targetId);
@@ -85,12 +84,8 @@ function scrollToSection(sectionId) {
         if (history.pushState) {
             history.pushState(null, null, `#${targetId}`);
         }
-    } else {
-        console.warn(`Seção #${targetId} não encontrada`);
     }
 }
-
-// ==================== CONFIGURAR LINKS DE SCROLL ====================
 
 function setupScrollLinks() {
     document.querySelectorAll('.scroll-link').forEach(link => {
@@ -104,14 +99,10 @@ function setupScrollLinks() {
     });
 }
 
-// ==================== SEGURANÇA ====================
-
 function mostrarSeguranca() {
     scrollToSection('seguranca-section');
     document.getElementById('seguranca-section').style.display = 'block';
 }
-
-// ==================== ALTERAR SENHA ====================
 
 document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -155,8 +146,6 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
     }
 });
 
-// ==================== EXCLUSÃO DE CONTA ====================
-
 async function solicitarExclusaoContaOng() {
     if (!confirm('⚠️ Tem certeza que deseja EXCLUIR sua conta? Esta ação é irreversível!')) return;
     if (!confirm('🔴 Última confirmação: Deseja realmente excluir sua conta permanentemente?')) return;
@@ -185,8 +174,6 @@ async function solicitarExclusaoContaOng() {
     }
 }
 
-// ==================== DASHBOARD ====================
-
 async function carregarDashboard() {
     try {
         const data = await apiRequest('/ongs/dashboard');
@@ -201,8 +188,6 @@ async function carregarDashboard() {
         console.error('Erro ao carregar dashboard:', error);
     }
 }
-
-// ==================== CARTEIRA ====================
 
 async function carregarCarteira() {
     try {
@@ -719,7 +704,6 @@ document.getElementById('localizacao-form')?.addEventListener('submit', async (e
         await apiRequest('/ongs/localizacao', { method: 'PUT', body: JSON.stringify(dados) });
         showToast('📍 Localização salva com sucesso!', 'success');
         fecharModal('localizacao-modal');
-        // Atualizar o mapa na página principal
         const mapaContainer = document.getElementById('mapa-container');
         if (mapaContainer) {
             mapaContainer.innerHTML = `
@@ -785,8 +769,6 @@ document.getElementById('perfil-form')?.addEventListener('submit', async (e) => 
         submitBtn.disabled = false;
     }
 });
-
-// ==================== MODAL ====================
 
 function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 function fecharModal(id) { document.getElementById(id).style.display = 'none'; }

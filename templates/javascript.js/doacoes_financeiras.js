@@ -1,3 +1,4 @@
+// doacoes_financeiras.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -116,12 +117,15 @@ async function enviarDoacaoFinanceira(e) {
     const mensagem = document.getElementById('mensagem-doacao').value;
     const metodoPagamento = document.getElementById('metodo-pagamento').value;
     const recorrente = document.getElementById('doacao-recorrente').checked;
+    
     if (!ongId) { showToast('Selecione uma ONG', 'error'); return; }
     if (!valor || valor < 1) { showToast('Valor mínimo é R$ 1,00', 'error'); return; }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
     submitBtn.textContent = 'Processando...';
     submitBtn.disabled = true;
+    
     try {
         const data = await apiRequest('/doacoes/financeiras/criar', {
             method: 'POST',
@@ -133,10 +137,20 @@ async function enviarDoacaoFinanceira(e) {
                 recorrente: recorrente
             })
         });
-        showToast(`💰 Doação de R$ ${valor.toFixed(2)} realizada com sucesso!`, 'success');
+        
+        // ============================================================
+        // REDIRECIONA PARA O MERCADO PAGO
+        // ============================================================
+        if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            showToast('Erro: URL de pagamento não disponível', 'error');
+        }
+        
         document.getElementById('form-doacao-financeira').reset();
         carregarMinhasDoacoes();
         carregarEstatisticas();
+        
     } catch (error) {
         showToast(error.message, 'error');
     } finally {

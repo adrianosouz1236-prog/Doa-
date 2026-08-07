@@ -21,10 +21,10 @@ class Config:
     # BANCO DE DADOS
     DB_CONFIG = {
         'host': os.getenv('DB_HOST', 'localhost'),
-        'port': int(os.getenv('DB_PORT', 3306)),
-        'user': os.getenv('DB_USER', 'root'),
+        'port': int(os.getenv('DB_PORT', 5432)),
+        'user': os.getenv('DB_USER', 'postgres'),
         'password': os.getenv('DB_PASSWORD', ''),
-        'database': os.getenv('DB_NAME', 'doacoes_db'),
+        'database': os.getenv('DB_NAME', 'postgres'),
         'charset': 'utf8mb4',
         'autocommit': False,
         'use_unicode': True
@@ -53,8 +53,6 @@ class Config:
     
     # SECURITY
     FERNET_KEY = os.getenv('FERNET_KEY', '')
-    RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '')
-    RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
     
     # EMAIL
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
