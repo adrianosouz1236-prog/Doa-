@@ -17,7 +17,7 @@ import random
 from config import get_config
 from security import (
     sanitizar_html, sanitizar_string, validar_senha_forte,
-    criptografar, descriptografar, verificar_recaptcha,
+    criptografar, descriptografar,
     verificar_tentativas_login, registrar_tentativa_login,
     gerar_csrf_token, verificar_csrf_token, add_security_headers,
     registrar_evento_seguranca, configurar_sessao_segura, logger,
@@ -622,17 +622,12 @@ def login():
     email = sanitizar_string(data.get('email', ''))
     senha = data.get('senha', '')
     tipo = sanitizar_string(data.get('tipo', ''))
-    recaptcha_token = data.get('recaptcha_token', '')
     
     ip = request.remote_addr
     
     if not email or not senha or not tipo:
         registrar_tentativa_login(ip, sucesso=False)
         return jsonify({'error': 'Email, senha e tipo são obrigatórios'}), 400
-    
-    if not verificar_recaptcha(recaptcha_token):
-        registrar_tentativa_login(ip, sucesso=False)
-        return jsonify({'error': 'Verificação de segurança falhou. Tente novamente.'}), 400
     
     usuario = None
     user_id = None
@@ -832,7 +827,6 @@ def cadastro_ong():
     uf = sanitizar_string(data.get('uf', ''))
     descricao = sanitizar_string(data.get('descricao', ''))
     conta_bancaria = criptografar(data.get('conta_bancaria', ''))
-    recaptcha_token = data.get('recaptcha_token', '')
     
     # ============================================================
     # VALIDAÇÃO DO CONSENTIMENTO LGPD - OBRIGATÓRIO
@@ -845,9 +839,6 @@ def cadastro_ong():
     
     if not nome or not cnpj or not email or not senha:
         return jsonify({'error': 'Nome, CNPJ, email e senha são obrigatórios'}), 400
-    
-    if not verificar_recaptcha(recaptcha_token):
-        return jsonify({'error': 'Verificação de segurança falhou. Tente novamente.'}), 400
     
     if not validar_email(email):
         return jsonify({'error': 'Email inválido'}), 400
@@ -924,7 +915,6 @@ def cadastro_doador():
     senha = data.get('senha', '')
     telefone = sanitizar_string(data.get('telefone', ''))
     cpf = sanitizar_string(data.get('cpf', ''))
-    recaptcha_token = data.get('recaptcha_token', '')
     
     # ============================================================
     # VALIDAÇÃO DO CONSENTIMENTO LGPD - OBRIGATÓRIO
@@ -937,9 +927,6 @@ def cadastro_doador():
     
     if not nome or not email or not senha:
         return jsonify({'error': 'Nome, email e senha são obrigatórios'}), 400
-    
-    if not verificar_recaptcha(recaptcha_token):
-        return jsonify({'error': 'Verificação de segurança falhou. Tente novamente.'}), 400
     
     if not validar_email(email):
         return jsonify({'error': 'Email inválido'}), 400
@@ -1152,21 +1139,6 @@ def redefinir_senha():
 def get_csrf_token():
     token = gerar_csrf_token()
     return jsonify({'csrf_token': token}), 200
-
-@app.route('/api/config/recaptcha-key', methods=['GET'])
-def get_recaptcha_key():
-    """Retorna a chave do reCAPTCHA apenas em produção"""
-    site_key = os.getenv('RECAPTCHA_SITE_KEY', '')
-    
-    # Em desenvolvimento, retorna uma chave fake
-    if is_development():
-        return jsonify({'site_key': 'dev-key-not-required'}), 200
-    
-    # Em produção, retorna a chave real
-    if site_key:
-        return jsonify({'site_key': site_key}), 200
-    else:
-        return jsonify({'site_key': ''}), 200
 
 # ==================== ROTAS DE NECESSIDADES (PÚBLICAS) ====================
 
@@ -3549,7 +3521,7 @@ def admin_doadores():
     
     return jsonify({'doadores': doadores_lista}), 200
 
-@app.route('/api/admin/doadores/<int:doador_id>/bloquear', methods=['PUT'])
+@app.route('/api/admin/doadores/<int:doador_id>/bloquear', methods(['PUT'])
 @token_required
 def admin_bloquear_doador(doador_id):
     if request.user_payload.get('tipo') != 'admin':

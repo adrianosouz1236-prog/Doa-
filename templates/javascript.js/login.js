@@ -1,6 +1,5 @@
-// login.js
+// login.js - SEM reCAPTCHA
 const API_BASE_URL = window.location.origin + '/api';
-let recaptchaSiteKey = '';
 
 // ============================================================
 // CSRF TOKEN
@@ -13,81 +12,6 @@ async function obterCsrfToken() {
     } catch (error) {
         console.error('Erro ao obter CSRF token:', error);
     }
-}
-
-// ============================================================
-// OBTER CHAVE DO RECAPTCHA
-// ============================================================
-async function obterRecaptchaKey() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/config/recaptcha-key`);
-        const data = await response.json();
-        recaptchaSiteKey = data.site_key || '';
-        
-        console.log('🔑 Chave reCAPTCHA obtida:', recaptchaSiteKey);
-        
-        if (recaptchaSiteKey && recaptchaSiteKey !== 'dev-key-not-required') {
-            // Carrega o script do reCAPTCHA
-            const script = document.createElement('script');
-            script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
-            script.async = true;
-            script.defer = true;
-            script.onload = function() {
-                console.log('✅ reCAPTCHA carregado com sucesso!');
-            };
-            script.onerror = function() {
-                console.error('❌ Erro ao carregar reCAPTCHA');
-            };
-            document.head.appendChild(script);
-        } else {
-            console.log('🔓 Modo desenvolvimento - reCAPTCHA desativado');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao carregar reCAPTCHA:', error);
-    }
-}
-
-// ============================================================
-// GERAR TOKEN DO RECAPTCHA
-// ============================================================
-function gerarRecaptchaToken() {
-    return new Promise((resolve) => {
-        // Se não tem chave ou está em desenvolvimento, retorna vazio
-        if (!recaptchaSiteKey || recaptchaSiteKey === 'dev-key-not-required') {
-            console.log('🔓 reCAPTCHA desativado - token vazio');
-            resolve('');
-            return;
-        }
-        
-        // Aguarda o grecaptcha ser carregado
-        let tentativas = 0;
-        const maxTentativas = 10;
-        
-        function tentarExecutar() {
-            tentativas++;
-            
-            if (typeof grecaptcha !== 'undefined') {
-                grecaptcha.ready(function() {
-                    grecaptcha.execute(recaptchaSiteKey, {action: 'login'}).then(function(token) {
-                        document.getElementById('recaptcha-token').value = token;
-                        console.log('✅ Token reCAPTCHA gerado com sucesso');
-                        resolve(token);
-                    }).catch(function(err) {
-                        console.error('❌ Erro ao executar reCAPTCHA:', err);
-                        resolve('');
-                    });
-                });
-            } else if (tentativas < maxTentativas) {
-                console.log(`⏳ Aguardando reCAPTCHA carregar... (tentativa ${tentativas})`);
-                setTimeout(tentarExecutar, 500);
-            } else {
-                console.error('❌ reCAPTCHA não carregou após múltiplas tentativas');
-                resolve('');
-            }
-        }
-        
-        tentarExecutar();
-    });
 }
 
 // ============================================================
@@ -153,9 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carregar CSRF token
     await obterCsrfToken();
-    
-    // Carregar reCAPTCHA
-    await obterRecaptchaKey();
 
     // Form submit
     const form = document.getElementById('login-form');
@@ -176,9 +97,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Gerar reCAPTCHA token
-        const recaptchaToken = await gerarRecaptchaToken();
-
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const textoOriginal = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
@@ -194,8 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify({
                     email,
                     senha,
-                    tipo,
-                    recaptcha_token: recaptchaToken
+                    tipo
                 })
             });
 

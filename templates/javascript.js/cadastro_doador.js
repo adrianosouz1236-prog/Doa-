@@ -1,3 +1,4 @@
+// cadastro_doador.js - SEM reCAPTCHA
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     const toastMessage = toast.querySelector('.toast-message');
@@ -17,26 +18,6 @@ async function obterCsrfToken() {
     } catch (error) {
         console.error('Erro ao obter CSRF token:', error);
     }
-}
-
-function gerarRecaptchaToken() {
-    return new Promise((resolve) => {
-        const recaptchaInput = document.getElementById('recaptcha-token');
-        const siteKey = recaptchaInput ? recaptchaInput.dataset.siteKey : '';
-        
-        if (typeof grecaptcha !== 'undefined' && siteKey && siteKey !== 'dev-key-not-required') {
-            grecaptcha.ready(function() {
-                grecaptcha.execute(siteKey, {action: 'cadastro'}).then(function(token) {
-                    document.getElementById('recaptcha-token').value = token;
-                    resolve(token);
-                });
-            });
-        } else {
-            // Modo desenvolvimento - não precisa de token
-            console.log('🔓 Modo desenvolvimento - reCAPTCHA ignorado');
-            resolve('');
-        }
-    });
 }
 
 function validarSenhaForte(senha) {
@@ -92,9 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // ============================================================
-            // VALIDAÇÃO DO CONSENTIMENTO LGPD
-            // ============================================================
             const consentimento = document.getElementById('consentimento-lgpd').checked;
             if (!consentimento) {
                 showToast('É obrigatório concordar com a Política de Privacidade e Termos de Serviço.', 'error');
@@ -108,9 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 telefone: document.getElementById('telefone').value,
                 consentimento_lgpd: consentimento
             };
-            
-            const recaptchaToken = await gerarRecaptchaToken();
-            dados.recaptcha_token = recaptchaToken;
             
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const textoOriginal = submitBtn.textContent;

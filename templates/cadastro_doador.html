@@ -27,8 +27,7 @@
             
             <form id="cadastro-doador-form">
                 <input type="hidden" id="csrf-token" value="">
-                <input type="hidden" id="recaptcha-token" value="" data-site-key="">
-                
+
                 <div class="form-group">
                     <label for="nome">Nome Completo *</label>
                     <input type="text" id="nome" name="nome" required placeholder="Digite seu nome completo">
@@ -129,40 +128,6 @@
     <div id="toast" class="toast" style="display: none;">
         <span class="toast-message"></span>
     </div>
-    
-    <script>
-        // Carrega reCAPTCHA apenas em produção
-        async function carregarRecaptcha() {
-            try {
-                const response = await fetch('/api/config/recaptcha-key');
-                const data = await response.json();
-                const siteKey = data.site_key;
-                
-                // Armazena a chave no campo hidden
-                const recaptchaInput = document.getElementById('recaptcha-token');
-                if (recaptchaInput) {
-                    recaptchaInput.dataset.siteKey = siteKey;
-                }
-                
-                if (siteKey && siteKey !== 'dev-key-not-required') {
-                    // Carrega o reCAPTCHA apenas em produção
-                    const script = document.createElement('script');
-                    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
-                    script.async = true;
-                    script.defer = true;
-                    document.head.appendChild(script);
-                    console.log('✅ reCAPTCHA carregado em produção');
-                } else {
-                    console.log('🔓 Modo desenvolvimento - reCAPTCHA desativado');
-                }
-            } catch (error) {
-                console.error('❌ Erro ao carregar reCAPTCHA:', error);
-            }
-        }
-        
-        // Executar ao carregar a página
-        document.addEventListener('DOMContentLoaded', carregarRecaptcha);
-    </script>
     
     <script src="javascript.js/cadastro_doador.js"></script>
 </body>

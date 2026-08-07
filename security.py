@@ -1,5 +1,4 @@
-# security.py - Módulo de segurança completo
-
+# security.py - SEM reCAPTCHA
 import os
 import re
 import logging
@@ -12,7 +11,6 @@ import pyotp
 import qrcode
 import io
 import base64
-import requests
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 
@@ -240,60 +238,6 @@ def verificar_csrf_token(token):
         return False
     return token == session.get('csrf_token')
 
-# ==================== RECAPTCHA ====================
-
-def verificar_recaptcha(token):
-    """
-    Verifica o token do reCAPTCHA com o Google
-    
-    - Em desenvolvimento: SEMPRE retorna True (não verifica)
-    - Em produção: Verifica com o Google
-    """
-    # ============================================================
-    # DESENVOLVIMENTO: Ignora verificação do reCAPTCHA
-    # ============================================================
-    if is_development():
-        logger.info("🔓 Modo desenvolvimento - reCAPTCHA ignorado")
-        return True
-    
-    # ============================================================
-    # PRODUÇÃO: Verifica com o Google
-    # ============================================================
-    if not token:
-        logger.warning("❌ Token reCAPTCHA não fornecido em produção")
-        return False
-    
-    secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
-    
-    if not secret_key:
-        logger.error("❌ RECAPTCHA_SECRET_KEY não configurada!")
-        return False
-    
-    try:
-        response = requests.post(
-            'https://www.google.com/recaptcha/api/siteverify',
-            data={
-                'secret': secret_key,
-                'response': token
-            },
-            timeout=5
-        )
-        data = response.json()
-        
-        success = data.get('success', False)
-        score = data.get('score', 0)
-        
-        if success and score >= 0.5:
-            logger.info(f"✅ reCAPTCHA verificado com sucesso (score: {score})")
-            return True
-        else:
-            logger.warning(f"❌ reCAPTCHA falhou (score: {score}, success: {success})")
-            return False
-            
-    except Exception as e:
-        logger.error(f"❌ Erro na verificação reCAPTCHA: {e}")
-        return False
-
 # ==================== DECORATORS ====================
 
 def security_required(f):
@@ -323,17 +267,15 @@ def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     
-    # ============================================================
-    # CSP CORRIGIDA - Permite reCAPTCHA e Font Awesome
-    # ============================================================
+    # CSP SEM reCAPTCHA
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdnjs.cloudflare.com https://maps.googleapis.com; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://maps.googleapis.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: https://via.placeholder.com https://www.google.com; "
+        "img-src 'self' data: https://via.placeholder.com; "
         "connect-src 'self' https://maps.googleapis.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
-        "frame-src 'self' https://www.google.com; "
+        "frame-src 'self'; "
         "object-src 'none'; "
         "base-uri 'self'; "
         "form-action 'self'; "
@@ -398,7 +340,6 @@ __all__ = [
     'verificar_csrf_token',
     'security_required',
     'add_security_headers',
-    'verificar_recaptcha',
     'registrar_evento_seguranca',
     'configurar_sessao_segura',
     'is_development',
