@@ -3521,7 +3521,7 @@ def admin_doadores():
     
     return jsonify({'doadores': doadores_lista}), 200
 
-@app.route('/api/admin/doadores/<int:doador_id>/bloquear', methods(['PUT'])
+@app.route('/api/admin/doadores/<int:doador_id>/bloquear', methods=['PUT'])
 @token_required
 def admin_bloquear_doador(doador_id):
     if request.user_payload.get('tipo') != 'admin':
