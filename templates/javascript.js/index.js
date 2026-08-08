@@ -446,6 +446,7 @@ const auth = {
         const userMenu = document.getElementById('user-menu');
         const userNameSpan = document.getElementById('user-name');
         const chatIcon = document.getElementById('chat-icon');
+        const dashboardLink = document.getElementById('dashboard-link-ong');
 
         if (this.isAuthenticated && this.user) {
             if (navButtons) navButtons.style.display = 'none';
@@ -454,6 +455,18 @@ const auth = {
                 if (userNameSpan) userNameSpan.textContent = this.user.nome?.split(' ')[0] || 'Usuário';
             }
             if (chatIcon) chatIcon.style.display = 'block';
+            
+            // ============================================================
+            // CORREÇÃO: Remove "Dashboard (ONG)" para doadores
+            // ============================================================
+            if (dashboardLink) {
+                if (this.userType === 'doador') {
+                    dashboardLink.style.display = 'none';
+                } else {
+                    dashboardLink.style.display = 'block';
+                }
+            }
+            
             setTimeout(() => { verificarComunicacoesNaoLidas(); verificarChatNaoLidas(); }, 500);
         } else {
             if (navButtons) navButtons.style.display = 'flex';

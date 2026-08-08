@@ -1,3 +1,4 @@
+// suporte.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -21,7 +22,9 @@ function showToast(message, type = 'info') {
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-function getToken() { return localStorage.getItem('token'); }
+function getToken() {
+    return localStorage.getItem('token');
+}
 
 function getHeaders() {
     const headers = { 'Content-Type': 'application/json' };
@@ -62,12 +65,24 @@ function updateAuthUI() {
     const navButtons = document.getElementById('nav-buttons');
     const userMenu = document.getElementById('user-menu');
     const userNameSpan = document.getElementById('user-name');
+    const userType = localStorage.getItem('userType');
 
     if (token && user) {
         if (navButtons) navButtons.style.display = 'none';
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) {
+                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            }
+            // Remove "Dashboard (ONG)" para doadores
+            const dashboardLink = userMenu.querySelector('.dropdown-menu a[href="/dashboard_ong.html"]');
+            if (dashboardLink) {
+                if (userType === 'doador') {
+                    dashboardLink.style.display = 'none';
+                } else {
+                    dashboardLink.style.display = 'block';
+                }
+            }
         }
     } else {
         if (navButtons) navButtons.style.display = 'flex';
@@ -105,6 +120,7 @@ async function enviarSuporte(e) {
     const assunto = document.getElementById('suporte-assunto').value;
     const mensagem = document.getElementById('suporte-mensagem').value;
     const categoria = document.getElementById('suporte-categoria').value;
+    
     if (!assunto || assunto.length < 3) {
         showToast('Assunto deve ter pelo menos 3 caracteres', 'error');
         return;
@@ -113,10 +129,12 @@ async function enviarSuporte(e) {
         showToast('Mensagem deve ter pelo menos 5 caracteres', 'error');
         return;
     }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
+    
     try {
         await apiRequest('/suporte', {
             method: 'POST',
@@ -137,14 +155,14 @@ async function carregarMeusSuportes() {
     const container = document.getElementById('meus-suportes-container');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<p class="empty-state">Faça login para ver seus chamados</p>';
+        container.innerHTML = '<div class="empty-state"><p>Faça login para ver seus chamados</p></div>';
         return;
     }
     try {
         const data = await apiRequest('/suporte/meus');
         const suportes = data.suportes || [];
         if (suportes.length === 0) {
-            container.innerHTML = '<p class="empty-state">Você ainda não abriu nenhum chamado</p>';
+            container.innerHTML = '<div class="empty-state"><p>Você ainda não abriu nenhum chamado</p></div>';
             return;
         }
         container.innerHTML = suportes.map(sp => {

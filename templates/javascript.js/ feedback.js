@@ -1,3 +1,4 @@
+// feedback.js
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -21,7 +22,9 @@ function showToast(message, type = 'info') {
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-function getToken() { return localStorage.getItem('token'); }
+function getToken() {
+    return localStorage.getItem('token');
+}
 
 function getHeaders() {
     const headers = { 'Content-Type': 'application/json' };
@@ -62,12 +65,24 @@ function updateAuthUI() {
     const navButtons = document.getElementById('nav-buttons');
     const userMenu = document.getElementById('user-menu');
     const userNameSpan = document.getElementById('user-name');
+    const userType = localStorage.getItem('userType');
 
     if (token && user) {
         if (navButtons) navButtons.style.display = 'none';
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) {
+                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            }
+            // Remove "Dashboard (ONG)" para doadores
+            const dashboardLink = userMenu.querySelector('.dropdown-menu a[href="/dashboard_ong.html"]');
+            if (dashboardLink) {
+                if (userType === 'doador') {
+                    dashboardLink.style.display = 'none';
+                } else {
+                    dashboardLink.style.display = 'block';
+                }
+            }
         }
     } else {
         if (navButtons) navButtons.style.display = 'flex';
@@ -105,14 +120,17 @@ async function enviarFeedback(e) {
     const mensagem = document.getElementById('feedback-mensagem').value;
     const tipo = document.getElementById('feedback-tipo').value;
     const anonimo = document.getElementById('feedback-anonimo').checked;
+    
     if (!mensagem || mensagem.length < 3) {
         showToast('Mensagem deve ter pelo menos 3 caracteres', 'error');
         return;
     }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
+    
     try {
         await apiRequest('/feedback', {
             method: 'POST',
@@ -133,14 +151,14 @@ async function carregarMeusFeedbacks() {
     const container = document.getElementById('meus-feedbacks-container');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<p class="empty-state">Faça login para ver seus feedbacks</p>';
+        container.innerHTML = '<div class="empty-state"><p>Faça login para ver seus feedbacks</p></div>';
         return;
     }
     try {
         const data = await apiRequest('/feedback/meus');
         const feedbacks = data.feedbacks || [];
         if (feedbacks.length === 0) {
-            container.innerHTML = '<p class="empty-state">Você ainda não enviou nenhum feedback</p>';
+            container.innerHTML = '<div class="empty-state"><p>Você ainda não enviou nenhum feedback</p></div>';
             return;
         }
         container.innerHTML = feedbacks.map(fb => {
