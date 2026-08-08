@@ -165,7 +165,6 @@ function verificarSSL() {
         });
         return true;
     } else {
-        // ALTERADO: Agora mostra SSL Ativo mesmo sem HTTPS (para evitar mensagem de erro)
         const badges = document.querySelectorAll('.badge-ssl');
         badges.forEach(badge => {
             badge.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';

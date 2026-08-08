@@ -437,6 +437,9 @@ function fecharModalInscricao() {
     document.getElementById('inscricao-modal').style.display = 'none';
 }
 
+// ============================================================
+// AUTH - CORRIGIDO
+// ============================================================
 const auth = {
     isAuthenticated: !!localStorage.getItem('token'),
     user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -448,13 +451,34 @@ const auth = {
         const chatIcon = document.getElementById('chat-icon');
         const dashboardLink = document.getElementById('dashboard-link-ong');
 
+        console.log('🔄 Atualizando UI...');
+        console.log('🔑 Autenticado:', this.isAuthenticated);
+        console.log('👤 Usuário:', this.user);
+        console.log('📌 Tipo:', this.userType);
+
         if (this.isAuthenticated && this.user) {
-            if (navButtons) navButtons.style.display = 'none';
+            // Esconde botões de login/cadastro
+            if (navButtons) {
+                navButtons.style.display = 'none';
+                console.log('✅ Botões de login escondidos');
+            }
+            
+            // Mostra menu do usuário
             if (userMenu) {
                 userMenu.style.display = 'flex';
-                if (userNameSpan) userNameSpan.textContent = this.user.nome?.split(' ')[0] || 'Usuário';
+                console.log('✅ Menu do usuário mostrado');
             }
-            if (chatIcon) chatIcon.style.display = 'block';
+            
+            // Mostra nome do usuário
+            if (userNameSpan) {
+                userNameSpan.textContent = this.user.nome?.split(' ')[0] || 'Usuário';
+                console.log('✅ Nome do usuário:', userNameSpan.textContent);
+            }
+            
+            // Mostra ícone do chat
+            if (chatIcon) {
+                chatIcon.style.display = 'block';
+            }
             
             // ============================================================
             // CORREÇÃO: Remove "Dashboard (ONG)" para doadores
@@ -462,24 +486,45 @@ const auth = {
             if (dashboardLink) {
                 if (this.userType === 'doador') {
                     dashboardLink.style.display = 'none';
+                    console.log('✅ Dashboard ONG escondido para doador');
                 } else {
                     dashboardLink.style.display = 'block';
+                    console.log('✅ Dashboard ONG mostrado para ONG');
                 }
             }
             
-            setTimeout(() => { verificarComunicacoesNaoLidas(); verificarChatNaoLidas(); }, 500);
+            setTimeout(() => { 
+                verificarComunicacoesNaoLidas(); 
+                verificarChatNaoLidas(); 
+            }, 500);
         } else {
-            if (navButtons) navButtons.style.display = 'flex';
-            if (userMenu) userMenu.style.display = 'none';
-            if (chatIcon) chatIcon.style.display = 'none';
+            // Mostra botões de login/cadastro
+            if (navButtons) {
+                navButtons.style.display = 'flex';
+                console.log('✅ Botões de login mostrados');
+            }
+            
+            // Esconde menu do usuário
+            if (userMenu) {
+                userMenu.style.display = 'none';
+                console.log('✅ Menu do usuário escondido');
+            }
+            
+            // Esconde ícone do chat
+            if (chatIcon) {
+                chatIcon.style.display = 'none';
+            }
         }
     },
     setup() {
+        console.log('🔧 Configurando autenticação...');
         this.updateUI();
+        
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                console.log('🚪 Usuário deslogando...');
                 localStorage.clear();
                 this.isAuthenticated = false;
                 this.user = null;
@@ -489,10 +534,13 @@ const auth = {
                 setTimeout(() => { window.location.href = '/'; }, 500);
             });
         }
+        
         const hamburger = document.getElementById('hamburger');
         const navMenu = document.getElementById('nav-menu');
         if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => { navMenu.classList.toggle('active'); });
+            hamburger.addEventListener('click', () => { 
+                navMenu.classList.toggle('active'); 
+            });
         }
     }
 };
