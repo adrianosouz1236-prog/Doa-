@@ -1,7 +1,10 @@
+// admin_plataform.js - COMPLETO COM TODAS AS FUNCIONALIDADES
 const API_BASE_URL = window.location.origin + '/api';
+let csrfToken = '';
 let ongsData = [], doadoresData = [], anunciosData = [], comunicacoesData = [];
 let doacoesFinanceirasData = [], solicitacoesExclusaoData = [];
-let csrfToken = '';
+
+// ==================== UTILITÁRIOS ====================
 
 async function obterCsrfToken() {
     try {
@@ -13,8 +16,9 @@ async function obterCsrfToken() {
     }
 }
 
-function showToast(msg, type) {
+function showToast(msg, type = 'info') {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     toast.querySelector('.toast-message').textContent = msg;
     toast.className = `toast toast-${type}`;
     toast.style.display = 'block';
@@ -33,10 +37,16 @@ function getHeaders() {
 
 async function requisicaoApi(endpoint, options = {}) {
     try {
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers: getHeaders() });
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, { 
+            ...options, 
+            headers: getHeaders() 
+        });
         const data = await res.json();
         if (!res.ok) { 
-            if (res.status === 401) { localStorage.clear(); window.location.href = '/login.html'; } 
+            if (res.status === 401) { 
+                localStorage.clear(); 
+                window.location.href = '/login.html'; 
+            } 
             throw new Error(data.error || 'Erro na requisição'); 
         }
         return data;
@@ -45,6 +55,36 @@ async function requisicaoApi(endpoint, options = {}) {
         throw error;
     }
 }
+
+function escapeHtml(texto) { 
+    if(!texto) return ''; 
+    const div = document.createElement('div'); 
+    div.textContent = texto; 
+    return div.innerHTML; 
+}
+
+function abrirModal(id) { 
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'flex'; 
+}
+
+function fecharModal(id) { 
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'none'; 
+}
+
+function baixarCSV(conteudo, arquivo) { 
+    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8' }); 
+    const a = document.createElement('a'); 
+    a.href = URL.createObjectURL(blob); 
+    a.download = arquivo; 
+    document.body.appendChild(a);
+    a.click(); 
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href); 
+}
+
+// ==================== NAVEGAÇÃO ====================
 
 function mostrarAba(aba) {
     document.querySelectorAll('.tab-content').forEach(t => {
@@ -56,39 +96,28 @@ function mostrarAba(aba) {
         abaElement.style.display = 'block';
         abaElement.classList.add('active');
     }
-    document.querySelectorAll('.nav-link').forEach(l => {
+    document.querySelectorAll('.nav-link[data-aba]').forEach(l => {
         l.classList.remove('active');
         if (l.dataset.aba === aba) l.classList.add('active');
     });
+    
+    // Carregar dados da aba
     if (aba === 'dashboard') carregarDashboard();
     if (aba === 'anuncios') carregarAnuncios();
     if (aba === 'ongs') carregarOngs();
     if (aba === 'doadores') carregarDoadores();
     if (aba === 'doacoes') carregarDoacoes();
-    if (aba === 'financeiro') { carregarDoacoesFinanceiras(); carregarCarteiras(); carregarCarteiraPlataforma(); }
+    if (aba === 'financeiro') { 
+        carregarDoacoesFinanceiras(); 
+        carregarCarteiras(); 
+        carregarCarteiraPlataforma(); 
+    }
     if (aba === 'feedback') carregarFeedbacksAdmin();
     if (aba === 'suporte') carregarSuportesAdmin();
     if (aba === 'comunicacao') carregarComunicacoesAdmin();
     if (aba === 'exclusoes') carregarSolicitacoesExclusao();
     if (aba === 'logs') carregarLogs();
     if (aba === 'relatorios') carregarDadosConsentimento();
-}
-
-function configurarEventosAbas() {
-    document.querySelectorAll('.nav-link[data-aba]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const aba = this.dataset.aba;
-            if (aba) mostrarAba(aba);
-        });
-    });
-    document.querySelectorAll('.dropdown-menu a[data-aba]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const aba = this.dataset.aba;
-            if (aba) mostrarAba(aba);
-        });
-    });
 }
 
 // ==================== DASHBOARD ====================
@@ -113,7 +142,10 @@ async function carregarDashboard() {
         ).join('');
 
         await carregarCarteiraPlataforma();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro no dashboard:', e);
+        showToast('Erro ao carregar dashboard', 'error'); 
+    }
 }
 
 // ==================== CARTEIRA DA PLATAFORMA ====================
@@ -125,19 +157,23 @@ async function carregarCarteiraPlataforma() {
         const totalTaxas = data.total_taxas || 0;
         const totalSacado = data.total_sacado || 0;
         
-        const saldoEl = document.getElementById('plataforma-saldo');
-        const taxasEl = document.getElementById('plataforma-total-taxas');
-        const sacadoEl = document.getElementById('plataforma-total-sacado');
-        if (saldoEl) saldoEl.textContent = `R$ ${saldo.toFixed(2)}`;
-        if (taxasEl) taxasEl.textContent = `R$ ${totalTaxas.toFixed(2)}`;
-        if (sacadoEl) sacadoEl.textContent = `R$ ${totalSacado.toFixed(2)}`;
-
-        const saldoFin = document.getElementById('plataforma-saldo-financeiro');
-        const taxasFin = document.getElementById('plataforma-total-taxas-financeiro');
-        const sacadoFin = document.getElementById('plataforma-total-sacado-financeiro');
-        if (saldoFin) saldoFin.textContent = `R$ ${saldo.toFixed(2)}`;
-        if (taxasFin) taxasFin.textContent = `R$ ${totalTaxas.toFixed(2)}`;
-        if (sacadoFin) sacadoFin.textContent = `R$ ${totalSacado.toFixed(2)}`;
+        // Atualizar elementos do dashboard
+        const elementos = [
+            'plataforma-saldo', 'plataforma-saldo-financeiro',
+            'plataforma-total-taxas', 'plataforma-total-taxas-financeiro',
+            'plataforma-total-sacado', 'plataforma-total-sacado-financeiro'
+        ];
+        
+        const valores = [
+            `R$ ${saldo.toFixed(2)}`, `R$ ${saldo.toFixed(2)}`,
+            `R$ ${totalTaxas.toFixed(2)}`, `R$ ${totalTaxas.toFixed(2)}`,
+            `R$ ${totalSacado.toFixed(2)}`, `R$ ${totalSacado.toFixed(2)}`
+        ];
+        
+        elementos.forEach((id, index) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = valores[index];
+        });
 
         const saldoModal = document.getElementById('saque-plataforma-saldo');
         if (saldoModal) saldoModal.textContent = `R$ ${saldo.toFixed(2)}`;
@@ -148,38 +184,37 @@ async function carregarCarteiraPlataforma() {
 }
 
 function abrirModalSaquePlataforma() {
-    const modalExistente = document.getElementById('modal-saque-plataforma');
-    if (modalExistente) {
-        modalExistente.style.display = 'flex';
+    const modal = document.getElementById('modal-saque-plataforma');
+    if (modal) {
+        modal.style.display = 'flex';
         carregarCarteiraPlataforma();
         return;
     }
 
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.id = 'modal-saque-plataforma';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>💸 Saque da Carteira da Plataforma</h3>
-                <span class="modal-close" onclick="fecharModal('modal-saque-plataforma')">&times;</span>
+    // Criar modal se não existir
+    const modalHTML = `
+        <div id="modal-saque-plataforma" class="modal" style="display: flex;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>💸 Saque da Carteira da Plataforma</h3>
+                    <span class="modal-close" onclick="fecharModal('modal-saque-plataforma')">&times;</span>
+                </div>
+                <form id="form-saque-plataforma">
+                    <div class="form-group">
+                        <label>Valor (R$) *</label>
+                        <input type="number" id="valor-saque-plataforma" min="10" step="0.01" required placeholder="Mínimo R$ 10,00">
+                        <small style="color: #7f8c8d;">Saldo disponível: <span id="saque-plataforma-saldo">R$ 0,00</span></small>
+                    </div>
+                    <div class="form-group">
+                        <label>Conta Bancária *</label>
+                        <input type="text" id="conta-saque-plataforma" required placeholder="Banco - Agência - Conta">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">💸 Solicitar Saque</button>
+                </form>
             </div>
-            <form id="form-saque-plataforma">
-                <div class="form-group">
-                    <label>Valor (R$) *</label>
-                    <input type="number" id="valor-saque-plataforma" min="10" step="0.01" required placeholder="Mínimo R$ 10,00">
-                    <small style="color: #7f8c8d;">Saldo disponível: <span id="saque-plataforma-saldo">R$ 0,00</span></small>
-                </div>
-                <div class="form-group">
-                    <label>Conta Bancária *</label>
-                    <input type="text" id="conta-saque-plataforma" required placeholder="Banco - Agência - Conta">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">💸 Solicitar Saque</button>
-            </form>
         </div>
     `;
-    document.body.appendChild(modal);
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     carregarCarteiraPlataforma();
 
@@ -227,18 +262,38 @@ async function carregarAnuncios() {
         const data = await requisicaoApi('/admin/anuncios');
         anunciosData = data.anuncios || [];
         renderizarAnuncios(anunciosData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar anúncios:', e);
+        showToast('Erro ao carregar anúncios', 'error'); 
+    }
 }
 
 function renderizarAnuncios(anuncios) {
-    document.getElementById('anuncios-tbody').innerHTML = anuncios.map(a => {
+    const tbody = document.getElementById('anuncios-tbody');
+    if (!tbody) return;
+    
+    if (anuncios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum anúncio encontrado</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = anuncios.map(a => {
         let statusBadge = '', statusText = '';
-        if (a.excluido) { statusBadge = 'badge-inactive'; statusText = 'Excluído'; }
-        else if (a.total_advertencias > 0) { statusBadge = 'badge-warning'; statusText = `⚠️ ${a.total_advertencias} advertência(s)`; }
-        else { statusBadge = 'badge-active'; statusText = 'Ativo'; }
+        if (a.excluido) { 
+            statusBadge = 'badge-inactive'; 
+            statusText = 'Excluído'; 
+        } else if (a.total_advertencias > 0) { 
+            statusBadge = 'badge-warning'; 
+            statusText = `⚠️ ${a.total_advertencias} advertência(s)`; 
+        } else { 
+            statusBadge = 'badge-active'; 
+            statusText = 'Ativo'; 
+        }
         return `
             <tr>
-                <td>${a.id}</td><td>${escapeHtml(a.ong_nome)}</td><td>${escapeHtml(a.titulo)}</td>
+                <td>${a.id}</td>
+                <td>${escapeHtml(a.ong_nome)}</td>
+                <td>${escapeHtml(a.titulo)}</td>
                 <td><span class="badge badge-info">${a.categoria}</span></td>
                 <td>${a.urgencia === 'alta' ? '<span class="text-danger">🔴 Alta</span>' : a.urgencia === 'media' ? '<span class="text-warning">🟡 Média</span>' : '🟢 Baixa'}</td>
                 <td><span class="badge ${statusBadge}">${statusText}</span></td>
@@ -255,8 +310,8 @@ function renderizarAnuncios(anuncios) {
 }
 
 function filtrarAnuncios() {
-    const termo = document.getElementById('buscar-anuncio').value.toLowerCase();
-    const filtroStatus = document.getElementById('filtro-status-anuncio').value;
+    const termo = document.getElementById('buscar-anuncio')?.value.toLowerCase() || '';
+    const filtroStatus = document.getElementById('filtro-status-anuncio')?.value || 'todos';
     let filtrados = anunciosData;
     if (termo) filtrados = filtrados.filter(a => a.titulo.toLowerCase().includes(termo) || a.ong_nome.toLowerCase().includes(termo));
     if (filtroStatus === 'normal') filtrados = filtrados.filter(a => !a.excluido && a.total_advertencias === 0);
@@ -268,19 +323,22 @@ function filtrarAnuncios() {
 let anuncioAtualId = null, ongAtualId = null;
 
 async function verAnuncio(id) {
-    const anuncio = anunciosData.find(a => a.id == id);
-    if (anuncio) {
-        anuncioAtualId = anuncio.id; ongAtualId = anuncio.ong_id;
+    try {
+        const anuncio = await requisicaoApi(`/admin/anuncios/${id}`);
+        anuncioAtualId = anuncio.id; 
+        ongAtualId = anuncio.ong_id;
+        
         document.getElementById('anuncio-detalhes').innerHTML = `
             <p><strong>ONG:</strong> ${escapeHtml(anuncio.ong_nome)}</p>
             <p><strong>Título:</strong> ${escapeHtml(anuncio.titulo)}</p>
             <p><strong>Categoria:</strong> ${anuncio.categoria}</p>
             <p><strong>Descrição:</strong> ${escapeHtml(anuncio.descricao)}</p>
-            <p><strong>Quantidade:</strong> ${anuncio.quantidade_necessaria} itens</p>
+            <p><strong>Quantidade Necessária:</strong> ${anuncio.quantidade_necessaria} itens</p>
             <p><strong>Recebidos:</strong> ${anuncio.quantidade_recebida || 0} itens</p>
             <p><strong>Urgência:</strong> ${anuncio.urgencia}</p>
             <p><strong>Status:</strong> ${anuncio.excluido ? 'Excluído' : (anuncio.total_advertencias > 0 ? `${anuncio.total_advertencias} advertência(s)` : 'Ativo')}</p>
         `;
+        
         if (anuncio.advertencias && anuncio.advertencias.length > 0) {
             document.getElementById('anuncio-advertencias').innerHTML = `
                 <div class="advertencia-list"><strong>📋 Histórico de Advertências:</strong><br>
@@ -290,11 +348,14 @@ async function verAnuncio(id) {
             document.getElementById('anuncio-advertencias').innerHTML = '<p class="text-muted">Nenhuma advertência registrada.</p>';
         }
         abrirModal('modal-anuncio');
+    } catch (error) {
+        showToast(error.message, 'error');
     }
 }
 
 function abrirModalAdvertenciaParaId(anuncioId, ongId) {
-    anuncioAtualId = anuncioId; ongAtualId = ongId;
+    anuncioAtualId = anuncioId; 
+    ongAtualId = ongId;
     abrirModalAdvertencia();
 }
 
@@ -318,7 +379,9 @@ async function excluirAnuncioPorId(id) {
         fecharModal('modal-advertencia');
         carregarAnuncios();
         carregarDashboard();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 // ==================== ONGs ====================
@@ -328,17 +391,38 @@ async function carregarOngs() {
         const data = await requisicaoApi('/admin/ongs'); 
         ongsData = data.ongs || []; 
         renderizarOngs(ongsData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar ONGs:', e);
+        showToast('Erro ao carregar ONGs', 'error'); 
+    }
 }
 
 function renderizarOngs(ongs) {
-    document.getElementById('ongs-tbody').innerHTML = ongs.map(o => {
+    const tbody = document.getElementById('ongs-tbody');
+    if (!tbody) return;
+    
+    if (ongs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">Nenhuma ONG encontrada</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = ongs.map(o => {
         const estrelas = '★'.repeat(Math.round(o.media_avaliacao || 0)) + '☆'.repeat(5 - Math.round(o.media_avaliacao || 0));
+        const statusMap = {
+            'verificado': 'badge-active',
+            'pendente_verificacao': 'badge-pending',
+            'rejeitado': 'badge-inactive',
+            'bloqueado': 'badge-danger'
+        };
+        const statusClass = statusMap[o.status] || 'badge-pending';
         return `
             <tr>
-                <td>${o.id}</td><td>${escapeHtml(o.nome)}</td><td>${o.cnpj || '-'}</td>
-                <td>${o.email}</td><td>${o.cidade || '-'}</td>
-                <td><span class="badge ${o.status === 'ativo' ? 'badge-active' : 'badge-inactive'}">${o.status}</span></td>
+                <td>${o.id}</td>
+                <td>${escapeHtml(o.nome)}</td>
+                <td>${o.cnpj || '-'}</td>
+                <td>${o.email}</td>
+                <td>${o.cidade || '-'}</td>
+                <td><span class="badge ${statusClass}">${o.status}</span></td>
                 <td>${o.total_advertencias || 0}</td>
                 <td>${estrelas} (${o.media_avaliacao || 0})</td>
                 <td>R$ ${(o.saldo_carteira || 0).toFixed(2)}</td>
@@ -346,6 +430,8 @@ function renderizarOngs(ongs) {
                 <td>
                     <button class="btn btn-outline btn-sm" onclick="verOng(${o.id})">👁️</button>
                     ${o.status !== 'bloqueado' ? `<button class="btn btn-danger btn-sm" onclick="bloquearOngPorId(${o.id})">🔒</button>` : ''}
+                    ${o.status === 'bloqueado' ? `<button class="btn btn-success btn-sm" onclick="desbloquearOng(${o.id})">🔓</button>` : ''}
+                    ${o.status === 'pendente_verificacao' ? `<button class="btn btn-primary btn-sm" onclick="verificarOng(${o.id})">✅</button>` : ''}
                 </td>
             </tr>
         `;
@@ -353,14 +439,16 @@ function renderizarOngs(ongs) {
 }
 
 function filtrarOngs() {
-    const termo = document.getElementById('buscar-ong').value.toLowerCase();
-    renderizarOngs(ongsData.filter(o => o.nome.toLowerCase().includes(termo) || o.email.toLowerCase().includes(termo)));
+    const termo = document.getElementById('buscar-ong')?.value.toLowerCase() || '';
+    const filtrados = ongsData.filter(o => o.nome.toLowerCase().includes(termo) || o.email.toLowerCase().includes(termo));
+    renderizarOngs(filtrados);
 }
 
 async function verOng(id) {
-    const ong = ongsData.find(o => o.id == id);
-    if (ong) {
+    try {
+        const ong = await requisicaoApi(`/admin/ongs/${id}`);
         const estrelas = '★'.repeat(Math.round(ong.media_avaliacao || 0)) + '☆'.repeat(5 - Math.round(ong.media_avaliacao || 0));
+        
         document.getElementById('ong-detalhes').innerHTML = `
             <p><strong>Nome:</strong> ${escapeHtml(ong.nome)}</p>
             <p><strong>CNPJ:</strong> ${ong.cnpj || '-'}</p>
@@ -370,9 +458,12 @@ async function verOng(id) {
             <p><strong>Cidade:</strong> ${ong.cidade || '-'}</p>
             <p><strong>⭐ Avaliação:</strong> ${estrelas} (${ong.media_avaliacao || 0} de 5)</p>
             <p><strong>💰 Saldo:</strong> R$ ${(ong.saldo_carteira || 0).toFixed(2)}</p>
-            <p><strong>Status:</strong> <span class="badge ${ong.status === 'ativo' ? 'badge-active' : 'badge-inactive'}">${ong.status}</span></p>
+            <p><strong>Status:</strong> <span class="badge ${ong.status === 'verificado' ? 'badge-active' : 'badge-pending'}">${ong.status}</span></p>
             <p><strong>Total de Advertências:</strong> ${ong.total_advertencias || 0}</p>
+            <p><strong>Data de Cadastro:</strong> ${new Date(ong.data_cadastro).toLocaleString()}</p>
+            ${ong.motivo_rejeicao ? `<p><strong>Motivo da Rejeição:</strong> ${ong.motivo_rejeicao}</p>` : ''}
         `;
+        
         if (ong.advertencias && ong.advertencias.length > 0) {
             document.getElementById('ong-advertencias').innerHTML = `
                 <div class="advertencia-list"><strong>📋 Histórico de Advertências:</strong><br>
@@ -381,19 +472,32 @@ async function verOng(id) {
         } else {
             document.getElementById('ong-advertencias').innerHTML = '<p>Nenhuma advertência registrada.</p>';
         }
+        
         const btnBloquear = document.getElementById('btn-bloquear-ong');
         if (ong.status === 'bloqueado') {
             btnBloquear.textContent = '🔓 Desbloquear ONG';
             btnBloquear.onclick = () => desbloquearOng(ong.id);
-            btnBloquear.classList.remove('btn-danger');
-            btnBloquear.classList.add('btn-primary');
+            btnBloquear.className = 'btn btn-success';
         } else {
             btnBloquear.textContent = '🔒 Bloquear ONG';
             btnBloquear.onclick = () => bloquearOngPorId(ong.id);
-            btnBloquear.classList.remove('btn-primary');
-            btnBloquear.classList.add('btn-danger');
+            btnBloquear.className = 'btn btn-danger';
         }
         abrirModal('modal-ong');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function verificarOng(id) {
+    if (!confirm('Confirmar verificação desta ONG?')) return;
+    try {
+        await requisicaoApi(`/admin/ongs/${id}/verificar`, { method: 'PUT' });
+        showToast('ONG verificada com sucesso!', 'success');
+        carregarOngs();
+        carregarDashboard();
+    } catch(e) { 
+        showToast(e.message, 'error'); 
     }
 }
 
@@ -405,22 +509,32 @@ async function bloquearOngPorId(id) {
         carregarOngs();
         carregarDashboard();
         fecharModal('modal-ong');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 async function desbloquearOng(id) {
+    if (!confirm('Deseja DESBLOQUEAR esta ONG?')) return;
     try {
         await requisicaoApi(`/admin/ongs/${id}/desbloquear`, { method: 'PUT' });
         showToast('ONG desbloqueada com sucesso!', 'success');
         carregarOngs();
         carregarDashboard();
         fecharModal('modal-ong');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 function bloquearOng() {
     const ongId = document.querySelector('#ong-detalhes')?.dataset?.ongId;
     if (ongId) bloquearOngPorId(parseInt(ongId));
+}
+
+function exportarOngs() { 
+    const csv = ongsData.map(o => `${o.id},${o.nome},${o.email},${o.status},${o.media_avaliacao},${o.saldo_carteira}`).join('\n'); 
+    baixarCSV(csv, 'ongs.csv'); 
 }
 
 // ==================== DOADORES ====================
@@ -430,11 +544,22 @@ async function carregarDoadores() {
         const data = await requisicaoApi('/admin/doadores'); 
         doadoresData = data.doadores || []; 
         renderizarDoadores(doadoresData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar doadores:', e);
+        showToast('Erro ao carregar doadores', 'error'); 
+    }
 }
 
 function renderizarDoadores(doadores) {
-    document.getElementById('doadores-tbody').innerHTML = doadores.map(d => {
+    const tbody = document.getElementById('doadores-tbody');
+    if (!tbody) return;
+    
+    if (doadores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Nenhum doador encontrado</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = doadores.map(d => {
         const conquistas = d.conquistas || [];
         const iconesConquistas = conquistas.map(c => {
             const icones = { 'primeira_doacao': '🌟', 'doador_frequente': '⭐', 'doador_master': '🏆', '100_pontos': '💎', '500_pontos': '👑', '1000_pontos': '🔥' };
@@ -442,9 +567,13 @@ function renderizarDoadores(doadores) {
         }).join(' ');
         return `
             <tr>
-                <td>${d.id}</td><td>${escapeHtml(d.nome)}</td><td>${d.email}</td>
-                <td>${d.telefone || '-'}</td><td>${d.total_doacoes || 0}</td>
-                <td>${d.pontuacao || 0}</td><td>${iconesConquistas || '-'}</td>
+                <td>${d.id}</td>
+                <td>${escapeHtml(d.nome)}</td>
+                <td>${d.email}</td>
+                <td>${d.telefone || '-'}</td>
+                <td>${d.total_doacoes || 0}</td>
+                <td>${d.pontuacao || 0}</td>
+                <td>${iconesConquistas || '-'}</td>
                 <td><span class="badge ${d.status === 'ativo' ? 'badge-active' : 'badge-inactive'}">${d.status}</span></td>
                 <td>${new Date(d.data_cadastro).toLocaleDateString()}</td>
                 <td>
@@ -457,24 +586,28 @@ function renderizarDoadores(doadores) {
 }
 
 function filtrarDoadores() {
-    const termo = document.getElementById('buscar-doador').value.toLowerCase();
-    renderizarDoadores(doadoresData.filter(d => d.nome.toLowerCase().includes(termo) || d.email.toLowerCase().includes(termo)));
+    const termo = document.getElementById('buscar-doador')?.value.toLowerCase() || '';
+    const filtrados = doadoresData.filter(d => d.nome.toLowerCase().includes(termo) || d.email.toLowerCase().includes(termo));
+    renderizarDoadores(filtrados);
 }
 
-function exportarDoadores() {
-    const csv = doadoresData.map(d => `${d.id},${d.nome},${d.email},${d.total_doacoes},${d.pontuacao},${d.status}`).join('\n');
-    baixarCSV(csv, 'doadores.csv');
+function exportarDoadores() { 
+    const csv = doadoresData.map(d => `${d.id},${d.nome},${d.email},${d.total_doacoes},${d.pontuacao},${d.status}`).join('\n'); 
+    baixarCSV(csv, 'doadores.csv'); 
 }
 
 async function verDoador(id) {
-    const doador = doadoresData.find(d => d.id == id);
-    if (doador) {
+    try {
+        const doador = await requisicaoApi(`/admin/doadores/${id}`);
         const conquistas = doador.conquistas || [];
         const iconesConquistas = conquistas.map(c => {
             const icones = { 'primeira_doacao': '🌟 Primeira Doação', 'doador_frequente': '⭐ Doador Frequente', 'doador_master': '🏆 Doador Master', '100_pontos': '💎 100 Pontos', '500_pontos': '👑 500 Pontos', '1000_pontos': '🔥 1000 Pontos' };
             return icones[c] || c;
         }).join('\n');
+        
         alert(`📋 DOADOR\n\nNome: ${doador.nome}\nEmail: ${doador.email}\nTelefone: ${doador.telefone}\nTotal doações: ${doador.total_doacoes}\nPontuação: ${doador.pontuacao}\nConquistas: ${iconesConquistas || 'Nenhuma'}\nStatus: ${doador.status}`);
+    } catch (error) {
+        showToast(error.message, 'error');
     }
 }
 
@@ -484,7 +617,9 @@ async function bloquearDoadorPorId(id) {
         await requisicaoApi(`/admin/doadores/${id}/bloquear`, { method: 'PUT' });
         showToast('Doador bloqueado!', 'warning');
         carregarDoadores();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 // ==================== DOAÇÕES ====================
@@ -495,7 +630,10 @@ async function carregarDoacoes() {
         document.getElementById('doacoes-tbody').innerHTML = (data.doacoes || []).map(d => 
             `<tr><td>${new Date(d.data).toLocaleString()}</td><td>${escapeHtml(d.doador_nome)}</td><td>${escapeHtml(d.ong_nome)}</td><td>${escapeHtml(d.item)}</td><td>${d.quantidade}</td><td><span class="badge ${d.status === 'confirmada' ? 'badge-active' : 'badge-pending'}">${d.status}</span></td></tr>`
         ).join('');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar doações:', e);
+        showToast('Erro ao carregar doações', 'error'); 
+    }
 }
 
 // ==================== DOAÇÕES FINANCEIRAS ====================
@@ -508,25 +646,40 @@ async function carregarDoacoesFinanceiras() {
         const valorTotal = doacoesFinanceirasData.reduce((sum, d) => sum + (d.status === 'confirmado' ? d.valor : 0), 0);
         const valorMedio = total > 0 ? valorTotal / total : 0;
         const recorrentes = doacoesFinanceirasData.filter(d => d.recorrente).length;
+        
         document.getElementById('financeiro-total').textContent = total;
         document.getElementById('financeiro-valor-total').textContent = `R$ ${valorTotal.toFixed(2)}`;
         document.getElementById('financeiro-valor-medio').textContent = `R$ ${valorMedio.toFixed(2)}`;
         document.getElementById('financeiro-recorrentes').textContent = recorrentes;
         renderizarDoacoesFinanceiras(doacoesFinanceirasData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar doações financeiras:', e);
+        showToast('Erro ao carregar doações financeiras', 'error'); 
+    }
 }
 
 function renderizarDoacoesFinanceiras(doacoes) {
-    const filtro = document.getElementById('filtro-status-financeiro').value;
+    const filtro = document.getElementById('filtro-status-financeiro')?.value || 'todos';
     let filtradas = doacoes;
     if (filtro !== 'todos') filtradas = filtradas.filter(d => d.status === filtro);
-    document.getElementById('financeiro-tbody').innerHTML = filtradas.map(d => {
-        const statusMap = { 'confirmado': 'badge-active', 'pendente': 'badge-pending', 'cancelado': 'badge-inactive' };
+    
+    const tbody = document.getElementById('financeiro-tbody');
+    if (!tbody) return;
+    
+    if (filtradas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">Nenhuma doação financeira encontrada</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = filtradas.map(d => {
+        const statusMap = { 'confirmado': 'badge-success', 'pendente': 'badge-pending', 'cancelado': 'badge-danger' };
         const statusText = { 'confirmado': '✅ Confirmado', 'pendente': '⏳ Pendente', 'cancelado': '❌ Cancelado' };
         return `
             <tr>
-                <td>${d.id}</td><td><code>${d.transacao_id}</code></td>
-                <td>${escapeHtml(d.doador_nome)}</td><td>${escapeHtml(d.ong_nome)}</td>
+                <td>${d.id}</td>
+                <td><code>${d.transacao_id}</code></td>
+                <td>${escapeHtml(d.doador_nome)}</td>
+                <td>${escapeHtml(d.ong_nome)}</td>
                 <td><strong>R$ ${d.valor.toFixed(2)}</strong></td>
                 <td>R$ ${(d.taxa_servico || 0).toFixed(2)}</td>
                 <td>R$ ${(d.valor_liquido || d.valor || 0).toFixed(2)}</td>
@@ -546,53 +699,73 @@ async function gerarRelatorioFinanceiro() {
             body: JSON.stringify({ tipo: 'financeiro' })
         });
         const relatorio = data.dados || {};
-        document.getElementById('relatorio-financeiro-conteudo').innerHTML = `
-            <div style="padding: 1rem;">
-                <h4>📊 Relatório Financeiro</h4>
-                <p><strong>Gerado em:</strong> ${new Date(relatorio.data_geracao).toLocaleString()}</p>
-                <hr>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="stat-card"><h3>Total Doações</h3><div class="stat-value">${relatorio.total_doacoes_financeiras || 0}</div></div>
-                    <div class="stat-card"><h3>💰 Valor Total</h3><div class="stat-value">R$ ${(relatorio.valor_total || 0).toFixed(2)}</div></div>
-                    <div class="stat-card"><h3>📊 Valor Médio</h3><div class="stat-value">R$ ${(relatorio.valor_medio || 0).toFixed(2)}</div></div>
-                    <div class="stat-card"><h3>💰 Taxas Arrecadadas</h3><div class="stat-value">R$ ${(relatorio.total_taxas || 0).toFixed(2)}</div></div>
+        
+        const modalContent = document.getElementById('relatorio-financeiro-conteudo');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div style="padding: 1rem;">
+                    <h4>📊 Relatório Financeiro</h4>
+                    <p><strong>Gerado em:</strong> ${new Date(relatorio.data_geracao).toLocaleString()}</p>
+                    <hr>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="stat-card"><h3>Total Doações</h3><div class="stat-value">${relatorio.total_doacoes_financeiras || 0}</div></div>
+                        <div class="stat-card"><h3>💰 Valor Total</h3><div class="stat-value">R$ ${(relatorio.valor_total || 0).toFixed(2)}</div></div>
+                        <div class="stat-card"><h3>📊 Valor Médio</h3><div class="stat-value">R$ ${(relatorio.valor_medio || 0).toFixed(2)}</div></div>
+                        <div class="stat-card"><h3>💰 Taxas Arrecadadas</h3><div class="stat-value">R$ ${(relatorio.total_taxas || 0).toFixed(2)}</div></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="fecharModal('modal-relatorio-financeiro')" style="margin-top: 1rem;">Fechar</button>
                 </div>
-                <button class="btn btn-primary" onclick="fecharModal('modal-relatorio-financeiro')" style="margin-top: 1rem;">Fechar</button>
-            </div>
-        `;
+            `;
+        }
         abrirModal('modal-relatorio-financeiro');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao gerar relatório:', e);
+        showToast('Erro ao gerar relatório', 'error'); 
+    }
 }
 
 async function carregarCarteiras() {
     try {
         const data = await requisicaoApi('/admin/ongs');
         const ongs = data.ongs || [];
-        document.getElementById('carteiras-tbody').innerHTML = ongs
-            .filter(o => (o.saldo_carteira || 0) > 0)
-            .map(o => `
-                <tr>
-                    <td>${escapeHtml(o.nome)}</td>
-                    <td><strong>R$ ${(o.saldo_carteira || 0).toFixed(2)}</strong></td>
-                    <td>R$ ${(o.total_recebido || 0).toFixed(2)}</td>
-                    <td>R$ ${(o.total_sacado || 0).toFixed(2)}</td>
-                    <td>${new Date(o.data_atualizacao).toLocaleString()}</td>
-                </tr>
-            `).join('') || '<tr><td colspan="5" style="text-align: center;">Nenhuma ONG com saldo</td></tr>';
-    } catch(e) { showToast(e.message, 'error'); }
+        const tbody = document.getElementById('carteiras-tbody');
+        if (!tbody) return;
+        
+        const ongsComSaldo = ongs.filter(o => (o.saldo_carteira || 0) > 0);
+        if (ongsComSaldo.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma ONG com saldo</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = ongsComSaldo.map(o => `
+            <tr>
+                <td>${escapeHtml(o.nome)}</td>
+                <td><strong>R$ ${(o.saldo_carteira || 0).toFixed(2)}</strong></td>
+                <td>R$ ${(o.total_recebido || 0).toFixed(2)}</td>
+                <td>R$ ${(o.total_sacado || 0).toFixed(2)}</td>
+                <td>${new Date(o.data_atualizacao).toLocaleString()}</td>
+            </tr>
+        `).join('');
+    } catch(e) { 
+        console.error('Erro ao carregar carteiras:', e);
+        showToast('Erro ao carregar carteiras', 'error'); 
+    }
 }
 
 // ==================== COMUNICAÇÃO ====================
 
 function abrirModalComunicacao() {
-    document.getElementById('form-comunicacao').reset();
-    document.getElementById('destinatario-especifico').style.display = 'none';
+    const form = document.getElementById('form-comunicacao');
+    if (form) form.reset();
+    const div = document.getElementById('destinatario-especifico');
+    if (div) div.style.display = 'none';
     abrirModal('modal-comunicacao');
 }
 
 function toggleDestinatarioEspecifico() {
-    const tipo = document.getElementById('comunicacao-tipo').value;
-    document.getElementById('destinatario-especifico').style.display = tipo === 'especifico' ? 'block' : 'none';
+    const tipo = document.getElementById('comunicacao-tipo')?.value;
+    const div = document.getElementById('destinatario-especifico');
+    if (div) div.style.display = tipo === 'especifico' ? 'block' : 'none';
 }
 
 async function carregarComunicacoesAdmin() {
@@ -602,21 +775,28 @@ async function carregarComunicacoesAdmin() {
         const total = comunicacoesData.length;
         const lidas = comunicacoesData.filter(c => c.lida).length;
         const naoLidas = total - lidas;
+        
         document.getElementById('total-enviadas').textContent = total;
         document.getElementById('total-lidas').textContent = lidas;
         document.getElementById('total-nao-lidas').textContent = naoLidas;
         renderizarComunicacoes(comunicacoesData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar comunicações:', e);
+        showToast('Erro ao carregar comunicações', 'error'); 
+    }
 }
 
 function renderizarComunicacoes(comunicacoes) {
     const tbody = document.getElementById('comunicacoes-tbody');
+    if (!tbody) return;
+    
     if (comunicacoes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma comunicação enviada</td></tr>';
         return;
     }
+    
     tbody.innerHTML = comunicacoes.map(c => {
-        const prioridadeLabels = { 'normal': '<span class="badge badge-active">Normal</span>', 'alta': '<span class="badge badge-warning">🟡 Alta</span>', 'urgente': '<span class="badge badge-inactive">🔴 Urgente</span>' };
+        const prioridadeLabels = { 'normal': '<span class="badge badge-active">Normal</span>', 'alta': '<span class="badge badge-warning">🟡 Alta</span>', 'urgente': '<span class="badge badge-danger">🔴 Urgente</span>' };
         const tipoLabels = { 'todos': 'Todos', 'doadores': 'Doadores', 'ongs': 'ONGs', 'especifico': 'Específico' };
         let destinatario = tipoLabels[c.tipo] || c.tipo;
         if (c.tipo === 'especifico' && c.destinatario_nome) destinatario += `: ${c.destinatario_nome} (ID: ${c.destinatario_id})`;
@@ -646,6 +826,7 @@ async function verComunicacao(id) {
         const tipoLabels = { 'todos': 'Todos (Doadores + ONGs)', 'doadores': 'Apenas Doadores', 'ongs': 'Apenas ONGs', 'especifico': 'Usuário Específico' };
         let destinatario = tipoLabels[comunicacao.tipo] || comunicacao.tipo;
         if (comunicacao.tipo === 'especifico' && comunicacao.destinatario_nome) destinatario += `: ${comunicacao.destinatario_nome} (ID: ${comunicacao.destinatario_id})`;
+        
         document.getElementById('comunicacao-detalhes').innerHTML = `
             <div style="border-left: 4px solid ${prioridadeColors[comunicacao.prioridade] || '#27ae60'}; padding-left: 1rem;">
                 <p><strong>📌 Título:</strong> ${escapeHtml(comunicacao.titulo)}</p>
@@ -671,18 +852,28 @@ async function deletarComunicacao(id) {
         showToast('Comunicação deletada com sucesso!', 'success');
         carregarComunicacoesAdmin();
         carregarDashboard();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 // ==================== FEEDBACK ====================
 
 async function carregarFeedbacksAdmin() {
     try {
-        const status = document.getElementById('filtro-status-feedback').value;
+        const status = document.getElementById('filtro-status-feedback')?.value || 'todos';
         const url = status !== 'todos' ? `/admin/feedback?status=${status}` : '/admin/feedback';
         const data = await requisicaoApi(url);
         const feedbacks = data.feedbacks || [];
-        document.getElementById('feedback-admin-tbody').innerHTML = feedbacks.map(fb => `
+        const tbody = document.getElementById('feedback-admin-tbody');
+        if (!tbody) return;
+        
+        if (feedbacks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum feedback encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = feedbacks.map(fb => `
             <tr>
                 <td>${new Date(fb.data).toLocaleString()}</td>
                 <td>${escapeHtml(fb.user_nome)}<br><small>${fb.user_email}</small></td>
@@ -695,7 +886,10 @@ async function carregarFeedbacksAdmin() {
                 </td>
             </tr>
         `).join('');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar feedbacks:', e);
+        showToast('Erro ao carregar feedbacks', 'error'); 
+    }
 }
 
 async function verFeedback(id) {
@@ -716,7 +910,9 @@ async function verFeedback(id) {
             document.getElementById('feedback-resposta').value = '';
             abrirModal('modal-responder-feedback');
         }
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 function abrirResponderFeedback(id) {
@@ -730,11 +926,19 @@ function abrirResponderFeedback(id) {
 
 async function carregarSuportesAdmin() {
     try {
-        const status = document.getElementById('filtro-status-suporte').value;
+        const status = document.getElementById('filtro-status-suporte')?.value || 'todos';
         const url = status !== 'todos' ? `/admin/suporte?status=${status}` : '/admin/suporte';
         const data = await requisicaoApi(url);
         const suportes = data.suportes || [];
-        document.getElementById('suporte-admin-tbody').innerHTML = suportes.map(sp => {
+        const tbody = document.getElementById('suporte-admin-tbody');
+        if (!tbody) return;
+        
+        if (suportes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitação encontrada</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = suportes.map(sp => {
             const statusMap = { 'aberto': 'badge-pending', 'em_andamento': 'badge-warning', 'resolvido': 'badge-active', 'fechado': 'badge-inactive' };
             const statusClass = statusMap[sp.status] || 'badge-pending';
             return `
@@ -751,7 +955,10 @@ async function carregarSuportesAdmin() {
                 </tr>
             `;
         }).join('');
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar suportes:', e);
+        showToast('Erro ao carregar suportes', 'error'); 
+    }
 }
 
 async function verSuporte(id) {
@@ -776,7 +983,9 @@ async function verSuporte(id) {
             document.getElementById('suporte-status').value = suporte.status || 'em_andamento';
             abrirModal('modal-responder-suporte');
         }
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 function abrirResponderSuporte(id) {
@@ -792,10 +1001,28 @@ function abrirResponderSuporte(id) {
 async function carregarLogs() {
     try { 
         const data = await requisicaoApi('/admin/logs'); 
-        document.getElementById('logs-tbody').innerHTML = (data.logs || []).map(l => 
-            `<tr><td>${new Date(l.data).toLocaleString()}</td><td>${l.evento}</td><td>${l.usuario || '-'}</td><td>${l.ip || '-'}</td><td><span class="badge ${l.gravidade === 'alta' ? 'badge-inactive' : 'badge-active'}">${l.gravidade}</span></td></tr>`
-        ).join('');
-    } catch(e) { showToast(e.message, 'error'); }
+        const tbody = document.getElementById('logs-tbody');
+        if (!tbody) return;
+        
+        const logs = data.logs || [];
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum log encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(l => {
+            const gravidadeClass = l.gravidade === 'critico' || l.gravidade === 'alta' ? 'badge-danger' : 
+                                   l.gravidade === 'media' ? 'badge-warning' : 'badge-active';
+            return `<tr><td>${new Date(l.data).toLocaleString()}</td><td>${l.evento}</td><td>${l.usuario || '-'}</td><td>${l.ip || '-'}</td><td><span class="badge ${gravidadeClass}">${l.gravidade || 'info'}</span></td></tr>`;
+        }).join('');
+    } catch(e) { 
+        console.error('Erro ao carregar logs:', e);
+        showToast('Erro ao carregar logs', 'error'); 
+    }
+}
+
+function exportarLogs() { 
+    showToast('Exportação em desenvolvimento', 'info'); 
 }
 
 // ==================== EXCLUSÕES ====================
@@ -805,15 +1032,21 @@ async function carregarSolicitacoesExclusao() {
         const data = await requisicaoApi('/admin/solicitacoes/exclusao');
         solicitacoesExclusaoData = data.solicitacoes || [];
         renderizarSolicitacoesExclusao(solicitacoesExclusaoData);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        console.error('Erro ao carregar solicitações:', e);
+        showToast('Erro ao carregar solicitações de exclusão', 'error'); 
+    }
 }
 
 function renderizarSolicitacoesExclusao(solicitacoes) {
     const tbody = document.getElementById('solicitacoes-exclusao-tbody');
+    if (!tbody) return;
+    
     if (solicitacoes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitação de exclusão pendente</td></tr>';
         return;
     }
+    
     tbody.innerHTML = solicitacoes.map(s => {
         const diasRestantes = calcularDiasRestantes(s.data_solicitacao);
         return `
@@ -828,12 +1061,8 @@ function renderizarSolicitacoesExclusao(solicitacoes) {
                     </span>
                 </td>
                 <td>
-                    <button class="btn btn-danger btn-sm" onclick="confirmarExclusaoAdmin(${s.id})">
-                        🗑️ Excluir Agora
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="cancelarExclusao(${s.id})">
-                        ❌ Cancelar
-                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmarExclusaoAdmin(${s.id})">🗑️ Excluir Agora</button>
+                    <button class="btn btn-outline btn-sm" onclick="cancelarExclusao(${s.id})">❌ Cancelar</button>
                 </td>
             </tr>
         `;
@@ -848,7 +1077,7 @@ function calcularDiasRestantes(dataSolicitacao) {
 }
 
 function filtrarExclusoes() {
-    const termo = document.getElementById('buscar-exclusao').value.toLowerCase();
+    const termo = document.getElementById('buscar-exclusao')?.value.toLowerCase() || '';
     const filtrados = solicitacoesExclusaoData.filter(s => 
         s.usuario_nome.toLowerCase().includes(termo) || 
         s.usuario_email.toLowerCase().includes(termo)
@@ -867,7 +1096,9 @@ async function confirmarExclusaoAdmin(solicitacaoId) {
         showToast('Conta excluída com sucesso!', 'success');
         carregarSolicitacoesExclusao();
         carregarDashboard();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 async function cancelarExclusao(solicitacaoId) {
@@ -879,14 +1110,15 @@ async function cancelarExclusao(solicitacaoId) {
         });
         showToast('Solicitação cancelada com sucesso!', 'info');
         carregarSolicitacoesExclusao();
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 // ==================== RELATÓRIO DE CONSENTIMENTO LGPD ====================
 
 function carregarDadosConsentimento() {
     try {
-        // Usar os dados já carregados das abas ONGs e Doadores
         const doadores = doadoresData || [];
         const ongs = ongsData || [];
         
@@ -898,15 +1130,10 @@ function carregarDadosConsentimento() {
         const consentidos = todosUsuarios.filter(u => u.consentimento_lgpd === true);
         const naoConsentidos = todosUsuarios.filter(u => u.consentimento_lgpd !== true);
         
-        const totalElement = document.getElementById('rel-total-usuarios');
-        const consentidosElement = document.getElementById('rel-consentidos');
-        const naoConsentidosElement = document.getElementById('rel-nao-consentidos');
-        const atualizacaoElement = document.getElementById('rel-ultima-atualizacao');
-        
-        if (totalElement) totalElement.textContent = todosUsuarios.length;
-        if (consentidosElement) consentidosElement.textContent = consentidos.length;
-        if (naoConsentidosElement) naoConsentidosElement.textContent = naoConsentidos.length;
-        if (atualizacaoElement) atualizacaoElement.textContent = new Date().toLocaleString();
+        document.getElementById('rel-total-usuarios').textContent = todosUsuarios.length;
+        document.getElementById('rel-consentidos').textContent = consentidos.length;
+        document.getElementById('rel-nao-consentidos').textContent = naoConsentidos.length;
+        document.getElementById('rel-ultima-atualizacao').textContent = new Date().toLocaleString();
         
         renderizarConsentimentos(consentidos);
         
@@ -960,7 +1187,6 @@ function gerarRelatorioConsentimento() {
             return;
         }
         
-        // Gerar relatório em texto
         let relatorio = `
 ============================================================
 RELATÓRIO DE CONSENTIMENTO LGPD - Doa+
@@ -989,7 +1215,6 @@ FIM DO RELATÓRIO
 ============================================================
 `;
         
-        // Criar arquivo para download
         const blob = new Blob([relatorio], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1024,7 +1249,6 @@ function exportarConsentimentosCSV() {
             return;
         }
         
-        // Cabeçalho CSV
         let csv = 'Nome,Email,Tipo,Data/Hora Consentimento,IP,Versão Termos\n';
         
         consentidos.forEach(u => {
@@ -1059,57 +1283,54 @@ function filtrarConsentimentos() {
     });
 }
 
-// ==================== UTILITÁRIOS ====================
-
-function exportarOngs() { 
-    const csv = ongsData.map(o => `${o.id},${o.nome},${o.email},${o.status},${o.media_avaliacao},${o.saldo_carteira}`).join('\n'); 
-    baixarCSV(csv, 'ongs.csv'); 
-}
-
-function exportarLogs() { showToast('Exportação em desenvolvimento', 'info'); }
-
-function baixarCSV(conteudo, arquivo) { 
-    const blob = new Blob([conteudo], { type: 'text/csv' }); 
-    const a = document.createElement('a'); 
-    a.href = URL.createObjectURL(blob); 
-    a.download = arquivo; 
-    a.click(); 
-    URL.revokeObjectURL(a.href); 
-}
-
-function escapeHtml(texto) { 
-    if(!texto) return ''; 
-    const div = document.createElement('div'); 
-    div.textContent = texto; 
-    return div.innerHTML; 
-}
-
-function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
-function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
-
 // ==================== INICIALIZAÇÃO ====================
 
 document.addEventListener('DOMContentLoaded', async function() {
     await obterCsrfToken();
     const token = getToken();
-    if (!token) { window.location.href = '/login.html'; return; }
+    if (!token) { 
+        window.location.href = '/login.html'; 
+        return; 
+    }
     const userType = localStorage.getItem('userType');
-    if (userType !== 'admin') { window.location.href = '/'; return; }
+    if (userType !== 'admin') { 
+        window.location.href = '/'; 
+        return; 
+    }
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const adminName = document.getElementById('admin-name');
     if (adminName && user.nome) adminName.textContent = user.nome || 'Admin';
     
-    configurarEventosAbas();
+    // Configurar navegação
+    document.querySelectorAll('.nav-link[data-aba]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aba = this.dataset.aba;
+            if (aba) mostrarAba(aba);
+        });
+    });
+    
+    // Configurar dropdown
+    document.querySelectorAll('.dropdown-menu a[data-aba]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aba = this.dataset.aba;
+            if (aba) mostrarAba(aba);
+        });
+    });
+    
+    // Carregar dashboard inicial
     mostrarAba('dashboard');
     
-    document.getElementById('logout-btn').addEventListener('click', function(e) {
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', function(e) {
         e.preventDefault();
         localStorage.clear();
         window.location.href = '/';
     });
     
-    // Form Advertência
-    document.getElementById('form-advertencia').addEventListener('submit', async function(e) {
+    // Formulário de Advertência
+    document.getElementById('form-advertencia')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const dados = {
             anuncio_id: document.getElementById('advertencia-anuncio-id').value,
@@ -1119,18 +1340,23 @@ document.addEventListener('DOMContentLoaded', async function() {
             acao: document.getElementById('acao-advertencia').value
         };
         try {
-            const resultado = await requisicaoApi('/admin/advertencias', { method: 'POST', body: JSON.stringify(dados) });
-            showToast(resultado.message || 'Advertência aplicada com sucesso!', 'warning');
+            await requisicaoApi('/admin/advertencias', { 
+                method: 'POST', 
+                body: JSON.stringify(dados) 
+            });
+            showToast('Advertência aplicada com sucesso!', 'warning');
             fecharModal('modal-advertencia');
             fecharModal('modal-anuncio');
             carregarAnuncios();
             carregarOngs();
             carregarDashboard();
-        } catch(e) { showToast(e.message, 'error'); }
+        } catch(e) { 
+            showToast(e.message, 'error'); 
+        }
     });
     
-    // Form Comunicação
-    document.getElementById('form-comunicacao').addEventListener('submit', async function(e) {
+    // Formulário de Comunicação
+    document.getElementById('form-comunicacao')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const tipo = document.getElementById('comunicacao-tipo').value;
         const titulo = document.getElementById('comunicacao-titulo').value;
@@ -1139,71 +1365,97 @@ document.addEventListener('DOMContentLoaded', async function() {
         const destinatarioId = document.getElementById('comunicacao-destinatario-id').value;
         const destinatarioTipo = document.getElementById('comunicacao-destinatario-tipo').value;
         
-        if (!titulo || titulo.length < 3) { showToast('Título deve ter pelo menos 3 caracteres', 'error'); return; }
-        if (!mensagem || mensagem.length < 5) { showToast('Mensagem deve ter pelo menos 5 caracteres', 'error'); return; }
-        if (tipo === 'especifico' && !destinatarioId) { showToast('Para envio específico, informe o ID do usuário', 'error'); return; }
+        if (!titulo || titulo.length < 3) { 
+            showToast('Título deve ter pelo menos 3 caracteres', 'error'); 
+            return; 
+        }
+        if (!mensagem || mensagem.length < 5) { 
+            showToast('Mensagem deve ter pelo menos 5 caracteres', 'error'); 
+            return; 
+        }
+        if (tipo === 'especifico' && !destinatarioId) { 
+            showToast('Para envio específico, informe o ID do usuário', 'error'); 
+            return; 
+        }
         
         const dados = { tipo, titulo, mensagem, prioridade };
-        if (tipo === 'especifico') { dados.destinatario_id = parseInt(destinatarioId); dados.destinatario_tipo = destinatarioTipo; }
+        if (tipo === 'especifico') { 
+            dados.destinatario_id = parseInt(destinatarioId); 
+            dados.destinatario_tipo = destinatarioTipo; 
+        }
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const textoOriginal = submitBtn.textContent;
         submitBtn.textContent = 'Enviando...';
         submitBtn.disabled = true;
+        
         try {
-            const resultado = await requisicaoApi('/admin/comunicacao/enviar', {
+            await requisicaoApi('/admin/comunicacao/enviar', {
                 method: 'POST',
                 body: JSON.stringify(dados)
             });
-            showToast(resultado.message || 'Comunicação enviada com sucesso!', 'success');
+            showToast('Comunicação enviada com sucesso!', 'success');
             fecharModal('modal-comunicacao');
             carregarComunicacoesAdmin();
             carregarDashboard();
-        } catch(e) { showToast(e.message, 'error'); } finally {
+        } catch(e) { 
+            showToast(e.message, 'error'); 
+        } finally {
             submitBtn.textContent = textoOriginal;
             submitBtn.disabled = false;
         }
     });
     
-    // Form Configurações
-    document.getElementById('form-config')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        showToast('Configurações salvas!', 'success');
-    });
-    
-    // Form Responder Feedback
+    // Formulário de Resposta Feedback
     document.getElementById('form-responder-feedback')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('feedback-id').value;
         const resposta = document.getElementById('feedback-resposta').value;
-        if (!resposta || resposta.length < 3) { showToast('Resposta deve ter pelo menos 3 caracteres', 'error'); return; }
+        if (!resposta || resposta.length < 3) { 
+            showToast('Resposta deve ter pelo menos 3 caracteres', 'error'); 
+            return; 
+        }
         try {
-            await requisicaoApi(`/admin/feedback/${id}`, { method: 'PUT', body: JSON.stringify({ resposta, status: 'respondido' }) });
+            await requisicaoApi(`/admin/feedback/${id}`, { 
+                method: 'PUT', 
+                body: JSON.stringify({ resposta, status: 'respondido' }) 
+            });
             showToast('Feedback respondido com sucesso!', 'success');
             fecharModal('modal-responder-feedback');
             carregarFeedbacksAdmin();
             carregarDashboard();
-        } catch(e) { showToast(e.message, 'error'); }
+        } catch(e) { 
+            showToast(e.message, 'error'); 
+        }
     });
     
-    // Form Responder Suporte
+    // Formulário de Resposta Suporte
     document.getElementById('form-responder-suporte')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('suporte-id').value;
         const resposta = document.getElementById('suporte-resposta').value;
         const status = document.getElementById('suporte-status').value;
-        if (!resposta || resposta.length < 3) { showToast('Resposta deve ter pelo menos 3 caracteres', 'error'); return; }
+        if (!resposta || resposta.length < 3) { 
+            showToast('Resposta deve ter pelo menos 3 caracteres', 'error'); 
+            return; 
+        }
         try {
-            await requisicaoApi(`/admin/suporte/${id}`, { method: 'PUT', body: JSON.stringify({ resposta, status }) });
+            await requisicaoApi(`/admin/suporte/${id}`, { 
+                method: 'PUT', 
+                body: JSON.stringify({ resposta, status }) 
+            });
             showToast('Solicitação de suporte respondida com sucesso!', 'success');
             fecharModal('modal-responder-suporte');
             carregarSuportesAdmin();
             carregarDashboard();
-        } catch(e) { showToast(e.message, 'error'); }
+        } catch(e) { 
+            showToast(e.message, 'error'); 
+        }
     });
 });
 
-// Tornar funções globais
+// ==================== EXPORTAÇÕES GLOBAIS ====================
+
 window.mostrarAba = mostrarAba;
 window.carregarDashboard = carregarDashboard;
 window.carregarAnuncios = carregarAnuncios;
@@ -1233,6 +1485,7 @@ window.verDoador = verDoador;
 window.verFeedback = verFeedback;
 window.verSuporte = verSuporte;
 window.verComunicacao = verComunicacao;
+window.verificarOng = verificarOng;
 window.bloquearOngPorId = bloquearOngPorId;
 window.desbloquearOng = desbloquearOng;
 window.bloquearOng = bloquearOng;
@@ -1249,4 +1502,9 @@ window.filtrarExclusoes = filtrarExclusoes;
 window.exportarOngs = exportarOngs;
 window.exportarDoadores = exportarDoadores;
 window.exportarLogs = exportarLogs;
-window.abrirResponderFeedback = abrir
+window.abrirResponderFeedback = abrirResponderFeedback;
+window.abrirResponderSuporte = abrirResponderSuporte;
+window.abrirModal = abrirModal;
+window.fecharModal = fecharModal;
+window.showToast = showToast;
+window.toggleDestinatarioEspecifico = toggleDestinatarioEspecifico;

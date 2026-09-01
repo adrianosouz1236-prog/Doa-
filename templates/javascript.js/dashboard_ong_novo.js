@@ -1,4 +1,4 @@
-// dashboard_ong.js - VERSÃO FINAL CORRIGIDA
+// dashboard_ong.js - CORRIGIDO
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 
@@ -75,7 +75,12 @@ function scrollToSection(sectionId) {
     if (section) {
         const navbarHeight = document.querySelector('.header')?.offsetHeight || 70;
         const sectionPosition = section.getBoundingClientRect().top + window.pageYOffset - navbarHeight - 20;
-        window.scrollTo({ top: sectionPosition, behavior: 'smooth' });
+        
+        window.scrollTo({
+            top: sectionPosition,
+            behavior: 'smooth'
+        });
+        
         if (history.pushState) {
             history.pushState(null, null, `#${targetId}`);
         }
@@ -87,7 +92,9 @@ function setupScrollLinks() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const target = this.getAttribute('data-target') || this.getAttribute('href').replace('#', '');
-            if (target) scrollToSection(target);
+            if (target) {
+                scrollToSection(target);
+            }
         });
     });
 }
@@ -100,6 +107,7 @@ function mostrarSeguranca() {
 // ==================== ALTERAR SENHA ====================
 document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
     const senhaAtual = document.getElementById('senha-atual-ong').value;
     const novaSenha = document.getElementById('nova-senha-ong').value;
     const confirmarSenha = document.getElementById('confirmar-senha-ong').value;
@@ -108,6 +116,7 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
         showToast('Preencha todos os campos', 'error');
         return;
     }
+    
     if (novaSenha !== confirmarSenha) {
         showToast('As senhas não coincidem', 'error');
         return;
@@ -121,10 +130,15 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
     try {
         await apiRequest('/usuario/alterar-senha', {
             method: 'PUT',
-            body: JSON.stringify({ senha_atual: senhaAtual, nova_senha: novaSenha })
+            body: JSON.stringify({ 
+                senha_atual: senhaAtual, 
+                nova_senha: novaSenha 
+            })
         });
+        
         showToast('✅ Senha alterada com sucesso!', 'success');
         document.getElementById('form-alterar-senha-ong').reset();
+        
     } catch (error) {
         showToast(error.message, 'error');
     } finally {
@@ -143,15 +157,19 @@ async function solicitarExclusaoContaOng() {
     
     try {
         const data = await apiRequest('/usuario/excluir', { method: 'DELETE' });
+        
         statusDiv.innerHTML = `
             <p style="color: #27ae60;">✅ ${data.message}</p>
             <p style="color: #7f8c8d; font-size: 0.9rem;">Prazo: ${data.prazo}</p>
             <p style="color: #7f8c8d; font-size: 0.9rem;">ID da solicitação: ${data.solicitacao_id}</p>
         `;
+        
         showToast('Solicitação de exclusão enviada com sucesso!', 'success');
+        
         document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').disabled = true;
         document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').textContent = '✅ Solicitação Enviada';
         document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').style.opacity = '0.6';
+        
     } catch (error) {
         statusDiv.innerHTML = `<p style="color: #e74c3c;">❌ Erro: ${error.message}</p>`;
         showToast(error.message, 'error');
@@ -351,7 +369,7 @@ document.getElementById('necessidade-form')?.addEventListener('submit', async (e
     }
 });
 
-// ==================== DOAÇÕES ====================
+// ==================== DOAÇÕES RECEBIDAS ====================
 async function carregarDoacoesRecebidas() {
     try {
         const data = await apiRequest('/ongs/doacoes');
@@ -596,6 +614,7 @@ async function carregarFotosOng() {
             if (container) container.innerHTML = html;
             if (modalContainer) modalContainer.innerHTML = html;
         }
+        
         document.getElementById('foto-url').value = '';
         document.getElementById('foto-descricao').value = '';
         document.getElementById('fotos-modal').style.display = 'flex';
@@ -768,7 +787,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupScrollLinks();
     
     if (window.location.hash) {
-        setTimeout(() => { scrollToSection(window.location.hash); }, 500);
+        setTimeout(() => {
+            scrollToSection(window.location.hash);
+        }, 500);
     }
     
     carregarDashboard();

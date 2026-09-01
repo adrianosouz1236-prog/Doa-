@@ -1,4 +1,4 @@
-# db/conexao.py
+# database/conexao.py
 import psycopg2
 from psycopg2 import sql, extras
 import logging
@@ -9,9 +9,8 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseConnection:
-    """Gerenciador de conexões com PostgreSQL"""
-    
     _instance = None
     
     def __new__(cls):
@@ -21,7 +20,6 @@ class DatabaseConnection:
         return cls._instance
     
     def _initialize(self):
-        """Inicializa a configuração da conexão"""
         self.connection = None
         self.use_direct_url = bool(os.getenv('DATABASE_URL'))
         
@@ -35,7 +33,6 @@ class DatabaseConnection:
             }
     
     def connect(self):
-        """Estabelece conexão com o banco de dados"""
         try:
             if self.use_direct_url:
                 self.connection = psycopg2.connect(os.getenv('DATABASE_URL'))
@@ -50,30 +47,17 @@ class DatabaseConnection:
             raise
     
     def disconnect(self):
-        """Fecha a conexão com o banco"""
         if self.connection:
             self.connection.close()
             logger.info("Conexão com PostgreSQL fechada")
     
     def get_cursor(self, dictionary=True):
-        """Retorna um cursor para executar queries"""
         conn = self.connect()
         if dictionary:
             return conn.cursor(cursor_factory=extras.RealDictCursor)
         return conn.cursor()
     
     def execute_query(self, query, params=None):
-        """
-        Executa uma query e retorna o resultado
-        
-        Args:
-            query: String SQL
-            params: Tupla com parâmetros para a query
-        
-        Returns:
-            Para SELECT: Lista de dicionários com os resultados
-            Para INSERT/UPDATE/DELETE: ID da linha afetada ou None
-        """
         cursor = None
         try:
             cursor = self.get_cursor()
@@ -85,7 +69,11 @@ class DatabaseConnection:
                 return cursor.fetchall()
             elif query_upper.startswith('INSERT'):
                 self.connection.commit()
-                return cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
+                try:
+                    cursor.execute("SELECT LASTVAL();")
+                    return cursor.fetchone()[0]
+                except:
+                    return cursor.rowcount
             else:
                 self.connection.commit()
                 return cursor.rowcount
@@ -100,7 +88,6 @@ class DatabaseConnection:
                 cursor.close()
     
     def execute_many(self, query, params_list):
-        """Executa múltiplas queries com batch"""
         cursor = None
         try:
             cursor = self.get_cursor()
@@ -117,7 +104,6 @@ class DatabaseConnection:
                 cursor.close()
     
     def test_connection(self):
-        """Testa a conexão com o banco de dados"""
         try:
             conn = self.connect()
             cursor = conn.cursor()
@@ -134,5 +120,5 @@ class DatabaseConnection:
                 'error': str(e)
             }
 
-# Singleton para uso global
+
 db = DatabaseConnection()

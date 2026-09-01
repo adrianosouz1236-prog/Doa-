@@ -88,10 +88,62 @@
                     <textarea id="descricao" name="descricao" rows="4" placeholder="Conte um pouco sobre o trabalho da sua organização..."></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label for="conta_bancaria">Conta Bancária (para saques)</label>
-                    <input type="text" id="conta_bancaria" name="conta_bancaria" placeholder="Banco - Agência - Conta">
-                    <small style="color: #7f8c8d;">Ex: Banco do Brasil - Ag: 1234 - CC: 56789-0</small>
+                <!-- ============================================================ -->
+                <!-- DADOS BANCÁRIOS - CAMPOS SEPARADOS                           -->
+                <!-- ============================================================ -->
+                <div class="form-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #ecf0f1;">
+                    <h3 style="color: #2c3e50; margin-bottom: 1rem;">🏦 Dados Bancários (para saques)</h3>
+                    <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 1rem;">
+                        Preencha os dados da conta bancária para receber saques das doações financeiras.
+                    </p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="banco">Banco *</label>
+                            <select id="banco" name="banco">
+                                <option value="">Selecione o banco</option>
+                                <option value="001">Banco do Brasil (001)</option>
+                                <option value="033">Santander (033)</option>
+                                <option value="104">Caixa Econômica (104)</option>
+                                <option value="237">Bradesco (237)</option>
+                                <option value="341">Itaú (341)</option>
+                                <option value="389">Mercantil do Brasil (389)</option>
+                                <option value="399">HSBC (399)</option>
+                                <option value="422">Banco Safra (422)</option>
+                                <option value="453">Banco Rural (453)</option>
+                                <option value="633">Banco Rendimento (633)</option>
+                                <option value="652">Itaú Unibanco (652)</option>
+                                <option value="745">Banco Citibank (745)</option>
+                                <option value="756">Banco Cooperativo (756)</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="agencia">Agência *</label>
+                            <input type="text" id="agencia" name="agencia" placeholder="Ex: 1234">
+                            <small style="color: #7f8c8d;">Número da agência (sem dígito)</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="conta">Conta *</label>
+                            <input type="text" id="conta" name="conta" placeholder="Ex: 56789-0">
+                            <small style="color: #7f8c8d;">Número da conta com dígito</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_conta">Tipo de Conta</label>
+                            <select id="tipo_conta" name="tipo_conta">
+                                <option value="corrente">Conta Corrente</option>
+                                <option value="poupanca">Conta Poupança</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="outro-banco" style="display: none;">
+                        <label for="outro_banco_nome">Nome do Banco</label>
+                        <input type="text" id="outro_banco_nome" placeholder="Digite o nome do banco">
+                    </div>
                 </div>
 
                 <!-- ============================================================ -->

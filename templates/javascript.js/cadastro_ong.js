@@ -1,4 +1,4 @@
-// cadastro_ong.js - SEM reCAPTCHA
+// cadastro_ong.js - COM CAMPOS BANCÁRIOS SEPARADOS
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     const toastMessage = toast.querySelector('.toast-message');
@@ -62,6 +62,22 @@ function atualizarForcaSenha(senha) {
     `;
 }
 
+// Mostrar campo "Outro banco"
+document.addEventListener('DOMContentLoaded', function() {
+    const bancoSelect = document.getElementById('banco');
+    const outroBanco = document.getElementById('outro-banco');
+    
+    if (bancoSelect) {
+        bancoSelect.addEventListener('change', function() {
+            if (this.value === 'outro') {
+                outroBanco.style.display = 'block';
+            } else {
+                outroBanco.style.display = 'none';
+            }
+        });
+    }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     await obterCsrfToken();
     const form = document.getElementById('cadastro-ong-form');
@@ -79,6 +95,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
+            // Coletar dados do formulário
+            const banco = document.getElementById('banco').value;
+            let nomeBanco = banco;
+            if (banco === 'outro') {
+                nomeBanco = document.getElementById('outro_banco_nome').value;
+                if (!nomeBanco) {
+                    showToast('Informe o nome do banco', 'error');
+                    return;
+                }
+            }
+            
             const dados = {
                 nome: document.getElementById('nome').value,
                 cnpj: document.getElementById('cnpj').value,
@@ -89,9 +116,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cidade: document.getElementById('cidade').value,
                 uf: document.getElementById('uf').value,
                 descricao: document.getElementById('descricao').value,
-                conta_bancaria: document.getElementById('conta_bancaria').value,
+                // Dados bancários separados
+                banco: nomeBanco,
+                agencia: document.getElementById('agencia').value,
+                conta: document.getElementById('conta').value,
+                tipo_conta: document.getElementById('tipo_conta').value,
                 consentimento_lgpd: consentimento
             };
+            
+            // Validar dados bancários (se algum campo de banco foi preenchido, todos devem estar)
+            const temBanco = dados.banco || dados.agencia || dados.conta;
+            if (temBanco) {
+                if (!dados.banco || !dados.agencia || !dados.conta) {
+                    showToast('Para cadastrar conta bancária, preencha Banco, Agência e Conta.', 'error');
+                    return;
+                }
+            }
             
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const textoOriginal = submitBtn.textContent;

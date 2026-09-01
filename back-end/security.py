@@ -1,4 +1,4 @@
-# security.py - SEM reCAPTCHA
+# security.py 
 import os
 import re
 import logging
@@ -13,6 +13,7 @@ import io
 import base64
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+import bcrypt
 
 load_dotenv()
 
@@ -80,6 +81,23 @@ logger = logging.getLogger('security')
 def is_development():
     """Verifica se está em modo desenvolvimento"""
     return os.getenv('FLASK_ENV', 'development') == 'development'
+
+def is_production():
+    """Verifica se está em modo produção"""
+    return os.getenv('FLASK_ENV', 'production') == 'production'
+
+# ==================== HASH DE SENHA ====================
+
+def hash_senha(senha):
+    """Gera hash bcrypt da senha"""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(senha.encode('utf-8'), salt).decode('utf-8')
+
+def verificar_senha(senha, hash_armazenado):
+    """Verifica se a senha corresponde ao hash"""
+    if not hash_armazenado:
+        return False
+    return bcrypt.checkpw(senha.encode('utf-8'), hash_armazenado.encode('utf-8'))
 
 # ==================== SANITIZAÇÃO ====================
 
@@ -267,7 +285,6 @@ def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     
-    # CSP SEM reCAPTCHA
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://maps.googleapis.com; "
@@ -326,6 +343,8 @@ def configurar_sessao_segura(app):
 # ==================== EXPORTAÇÕES ====================
 
 __all__ = [
+    'hash_senha',
+    'verificar_senha',
     'sanitizar_html',
     'sanitizar_string',
     'validar_senha_forte',
@@ -343,5 +362,6 @@ __all__ = [
     'registrar_evento_seguranca',
     'configurar_sessao_segura',
     'is_development',
+    'is_production',
     'logger'
 ]

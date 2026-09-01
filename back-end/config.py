@@ -40,6 +40,7 @@ class Config:
     TAXA_FIXA = float(os.getenv('TAXA_FIXA', 0.60))
     SAQUE_MINIMO = float(os.getenv('SAQUE_MINIMO', 10.00))
     PRAZO_SAQUE_DIAS = int(os.getenv('PRAZO_SAQUE_DIAS', 3))
+    DIAS_VERIFICACAO_ONG = int(os.getenv('DIAS_VERIFICACAO_ONG', 7))
     
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
