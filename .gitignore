@@ -52,4 +52,6 @@ logs/
 Thumbs.db
 
 # Config
-config.local.py
+config.local.pygerar_hashes.py
+*_hashes.py
+credenciais_hashes.txt
