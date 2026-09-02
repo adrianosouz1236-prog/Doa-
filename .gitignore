@@ -5,6 +5,7 @@
 generate_admin.py
 admin_*.py
 *_admin.py
+gerar_hashes.py
 
 # Python
 __pycache__/

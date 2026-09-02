@@ -1,4 +1,4 @@
-# security.py 
+# security.py - COMPLETO
 import os
 import re
 import logging
@@ -84,7 +84,7 @@ def is_development():
 
 def is_production():
     """Verifica se está em modo produção"""
-    return os.getenv('FLASK_ENV', 'production') == 'production'
+    return os.getenv('FLASK_ENV', 'development') == 'production'
 
 # ==================== HASH DE SENHA ====================
 
@@ -340,6 +340,16 @@ def configurar_sessao_segura(app):
         if 'csrf_token' not in session:
             session['csrf_token'] = secrets.token_urlsafe(32)
 
+# ==================== GERAR SENHA FORTE ====================
+
+def gerar_senha_aleatoria(tamanho=16):
+    """
+    Gera uma senha forte aleatória
+    Útil para criar senhas temporárias ou para administradores
+    """
+    caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()'
+    return ''.join(secrets.choice(caracteres) for _ in range(tamanho))
+
 # ==================== EXPORTAÇÕES ====================
 
 __all__ = [
@@ -363,5 +373,6 @@ __all__ = [
     'configurar_sessao_segura',
     'is_development',
     'is_production',
+    'gerar_senha_aleatoria',
     'logger'
 ]

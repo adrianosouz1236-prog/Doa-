@@ -1,13 +1,14 @@
-# database/repositories.py - COMPLETO COM DADOS DE TESTE
+# database/repositories.py - COMPLETO COM HASHES DAS VARIÁVEIS DE AMBIENTE
 from .conexao import db
 from datetime import datetime, timedelta
 import logging
 import json
+import os
 
 logger = logging.getLogger(__name__)
 
 # =====================================================================
-# DADOS EM MEMÓRIA - DEFINIDOS ANTES DA FUNÇÃO
+# DADOS EM MEMÓRIA
 # =====================================================================
 
 ongs_db = {}
@@ -54,162 +55,193 @@ next_transacao_id = 1
 
 
 # =====================================================================
-# FUNÇÃO DE INICIALIZAÇÃO
+# FUNÇÃO DE INICIALIZAÇÃO - CONTROLADA POR AMBIENTE
 # =====================================================================
 
 def init_test_data():
-    """Inicializa dados de teste em memória"""
+    """Inicializa dados de teste SOMENTE em desenvolvimento"""
     from security import hash_senha
     from datetime import datetime
     
-    global ongs_db, doadores_db, administradores_db, necessidades_db, doacoes_db
-    global doacoes_financeiras_db, carteiras_db, ong_eventos_db, voluntariado_db
-    
-    if ongs_db and doadores_db and administradores_db:
-        print("⚠️ Dados já inicializados")
+    # ============================================================
+    # NÃO CARREGA DADOS DE TESTE EM PRODUÇÃO
+    # ============================================================
+    if os.getenv('FLASK_ENV') == 'production':
+        print("🚀 Ambiente PRODUÇÃO - Dados de teste NÃO carregados")
         return
     
-    print("🧪 Carregando dados de teste...")
+    print("🧪 Ambiente DESENVOLVIMENTO - Carregando dados de teste...")
     
     # ============================================================
-    # ADMINISTRADOR
+    # ADMINISTRADOR - USA HASH DAS VARIÁVEIS DE AMBIENTE
     # ============================================================
-    admin_data = {
-        'id': 1,
-        'nome': 'Administrador',
-        'email': 'admin@doamais.org',
-        'senha': hash_senha('admin123'),
-        'tipo': 'admin',
-        'status': 'ativo',
-        'data_cadastro': datetime.now().isoformat()
-    }
-    administradores_db[1] = admin_data
-    print(f"✅ Admin criado: {admin_data['email']}")
+    if not administradores_db:
+        # Verifica se existe hash nas variáveis de ambiente
+        hash_admin = os.getenv('ADMIN_PASSWORD_HASH')
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
+        
+        if hash_admin:
+            # Usa o hash das variáveis de ambiente
+            senha_admin = hash_admin
+            print(f"✅ Admin usando senha das variáveis de ambiente: {admin_email}")
+        else:
+            # Fallback: usa a senha padrão
+            senha_admin = hash_senha('admin123')
+            print("⚠️ Admin usando senha padrão (admin123)")
+        
+        admin_data = {
+            'id': 1,
+            'nome': 'Administrador',
+            'email': admin_email,
+            'senha': senha_admin,
+            'tipo': 'admin',
+            'status': 'ativo',
+            'data_cadastro': datetime.now().isoformat()
+        }
+        administradores_db[1] = admin_data
+        print("✅ Admin criado")
     
     # ============================================================
-    # ONG DE TESTE
+    # ONG DE TESTE - USA HASH DAS VARIÁVEIS DE AMBIENTE
     # ============================================================
-    ong_data = {
-        'id': 1,
-        'nome': 'ONG Solidária Brasil',
-        'cnpj': '12.345.678/0001-90',
-        'email': 'ong@solidaria.org',
-        'senha': hash_senha('Ong@123456'),
-        'telefone': '(11) 99999-9999',
-        'endereco': 'Rua da Solidariedade, 100',
-        'cidade': 'São Paulo',
-        'uf': 'SP',
-        'descricao': 'ONG dedicada a ajudar pessoas em situação de vulnerabilidade social.',
-        'status': 'verificado',
-        'data_cadastro': datetime.now().isoformat(),
-        'media_avaliacao': 4.5,
-        'total_avaliacoes': 10,
-        'latitude': -23.550520,
-        'longitude': -46.633308,
-        'endereco_completo': 'Rua da Solidariedade, 100 - São Paulo - SP',
-        'logo_url': 'https://via.placeholder.com/150?text=ONG',
-        'email_confirmado': True,
-        'consentimento_lgpd': True,
-        'conta_bancaria_criptografada': None
-    }
-    ongs_db[1] = ong_data
-    print(f"✅ ONG criada: {ong_data['email']}")
+    if not ongs_db:
+        hash_ong = os.getenv('ONG_PASSWORD_HASH')
+        ong_email = os.getenv('ONG_EMAIL', 'ong@solidaria.org')
+        
+        if hash_ong:
+            senha_ong = hash_ong
+            print(f"✅ ONG usando senha das variáveis de ambiente: {ong_email}")
+        else:
+            senha_ong = hash_senha('Ong@123456')
+            print("⚠️ ONG usando senha padrão (Ong@123456)")
+        
+        ong_data = {
+            'id': 1,
+            'nome': 'ONG Teste',
+            'cnpj': '12.345.678/0001-90',
+            'email': ong_email,
+            'senha': senha_ong,
+            'telefone': '(11) 99999-9999',
+            'status': 'verificado',
+            'data_cadastro': datetime.now().isoformat(),
+            'email_confirmado': True,
+            'consentimento_lgpd': True
+        }
+        ongs_db[1] = ong_data
+        print("✅ ONG de teste criada")
     
     # ============================================================
-    # DOADOR DE TESTE
+    # DOADOR DE TESTE - USA HASH DAS VARIÁVEIS DE AMBIENTE
     # ============================================================
-    doador_data = {
-        'id': 1,
-        'nome': 'João Silva',
-        'email': 'joao@email.com',
-        'senha': hash_senha('Doador@123456'),
-        'telefone': '(11) 98888-7777',
-        'cpf': '123.456.789-00',
-        'endereco': 'Rua das Flores, 123',
-        'cidade': 'São Paulo',
-        'uf': 'SP',
-        'status': 'ativo',
-        'data_cadastro': datetime.now().isoformat(),
-        'total_doacoes': 5,
-        'pontuacao': 150,
-        'conquistas': ['primeira_doacao', 'doador_frequente'],
-        'email_confirmado': True,
-        'consentimento_lgpd': True
-    }
-    doadores_db[1] = doador_data
-    print(f"✅ Doador criado: {doador_data['email']}")
+    if not doadores_db:
+        hash_doador = os.getenv('DOADOR_PASSWORD_HASH')
+        doador_email = os.getenv('DOADOR_EMAIL', 'joao@email.com')
+        
+        if hash_doador:
+            senha_doador = hash_doador
+            print(f"✅ Doador usando senha das variáveis de ambiente: {doador_email}")
+        else:
+            senha_doador = hash_senha('Doador@123456')
+            print("⚠️ Doador usando senha padrão (Doador@123456)")
+        
+        doador_data = {
+            'id': 1,
+            'nome': 'Doador Teste',
+            'email': doador_email,
+            'senha': senha_doador,
+            'telefone': '(11) 98888-7777',
+            'status': 'ativo',
+            'data_cadastro': datetime.now().isoformat(),
+            'email_confirmado': True,
+            'consentimento_lgpd': True
+        }
+        doadores_db[1] = doador_data
+        print("✅ Doador de teste criado")
     
     # ============================================================
-    # CARTEIRA DA ONG
+    # CARTEIRA DA ONG DE TESTE (apenas desenvolvimento)
     # ============================================================
-    carteiras_db[1] = {
-        'ong_id': 1,
-        'saldo': 150.00,
-        'total_recebido': 250.00,
-        'total_sacado': 100.00
-    }
-    print("✅ Carteira criada")
+    if not carteiras_db and os.getenv('FLASK_ENV') == 'development':
+        carteiras_db[1] = {
+            'ong_id': 1,
+            'saldo': 150.00,
+            'total_recebido': 250.00,
+            'total_sacado': 100.00
+        }
+        print("✅ Carteira criada")
     
     # ============================================================
-    # NECESSIDADE DE TESTE
+    # NECESSIDADE DE TESTE (apenas desenvolvimento)
     # ============================================================
-    necessidades_db[1] = {
-        'id': 1,
-        'ong_id': 1,
-        'titulo': 'Arrecadação de Alimentos',
-        'descricao': 'Precisamos de alimentos não perecíveis para distribuir para 100 famílias.',
-        'categoria': 'alimentos',
-        'quantidade_necessaria': 500,
-        'quantidade_recebida': 150,
-        'urgencia': 'alta',
-        'status': 'aberta',
-        'data_criacao': datetime.now().isoformat()
-    }
-    print(f"✅ Necessidade criada: {necessidades_db[1]['titulo']}")
+    if not necessidades_db and os.getenv('FLASK_ENV') == 'development':
+        necessidades_db[1] = {
+            'id': 1,
+            'ong_id': 1,
+            'titulo': 'Arrecadação de Alimentos',
+            'descricao': 'Precisamos de alimentos não perecíveis para distribuir para 100 famílias.',
+            'categoria': 'alimentos',
+            'quantidade_necessaria': 500,
+            'quantidade_recebida': 150,
+            'urgencia': 'alta',
+            'status': 'aberta',
+            'data_criacao': datetime.now().isoformat()
+        }
+        print("✅ Necessidade criada")
     
     # ============================================================
-    # EVENTO DE TESTE
+    # EVENTO DE TESTE (apenas desenvolvimento)
     # ============================================================
-    ong_eventos_db[1] = {
-        'id': 1,
-        'ong_id': 1,
-        'titulo': 'Dia da Solidariedade',
-        'descricao': 'Venha participar do nosso evento de arrecadação de alimentos e roupas.',
-        'data_evento': datetime.now().isoformat(),
-        'local_evento': 'Parque da Cidade',
-        'endereco': 'Av. Principal, 500',
-        'cidade': 'São Paulo',
-        'uf': 'SP',
-        'status': 'ativo',
-        'data_criacao': datetime.now().isoformat()
-    }
-    print(f"✅ Evento criado: {ong_eventos_db[1]['titulo']}")
+    if not ong_eventos_db and os.getenv('FLASK_ENV') == 'development':
+        ong_eventos_db[1] = {
+            'id': 1,
+            'ong_id': 1,
+            'titulo': 'Dia da Solidariedade',
+            'descricao': 'Venha participar do nosso evento de arrecadação de alimentos e roupas.',
+            'data_evento': datetime.now().isoformat(),
+            'local_evento': 'Parque da Cidade',
+            'endereco': 'Av. Principal, 500',
+            'cidade': 'São Paulo',
+            'uf': 'SP',
+            'status': 'ativo',
+            'data_criacao': datetime.now().isoformat()
+        }
+        print("✅ Evento criado")
     
     # ============================================================
-    # VAGA DE VOLUNTARIADO
+    # VAGA DE VOLUNTARIADO (apenas desenvolvimento)
     # ============================================================
-    voluntariado_db[1] = {
-        'id': 1,
-        'ong_id': 1,
-        'ong_nome': 'ONG Solidária Brasil',
-        'titulo': 'Voluntário para distribuição de alimentos',
-        'descricao': 'Ajudar na organização e distribuição de alimentos para famílias carentes.',
-        'data_evento': datetime.now().isoformat(),
-        'local': 'Parque da Cidade',
-        'vagas_disponiveis': 10,
-        'vagas_preenchidas': 3,
-        'status': 'aberta',
-        'data_criacao': datetime.now().isoformat()
-    }
-    print(f"✅ Vaga de voluntariado criada: {voluntariado_db[1]['titulo']}")
+    if not voluntariado_db and os.getenv('FLASK_ENV') == 'development':
+        voluntariado_db[1] = {
+            'id': 1,
+            'ong_id': 1,
+            'ong_nome': 'ONG Teste',
+            'titulo': 'Voluntário para distribuição de alimentos',
+            'descricao': 'Ajudar na organização e distribuição de alimentos para famílias carentes.',
+            'data_evento': datetime.now().isoformat(),
+            'local': 'Parque da Cidade',
+            'vagas_disponiveis': 10,
+            'vagas_preenchidas': 3,
+            'status': 'aberta',
+            'data_criacao': datetime.now().isoformat()
+        }
+        print("✅ Vaga de voluntariado criada")
     
     print("\n" + "="*60)
-    print("✅ DADOS DE TESTE CARREGADOS COM SUCESSO!")
+    if os.getenv('FLASK_ENV') == 'production':
+        print("✅ APENAS CONTAS DE TESTE CRIADAS (sem dados falsos)")
+    else:
+        print("✅ DADOS DE TESTE CARREGADOS COM SUCESSO!")
     print("="*60)
-    print("\n🔑 CREDENCIAIS:")
-    print("   👑 Admin: admin@doamais.org / admin123")
-    print("   🏢 ONG:   ong@solidaria.org / Ong@123456")
-    print("   👤 Doador: joao@email.com / Doador@123456")
+    print("\n🔑 CREDENCIAIS DE TESTE:")
+    
+    # Mostra as credenciais de acordo com o ambiente
+    admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
+    ong_email = os.getenv('ONG_EMAIL', 'ong@solidaria.org')
+    doador_email = os.getenv('DOADOR_EMAIL', 'joao@email.com')
+    
+    print(f"   👑 Admin: {admin_email} / (senha definida no .env)")
+    print(f"   🏢 ONG:   {ong_email} / (senha definida no .env)")
+    print(f"   👤 Doador: {doador_email} / (senha definida no .env)")
     print("="*60 + "\n")
 
 
@@ -228,6 +260,17 @@ class AdminRepository:
     @staticmethod
     def buscar_por_id(admin_id):
         return administradores_db.get(admin_id)
+    
+    @staticmethod
+    def atualizar(admin_id, dados):
+        if admin_id not in administradores_db:
+            return False
+        administradores_db[admin_id].update(dados)
+        return True
+    
+    @staticmethod
+    def listar_todos():
+        return list(administradores_db.values())
 
 
 # =====================================================================
@@ -646,8 +689,8 @@ class AuditRepository:
 
 
 # =====================================================================
-# INICIALIZAR DADOS AUTOMATICAMENTE
+# INICIALIZAR DADOS
 # =====================================================================
 
-# Chamar a inicialização automaticamente ao importar
+# Inicializa dados de teste (controlado pelo ambiente)
 init_test_data()

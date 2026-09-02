@@ -1,4 +1,4 @@
-# app.py - COMPLETO COM TODOS OS BLUEPRINTS E CREDENCIAIS DE TESTE
+# app.py - COMPLETO COM CONTROLE DE AMBIENTE
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 import os
@@ -163,15 +163,18 @@ def add_security_headers_to_response(response):
 if __name__ == '__main__':
     from database.repositories import init_test_data
     
+    # SÓ CARREGA DADOS DE TESTE EM DESENVOLVIMENTO
     if is_development():
         init_test_data()
         
         # Verificar se os dados foram carregados
         from database.repositories import ongs_db, doadores_db, necessidades_db
-        print(f"\n📊 Dados de teste carregados:")
+        print(f"\n📊 Dados carregados:")
         print(f"   ONGs: {len(ongs_db)}")
         print(f"   Doadores: {len(doadores_db)}")
         print(f"   Necessidades: {len(necessidades_db)}")
+    else:
+        print("🚀 Ambiente PRODUÇÃO - Sem dados de teste")
     
     port = int(os.environ.get('PORT', 5000))
     debug_mode = is_development()
@@ -183,25 +186,25 @@ if __name__ == '__main__':
     print(f"🔧 Modo: {'DESENVOLVIMENTO' if debug_mode else 'PRODUÇÃO'}")
     
     print("\n" + "="*70)
-    print("🔑 CREDENCIAIS DE TESTE")
+    print("🔑 CREDENCIAIS DE TESTE (apenas desenvolvimento)")
     print("="*70)
     print("\n👑 ADMIN (Painel Administrativo)")
     print("   Email: admin@doamais.org")
     print("   Senha: admin123")
     print("   Tipo: admin")
-    print("   Acesso: http://127.0.0.1:5000/admin_plataform.html")
+    print("   Acesso: /admin_plataform.html")
     
     print("\n🏢 ONG (Organização)")
     print("   Email: ong@solidaria.org")
     print("   Senha: Ong@123456")
     print("   Tipo: ong")
-    print("   Acesso: http://127.0.0.1:5000/dashboard_ong.html")
+    print("   Acesso: /dashboard_ong.html")
     
     print("\n👤 DOADOR (Usuário Comum)")
     print("   Email: joao@email.com")
     print("   Senha: Doador@123456")
     print("   Tipo: doador")
-    print("   Acesso: http://127.0.0.1:5000/")
+    print("   Acesso: /")
     
     print("\n" + "="*70)
     print("📋 ROTAS DISPONÍVEIS")
@@ -210,50 +213,18 @@ if __name__ == '__main__':
     print("   /                 - Página inicial")
     print("   /login.html       - Login")
     print("   /cadastro.html    - Cadastro")
-    print("   /cadastro_doador.html - Cadastro do Doador")
-    print("   /cadastro_ong.html - Cadastro da ONG")
-    print("   /dashboard_ong.html - Dashboard da ONG")
-    print("   /admin_plataform.html - Painel Administrativo")
+    print("   /dashboard_ong.html - Dashboard ONG")
+    print("   /admin_plataform.html - Painel Admin")
     print("   /feedback.html    - Feedback")
     print("   /suporte.html     - Suporte")
-    print("   /perfil_doador.html - Perfil do Doador")
-    print("   /perfil_ong.html  - Perfil da ONG")
-    print("   /doacoes_financeiras.html - Doações Financeiras")
-    print("   /central_ajuda.html - Central de Ajuda")
-    print("   /politicas_privacidade.html - Políticas de Privacidade")
-    print("   /termos_servico.html - Termos de Serviço")
-    print("   /recuperar_senha.html - Recuperar Senha")
     
     print("\n   📡 API:")
-    print("   /api/ongs                    - Listar ONGs")
-    print("   /api/ongs/dashboard          - Dashboard da ONG")
-    print("   /api/ongs/necessidades       - Necessidades da ONG")
-    print("   /api/ongs/doacoes            - Doações da ONG")
-    print("   /api/ongs/eventos            - Eventos da ONG")
-    print("   /api/ongs/parcerias          - Parcerias da ONG")
-    print("   /api/ongs/fotos              - Fotos da ONG")
-    print("   /api/ongs/perfil             - Perfil da ONG")
-    print("   /api/ongs/localizacao        - Localização da ONG")
-    print("   /api/necessidades            - Listar necessidades públicas")
-    print("   /api/eventos                 - Listar eventos públicos")
-    print("   /api/dashboard/stats         - Estatísticas do dashboard")
-    print("   /api/ranking/doadores        - Ranking de doadores")
-    print("   /api/voluntariado/vagas      - Vagas de voluntariado")
-    print("   /api/auth/login              - Login")
-    print("   /api/auth/cadastro/doador    - Cadastro doador")
-    print("   /api/auth/cadastro/ong       - Cadastro ONG")
-    print("   /api/auth/recuperar-senha    - Recuperar senha")
-    print("   /api/doacoes                 - Gerenciar doações")
-    print("   /api/doacoes/financeiras     - Doações financeiras")
-    print("   /api/carteira/saldo          - Saldo da carteira")
-    print("   /api/carteira/extrato        - Extrato da carteira")
-    print("   /api/carteira/sacar          - Solicitar saque")
-    print("   /api/feedback/meus           - Meus feedbacks")
-    print("   /api/suporte/meus            - Meus chamados")
-    print("   /api/comunicacoes/nao-lidas  - Comunicações não lidas")
-    print("   /api/chat/nao-lidas          - Chat não lidas")
-    print("   /api/config/csrf-token       - CSRF Token")
-    print("   /health                      - Health Check")
+    print("   /api/ongs          - Listar ONGs")
+    print("   /api/necessidades  - Listar necessidades")
+    print("   /api/eventos       - Listar eventos")
+    print("   /api/dashboard/stats - Estatísticas")
+    print("   /api/auth/login    - Login")
+    print("   /api/carteira/saldo - Saldo da carteira")
     
     print("\n" + "="*70)
     print("💡 DICA: Use as credenciais acima para testar o sistema")
