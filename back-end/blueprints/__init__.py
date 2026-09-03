@@ -11,6 +11,8 @@ from .chat import chat_bp
 from .suporte import suporte_bp
 from .feedback import feedback_bp
 from .carteira import carteira_bp
+from .ajuda import ajuda_bp
+from .usuario import usuario_bp
 
 __all__ = [
     'auth_bp',
@@ -24,5 +26,7 @@ __all__ = [
     'chat_bp',
     'suporte_bp',
     'feedback_bp',
-    'carteira_bp'
+    'carteira_bp',
+    'ajuda_bp',
+    'usuario_bp'
 ]

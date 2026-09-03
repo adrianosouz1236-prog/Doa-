@@ -1,4 +1,4 @@
-# app.py - COMPLETO COM CONTROLE DE AMBIENTE
+# app.py - COMPLETO COM TODOS OS BLUEPRINTS
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 import os
@@ -30,7 +30,9 @@ from blueprints import (
     chat_bp,
     suporte_bp,
     feedback_bp,
-    carteira_bp
+    carteira_bp,
+    ajuda_bp,
+    usuario_bp
 )
 
 # Importar rate limiter
@@ -70,6 +72,8 @@ app.register_blueprint(chat_bp, url_prefix='/api/chat')
 app.register_blueprint(suporte_bp, url_prefix='/api/suporte')
 app.register_blueprint(feedback_bp, url_prefix='/api/feedback')
 app.register_blueprint(carteira_bp, url_prefix='/api/carteira')
+app.register_blueprint(ajuda_bp, url_prefix='/api/ajuda')
+app.register_blueprint(usuario_bp, url_prefix='/api/usuario')
 
 print("✅ Blueprints registrados:")
 print(f"   /api/auth - {auth_bp.name}")
@@ -84,6 +88,8 @@ print(f"   /api/chat - {chat_bp.name}")
 print(f"   /api/suporte - {suporte_bp.name}")
 print(f"   /api/feedback - {feedback_bp.name}")
 print(f"   /api/carteira - {carteira_bp.name}")
+print(f"   /api/ajuda - {ajuda_bp.name}")
+print(f"   /api/usuario - {usuario_bp.name}")
 
 # ==================== INICIALIZAR RATE LIMITER ====================
 RateLimiterMiddleware(app)
@@ -217,6 +223,11 @@ if __name__ == '__main__':
     print("   /admin_plataform.html - Painel Admin")
     print("   /feedback.html    - Feedback")
     print("   /suporte.html     - Suporte")
+    print("   /perfil_doador.html - Perfil do Doador")
+    print("   /perfil_ong.html  - Perfil da ONG")
+    print("   /doacoes_financeiras.html - Doações Financeiras")
+    print("   /central_ajuda.html - Central de Ajuda")
+    print("   /recuperar_senha.html - Recuperar Senha")
     
     print("\n   📡 API:")
     print("   /api/ongs          - Listar ONGs")
@@ -224,7 +235,23 @@ if __name__ == '__main__':
     print("   /api/eventos       - Listar eventos")
     print("   /api/dashboard/stats - Estatísticas")
     print("   /api/auth/login    - Login")
+    print("   /api/auth/cadastro/doador - Cadastro doador")
+    print("   /api/auth/cadastro/ong - Cadastro ONG")
+    print("   /api/auth/recuperar-senha - Recuperar senha")
+    print("   /api/doacoes       - Gerenciar doações")
+    print("   /api/doacoes/financeiras - Doações financeiras")
     print("   /api/carteira/saldo - Saldo da carteira")
+    print("   /api/carteira/extrato - Extrato da carteira")
+    print("   /api/carteira/sacar - Solicitar saque")
+    print("   /api/feedback/meus - Meus feedbacks")
+    print("   /api/suporte/meus  - Meus chamados")
+    print("   /api/comunicacoes/nao-lidas - Comunicações não lidas")
+    print("   /api/chat/nao-lidas - Chat não lidas")
+    print("   /api/usuario/dados - Dados do usuário")
+    print("   /api/usuario/alterar-senha - Alterar senha")
+    print("   /api/ajuda         - Central de Ajuda")
+    print("   /api/config/csrf-token - CSRF Token")
+    print("   /health            - Health Check")
     
     print("\n" + "="*70)
     print("💡 DICA: Use as credenciais acima para testar o sistema")
