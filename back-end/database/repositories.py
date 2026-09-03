@@ -1,4 +1,4 @@
-# database/repositories.py - COMPLETO COM HASHES DAS VARIÁVEIS DE AMBIENTE
+# database/repositories.py - COMPLETO COM ADMIN SEMPRE CRIADO
 from .conexao import db
 from datetime import datetime, timedelta
 import logging
@@ -55,25 +55,18 @@ next_transacao_id = 1
 
 
 # =====================================================================
-# FUNÇÃO DE INICIALIZAÇÃO - CONTROLADA POR AMBIENTE
+# FUNÇÃO DE INICIALIZAÇÃO - ADMIN SEMPRE CRIADO
 # =====================================================================
 
 def init_test_data():
-    """Inicializa dados de teste SOMENTE em desenvolvimento"""
+    """Inicializa dados de teste - Admin SEMPRE criado"""
     from security import hash_senha
     from datetime import datetime
     
-    # ============================================================
-    # NÃO CARREGA DADOS DE TESTE EM PRODUÇÃO
-    # ============================================================
-    if os.getenv('FLASK_ENV') == 'production':
-        print("🚀 Ambiente PRODUÇÃO - Dados de teste NÃO carregados")
-        return
-    
-    print("🧪 Ambiente DESENVOLVIMENTO - Carregando dados de teste...")
+    print("🧪 Inicializando dados...")
     
     # ============================================================
-    # ADMINISTRADOR - USA HASH DAS VARIÁVEIS DE AMBIENTE
+    # ADMINISTRADOR - CRIADO SEMPRE (produção e desenvolvimento)
     # ============================================================
     if not administradores_db:
         # Verifica se existe hash nas variáveis de ambiente
@@ -87,7 +80,7 @@ def init_test_data():
         else:
             # Fallback: usa a senha padrão
             senha_admin = hash_senha('admin123')
-            print("⚠️ Admin usando senha padrão (admin123)")
+            print(f"⚠️ Admin usando senha padrão (admin123): {admin_email}")
         
         admin_data = {
             'id': 1,
@@ -99,10 +92,12 @@ def init_test_data():
             'data_cadastro': datetime.now().isoformat()
         }
         administradores_db[1] = admin_data
-        print("✅ Admin criado")
+        print(f"✅ Admin criado: {admin_email}")
+    else:
+        print(f"✅ Admin já existe: {administradores_db[1].get('email')}")
     
     # ============================================================
-    # ONG DE TESTE - USA HASH DAS VARIÁVEIS DE AMBIENTE
+    # ONG DE TESTE - CRIADA SEMPRE
     # ============================================================
     if not ongs_db:
         hash_ong = os.getenv('ONG_PASSWORD_HASH')
@@ -113,7 +108,7 @@ def init_test_data():
             print(f"✅ ONG usando senha das variáveis de ambiente: {ong_email}")
         else:
             senha_ong = hash_senha('Ong@123456')
-            print("⚠️ ONG usando senha padrão (Ong@123456)")
+            print(f"⚠️ ONG usando senha padrão (Ong@123456): {ong_email}")
         
         ong_data = {
             'id': 1,
@@ -128,10 +123,12 @@ def init_test_data():
             'consentimento_lgpd': True
         }
         ongs_db[1] = ong_data
-        print("✅ ONG de teste criada")
+        print(f"✅ ONG de teste criada: {ong_email}")
+    else:
+        print(f"✅ ONG já existe: {ongs_db[1].get('email')}")
     
     # ============================================================
-    # DOADOR DE TESTE - USA HASH DAS VARIÁVEIS DE AMBIENTE
+    # DOADOR DE TESTE - CRIADO SEMPRE
     # ============================================================
     if not doadores_db:
         hash_doador = os.getenv('DOADOR_PASSWORD_HASH')
@@ -142,7 +139,7 @@ def init_test_data():
             print(f"✅ Doador usando senha das variáveis de ambiente: {doador_email}")
         else:
             senha_doador = hash_senha('Doador@123456')
-            print("⚠️ Doador usando senha padrão (Doador@123456)")
+            print(f"⚠️ Doador usando senha padrão (Doador@123456): {doador_email}")
         
         doador_data = {
             'id': 1,
@@ -156,12 +153,34 @@ def init_test_data():
             'consentimento_lgpd': True
         }
         doadores_db[1] = doador_data
-        print("✅ Doador de teste criado")
+        print(f"✅ Doador de teste criado: {doador_email}")
+    else:
+        print(f"✅ Doador já existe: {doadores_db[1].get('email')}")
+    
+    # ============================================================
+    # SÓ CRIA DADOS FALSOS EM DESENVOLVIMENTO
+    # ============================================================
+    if os.getenv('FLASK_ENV') == 'production':
+        print("🚀 Ambiente PRODUÇÃO - Apenas contas de teste criadas")
+        print("\n" + "="*60)
+        print("✅ INICIALIZAÇÃO CONCLUÍDA!")
+        print("="*60)
+        print("\n🔑 CREDENCIAIS DE TESTE:")
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
+        ong_email = os.getenv('ONG_EMAIL', 'ong@solidaria.org')
+        doador_email = os.getenv('DOADOR_EMAIL', 'joao@email.com')
+        print(f"   👑 Admin: {admin_email}")
+        print(f"   🏢 ONG:   {ong_email}")
+        print(f"   👤 Doador: {doador_email}")
+        print("="*60 + "\n")
+        return
+    
+    print("🧪 Ambiente DESENVOLVIMENTO - Carregando dados de teste...")
     
     # ============================================================
     # CARTEIRA DA ONG DE TESTE (apenas desenvolvimento)
     # ============================================================
-    if not carteiras_db and os.getenv('FLASK_ENV') == 'development':
+    if not carteiras_db:
         carteiras_db[1] = {
             'ong_id': 1,
             'saldo': 150.00,
@@ -173,7 +192,7 @@ def init_test_data():
     # ============================================================
     # NECESSIDADE DE TESTE (apenas desenvolvimento)
     # ============================================================
-    if not necessidades_db and os.getenv('FLASK_ENV') == 'development':
+    if not necessidades_db:
         necessidades_db[1] = {
             'id': 1,
             'ong_id': 1,
@@ -191,7 +210,7 @@ def init_test_data():
     # ============================================================
     # EVENTO DE TESTE (apenas desenvolvimento)
     # ============================================================
-    if not ong_eventos_db and os.getenv('FLASK_ENV') == 'development':
+    if not ong_eventos_db:
         ong_eventos_db[1] = {
             'id': 1,
             'ong_id': 1,
@@ -210,7 +229,7 @@ def init_test_data():
     # ============================================================
     # VAGA DE VOLUNTARIADO (apenas desenvolvimento)
     # ============================================================
-    if not voluntariado_db and os.getenv('FLASK_ENV') == 'development':
+    if not voluntariado_db:
         voluntariado_db[1] = {
             'id': 1,
             'ong_id': 1,
@@ -227,21 +246,15 @@ def init_test_data():
         print("✅ Vaga de voluntariado criada")
     
     print("\n" + "="*60)
-    if os.getenv('FLASK_ENV') == 'production':
-        print("✅ APENAS CONTAS DE TESTE CRIADAS (sem dados falsos)")
-    else:
-        print("✅ DADOS DE TESTE CARREGADOS COM SUCESSO!")
+    print("✅ INICIALIZAÇÃO CONCLUÍDA!")
     print("="*60)
     print("\n🔑 CREDENCIAIS DE TESTE:")
-    
-    # Mostra as credenciais de acordo com o ambiente
     admin_email = os.getenv('ADMIN_EMAIL', 'admin@doamais.org')
     ong_email = os.getenv('ONG_EMAIL', 'ong@solidaria.org')
     doador_email = os.getenv('DOADOR_EMAIL', 'joao@email.com')
-    
-    print(f"   👑 Admin: {admin_email} / (senha definida no .env)")
-    print(f"   🏢 ONG:   {ong_email} / (senha definida no .env)")
-    print(f"   👤 Doador: {doador_email} / (senha definida no .env)")
+    print(f"   👑 Admin: {admin_email}")
+    print(f"   🏢 ONG:   {ong_email}")
+    print(f"   👤 Doador: {doador_email}")
     print("="*60 + "\n")
 
 
@@ -692,5 +705,5 @@ class AuditRepository:
 # INICIALIZAR DADOS
 # =====================================================================
 
-# Inicializa dados de teste (controlado pelo ambiente)
+# Inicializa dados de teste (admin sempre criado)
 init_test_data()
