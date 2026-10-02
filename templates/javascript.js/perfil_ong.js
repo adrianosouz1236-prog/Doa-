@@ -5,11 +5,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -44,7 +49,7 @@ function updateAuthUI() {
         if (navButtons) navButtons.style.display = 'none';
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
         }
     } else {
         if (navButtons) navButtons.style.display = 'flex';
@@ -79,7 +84,7 @@ function getOngIdFromUrl() {
 async function carregarPerfilOng() {
     const ongId = getOngIdFromUrl();
     if (!ongId) {
-        showToast('ONG não identificada', 'error');
+        showToast('ONG nao identificada', 'error');
         window.location.href = '/';
         return;
     }
@@ -92,13 +97,13 @@ async function carregarPerfilOng() {
         document.getElementById('page-title').textContent = `${data.nome} - Doa+`;
         document.getElementById('ong-nome').textContent = data.nome;
         document.getElementById('ong-cidade').textContent = `${data.cidade || ''}${data.uf ? `/${data.uf}` : ''}`;
-        document.getElementById('ong-telefone').textContent = data.telefone || 'Não informado';
+        document.getElementById('ong-telefone').textContent = data.telefone || 'Nao informado';
         document.getElementById('ong-email').textContent = data.email;
-        document.getElementById('ong-descricao').textContent = data.descricao || 'Sem descrição disponível.';
-        document.getElementById('sobre-texto').textContent = data.descricao || 'Sem descrição disponível.';
-        document.getElementById('ong-endereco').textContent = data.endereco || 'Não informado';
+        document.getElementById('ong-descricao').textContent = data.descricao || 'Sem descricao disponivel.';
+        document.getElementById('sobre-texto').textContent = data.descricao || 'Sem descricao disponivel.';
+        document.getElementById('ong-endereco').textContent = data.endereco || 'Nao informado';
         document.getElementById('ong-cidade-uf').textContent = `${data.cidade || ''}${data.uf ? ` - ${data.uf}` : ''}`;
-        document.getElementById('ong-endereco-completo').textContent = data.endereco_completo || data.endereco || 'Endereço não informado';
+        document.getElementById('ong-endereco-completo').textContent = data.endereco_completo || data.endereco || 'Endereco nao informado';
         if (data.logo_url) {
             document.getElementById('ong-logo').src = data.logo_url;
         } else {
@@ -130,7 +135,7 @@ async function carregarPerfilOng() {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('perfil-content').style.display = 'block';
     } catch (error) {
-        console.error('Erro:', error);
+        console.warn('Erro ao carregar perfil da ONG');
         showToast(error.message, 'error');
         document.getElementById('loading').innerHTML = `<p style="color: red;">Erro ao carregar perfil: ${error.message}</p>`;
     }
@@ -169,8 +174,8 @@ function renderizarEventos(eventos) {
             <div class="evento-card">
                 <img class="evento-imagem" src="${evento.imagem_url || 'https://via.placeholder.com/400x200?text=Evento'}" alt="${escapeHtml(evento.titulo)}">
                 <h3>${escapeHtml(evento.titulo)}</h3>
-                <div class="evento-data">📅 ${dataFormatada} • ${horaFormatada}</div>
-                <div class="evento-local">📍 ${escapeHtml(evento.local_evento || evento.cidade || 'Local não informado')}</div>
+                <div class="evento-data">${dataFormatada} - ${horaFormatada}</div>
+                <div class="evento-local">${escapeHtml(evento.local_evento || evento.cidade || 'Local nao informado')}</div>
                 <p class="evento-descricao">${escapeHtml(evento.descricao?.substring(0, 120))}${evento.descricao?.length > 120 ? '...' : ''}</p>
             </div>
         `;
@@ -185,7 +190,7 @@ function renderizarParcerias(parcerias) {
             <h3>${escapeHtml(par.parceiro_nome)}</h3>
             <span class="parceria-tipo">${par.tipo_parceria || 'Parceiro'}</span>
             <p class="parceria-descricao">${escapeHtml(par.descricao?.substring(0, 100))}${par.descricao?.length > 100 ? '...' : ''}</p>
-            ${par.website_url ? `<a href="${par.website_url}" target="_blank" class="parceria-link">Visitar site →</a>` : ''}
+            ${par.website_url ? `<a href="${par.website_url}" target="_blank" class="parceria-link">Visitar site</a>` : ''}
         </div>
     `).join('');
 }
@@ -195,7 +200,7 @@ function renderizarFotos(fotos) {
     container.innerHTML = fotos.map(foto => `
         <div class="foto-item" onclick="abrirImagem('${foto.foto_url}')">
             <img src="${foto.foto_url}" alt="${escapeHtml(foto.descricao || 'Foto da ONG')}">
-            <div class="foto-descricao">${escapeHtml(foto.descricao || 'Sem descrição')}</div>
+            <div class="foto-descricao">${escapeHtml(foto.descricao || 'Sem descricao')}</div>
         </div>
     `).join('');
 }
@@ -207,7 +212,7 @@ function abrirImagem(url) {
 function inicializarMapa(lat, lng) {
     const container = document.getElementById('mapa-container');
     if (typeof google === 'undefined' || !google.maps) {
-        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: #7f8c8d;">Google Maps não disponível</p>';
+        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: #7f8c8d;">Google Maps nao disponivel</p>';
         return;
     }
     const posicao = { lat: parseFloat(lat) || -23.550520, lng: parseFloat(lng) || -46.633308 };
@@ -223,11 +228,11 @@ function inicializarMapa(lat, lng) {
         new google.maps.Marker({
             position: posicao,
             map: map,
-            title: 'Localização da ONG',
+            title: 'Localizacao da ONG',
             animation: google.maps.Animation.DROP
         });
     } else {
-        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: #7f8c8d;">Localização não informada pela ONG.</p>';
+        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: #7f8c8d;">Localizacao nao informada pela ONG.</p>';
     }
 }
 
@@ -248,7 +253,7 @@ function setupTabs() {
 function abrirModalDoacao(necessidadeId) {
     const token = getToken();
     if (!token) {
-        showToast('Faça login para realizar uma doação', 'warning');
+        showToast('Faca login para realizar uma doacao', 'warning');
         setTimeout(() => { window.location.href = '/login.html'; }, 1500);
         return;
     }
@@ -266,7 +271,7 @@ async function handleDoacaoSubmit(e) {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-        showToast('Faça login para doar', 'warning');
+        showToast('Faca login para doar', 'warning');
         window.location.href = '/login.html';
         return;
     }
@@ -274,7 +279,7 @@ async function handleDoacaoSubmit(e) {
     const quantidade = parseInt(document.getElementById('modal-quantidade').value);
     const mensagem = document.getElementById('modal-mensagem').value;
     if (!quantidade || quantidade < 1) {
-        showToast('Informe uma quantidade válida', 'error');
+        showToast('Informe uma quantidade valida', 'error');
         return;
     }
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -293,9 +298,9 @@ async function handleDoacaoSubmit(e) {
         });
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.error || 'Erro ao registrar doação');
+            throw new Error(data.error || 'Erro ao registrar doacao');
         }
-        showToast('Doação registrada com sucesso!', 'success');
+        showToast('Doacao registrada com sucesso!', 'success');
         fecharModal();
         setTimeout(() => { window.location.reload(); }, 1500);
     } catch (error) {

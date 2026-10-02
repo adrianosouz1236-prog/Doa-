@@ -4,11 +4,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -46,7 +51,7 @@ async function apiRequest(endpoint, options = {}) {
             localStorage.clear();
             window.location.href = '/login.html';
         }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || 'Erro na requisicao');
     }
     return data;
 }
@@ -94,13 +99,13 @@ async function carregarExtrato() {
         const data = await apiRequest('/carteira/extrato');
         const extrato = data.extrato || [];
         if (extrato.length === 0) {
-            container.innerHTML = '<p class="empty-state">Nenhuma transação encontrada</p>';
+            container.innerHTML = '<p class="empty-state">Nenhuma transacao encontrada</p>';
             return;
         }
         container.innerHTML = extrato.map(t => {
-            const tipoIcon = t.tipo === 'doacao_financeira' ? '💰 Entrada' : '💸 Saque';
+            const tipoIcon = t.tipo === 'doacao_financeira' ? 'Entrada' : 'Saque';
             const tipoClass = t.tipo === 'doacao_financeira' ? 'entrada' : 'saida';
-            const statusText = t.status === 'confirmado' ? '✅ Confirmado' : '⏳ Processando';
+            const statusText = t.status === 'confirmado' ? 'Confirmado' : 'Processando';
             return `
                 <div class="transacao-item ${tipoClass}">
                     <div class="transacao-info">
@@ -128,28 +133,28 @@ async function carregarDoacoesRecebidas() {
         const data = await apiRequest('/doacoes/financeiras/ong');
         const doacoes = data.doacoes || [];
         if (doacoes.length === 0) {
-            container.innerHTML = '<p class="empty-state">Nenhuma doação financeira recebida</p>';
+            container.innerHTML = '<p class="empty-state">Nenhuma doacao financeira recebida</p>';
             return;
         }
         container.innerHTML = doacoes.map(d => `
             <div class="doacao-item">
                 <div class="doacao-header">
-                    <span class="doacao-doador">👤 ${escapeHtml(d.doador_nome)}</span>
+                    <span class="doacao-doador">${escapeHtml(d.doador_nome)}</span>
                     <span class="doacao-valor">R$ ${d.valor.toFixed(2)}</span>
                 </div>
                 <div class="doacao-detalhes">
-                    <span>📅 ${new Date(d.data_criacao).toLocaleString()}</span>
+                    <span>${new Date(d.data_criacao).toLocaleString()}</span>
                     <span>${d.metodo_pagamento}</span>
-                    ${d.recorrente ? '<span class="badge-recorrente">🔄 Recorrente</span>' : ''}
+                    ${d.recorrente ? '<span class="badge-recorrente">Recorrente</span>' : ''}
                     <span class="doacao-status ${d.status === 'confirmado' ? 'status-confirmado' : 'status-pendente'}">
-                        ${d.status === 'confirmado' ? '✅ Confirmado' : '⏳ Pendente'}
+                        ${d.status === 'confirmado' ? 'Confirmado' : 'Pendente'}
                     </span>
                 </div>
-                ${d.mensagem ? `<p class="doacao-mensagem">💬 ${escapeHtml(d.mensagem)}</p>` : ''}
+                ${d.mensagem ? `<p class="doacao-mensagem">${escapeHtml(d.mensagem)}</p>` : ''}
             </div>
         `).join('');
     } catch (error) {
-        container.innerHTML = `<p class="error-state">Erro ao carregar doações: ${error.message}</p>`;
+        container.innerHTML = `<p class="error-state">Erro ao carregar doacoes: ${error.message}</p>`;
     }
 }
 
@@ -161,7 +166,7 @@ function abrirModalSaque() {
         if (data.conta_bancaria) {
             document.getElementById('conta-bancaria').value = data.conta_bancaria;
         }
-    }).catch(error => console.error('Erro ao carregar conta:', error));
+    }).catch(error => console.warn('Erro ao carregar conta'));
 }
 
 function fecharModalSaque() {
@@ -173,11 +178,11 @@ document.getElementById('form-saque')?.addEventListener('submit', async (e) => {
     const valor = parseFloat(document.getElementById('valor-saque').value);
     const contaBancaria = document.getElementById('conta-bancaria').value;
     if (!valor || valor < 10) {
-        showToast('Valor mínimo para saque é R$ 10,00', 'error');
+        showToast('Valor minimo para saque e R$ 10,00', 'error');
         return;
     }
     if (!contaBancaria) {
-        showToast('Informe a conta bancária', 'error');
+        showToast('Informe a conta bancaria', 'error');
         return;
     }
     try {

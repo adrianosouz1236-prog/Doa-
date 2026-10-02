@@ -1,22 +1,22 @@
 // login.js - SEM reCAPTCHA
 const API_BASE_URL = window.location.origin + '/api';
 
-// ============================================================
-// CSRF TOKEN
-// ============================================================
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
-        document.getElementById('csrf-token').value = data.csrf_token || '';
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        csrfToken = data.csrf_token || '';
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
-// ============================================================
-// MOSTRAR/OCULTAR SENHA
-// ============================================================
 function togglePassword() {
     const senhaInput = document.getElementById('senha');
     const icon = document.querySelector('.toggle-password i');
@@ -29,9 +29,6 @@ function togglePassword() {
     }
 }
 
-// ============================================================
-// MOSTRAR MENSAGENS
-// ============================================================
 function showError(message) {
     const errorDiv = document.getElementById('errorMessage');
     errorDiv.textContent = message;
@@ -48,9 +45,6 @@ function showSuccess(message) {
     setTimeout(() => { successDiv.style.display = 'none'; }, 5000);
 }
 
-// ============================================================
-// VERIFICAR SE JÁ ESTÁ LOGADO
-// ============================================================
 function verificarSessao() {
     const token = localStorage.getItem('token');
     const userType = localStorage.getItem('userType');
@@ -68,17 +62,11 @@ function verificarSessao() {
     return false;
 }
 
-// ============================================================
-// LOGIN
-// ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar se já está logado
     if (verificarSessao()) return;
 
-    // Carregar CSRF token
     await obterCsrfToken();
 
-    // Form submit
     const form = document.getElementById('login-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -146,7 +134,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Enter para submit
     document.getElementById('email').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') form.dispatchEvent(new Event('submit'));
     });

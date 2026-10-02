@@ -19,11 +19,16 @@ function showToast(message, type = 'info') {
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -53,7 +58,7 @@ async function apiRequest(endpoint, options = {}) {
             localStorage.clear();
             window.location.href = '/login.html';
         }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || 'Erro na requisicao');
     }
     return data;
 }
@@ -68,7 +73,7 @@ function updateAuthUI() {
     if (token && user) {
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
         }
     } else {
         if (userMenu) userMenu.style.display = 'none';
@@ -91,16 +96,16 @@ function setupAuth() {
 // ==================== FORÇA DA SENHA ====================
 function validarSenhaForte(senha) {
     const requisitos = [];
-    if (senha.length >= 12) requisitos.push('✅ 12+ caracteres');
-    else requisitos.push('❌ 12+ caracteres');
-    if (/[A-Z]/.test(senha)) requisitos.push('✅ Letra maiúscula');
-    else requisitos.push('❌ Letra maiúscula');
-    if (/[a-z]/.test(senha)) requisitos.push('✅ Letra minúscula');
-    else requisitos.push('❌ Letra minúscula');
-    if (/\d/.test(senha)) requisitos.push('✅ Número');
-    else requisitos.push('❌ Número');
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(senha)) requisitos.push('✅ Caractere especial');
-    else requisitos.push('❌ Caractere especial');
+    if (senha.length >= 12) requisitos.push('OK 12+ caracteres');
+    else requisitos.push('X 12+ caracteres');
+    if (/[A-Z]/.test(senha)) requisitos.push('OK Letra maiuscula');
+    else requisitos.push('X Letra maiuscula');
+    if (/[a-z]/.test(senha)) requisitos.push('OK Letra minuscula');
+    else requisitos.push('X Letra minuscula');
+    if (/\d/.test(senha)) requisitos.push('OK Numero');
+    else requisitos.push('X Numero');
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(senha)) requisitos.push('OK Caractere especial');
+    else requisitos.push('X Caractere especial');
     return requisitos;
 }
 
@@ -112,16 +117,16 @@ function atualizarForcaSenha(senha) {
         return;
     }
     const requisitos = validarSenhaForte(senha);
-    const validos = requisitos.filter(r => r.startsWith('✅')).length;
+    const validos = requisitos.filter(r => r.startsWith('OK')).length;
     const total = requisitos.length;
     const porcentagem = (validos / total) * 100;
     let cor, texto;
-    if (porcentagem === 100) { cor = '#27ae60'; texto = '🟢 Senha Forte'; }
-    else if (porcentagem >= 60) { cor = '#f39c12'; texto = '🟡 Senha Média'; }
-    else { cor = '#e74c3c'; texto = '🔴 Senha Fraca'; }
+    if (porcentagem === 100) { cor = '#27ae60'; texto = 'Senha Forte'; }
+    else if (porcentagem >= 60) { cor = '#f39c12'; texto = 'Senha Media'; }
+    else { cor = '#e74c3c'; texto = 'Senha Fraca'; }
     container.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.3rem;">
-            ${requisitos.map(r => `<span style="font-size: 0.7rem; color: ${r.startsWith('✅') ? '#27ae60' : '#e74c3c'};">${r}</span>`).join('')}
+            ${requisitos.map(r => `<span style="font-size: 0.7rem; color: ${r.startsWith('OK') ? '#27ae60' : '#e74c3c'};">${r}</span>`).join('')}
         </div>
         <div style="width: 100%; height: 4px; background: #ecf0f1; border-radius: 2px; overflow: hidden;">
             <div style="width: ${porcentagem}%; height: 100%; background: ${cor}; transition: width 0.3s;"></div>
@@ -150,21 +155,13 @@ async function carregarPerfil() {
         document.getElementById('pontuacao').textContent = userData.pontuacao || 0;
         document.getElementById('total-itens').textContent = userData.total_itens || 0;
         
-        // Inicial da avatar
-        const inicial = userData.nome?.charAt(0) || '👤';
+        const inicial = userData.nome?.charAt(0) || '?';
         document.getElementById('avatar-inicial').textContent = inicial;
         
-        // Carregar conquistas
         await carregarConquistas();
-        
-        // Carregar doações
         await carregarDoacoes();
         await carregarDoacoesFinanceiras();
-        
-        // Carregar status 2FA
         await carregarStatus2FA();
-        
-        // Carregar preferências de notificação
         await carregarPreferenciasNotificacoes();
         
     } catch (error) {
@@ -192,26 +189,26 @@ async function carregarConquistas() {
         if (total === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <p>🚀 Você ainda não tem conquistas.</p>
-                    <p style="font-size: 0.8rem; color: #7f8c8d;">Faça doações para desbloquear suas primeiras conquistas!</p>
+                    <p>Voce ainda nao tem conquistas.</p>
+                    <p style="font-size: 0.8rem; color: #7f8c8d;">Faca doacoes para desbloquear suas primeiras conquistas!</p>
                 </div>
             `;
             return;
         }
         
         const icones = {
-            'primeira_doacao': '🌟',
-            'doador_frequente': '⭐',
-            'doador_master': '🏆',
-            '100_pontos': '💎',
-            '500_pontos': '👑',
-            '1000_pontos': '🔥'
+            'primeira_doacao': '1',
+            'doador_frequente': '2',
+            'doador_master': '3',
+            '100_pontos': '4',
+            '500_pontos': '5',
+            '1000_pontos': '6'
         };
         
         const descricoes = {
-            'primeira_doacao': 'Realizou sua primeira doação',
-            'doador_frequente': 'Realizou 5 doações',
-            'doador_master': 'Realizou 20 doações',
+            'primeira_doacao': 'Realizou sua primeira doacao',
+            'doador_frequente': 'Realizou 5 doacoes',
+            'doador_master': 'Realizou 20 doacoes',
             '100_pontos': 'Acumulou 100 pontos',
             '500_pontos': 'Acumulou 500 pontos',
             '1000_pontos': 'Acumulou 1000 pontos'
@@ -221,10 +218,10 @@ async function carregarConquistas() {
             const desbloqueada = conquistas.some(cq => cq === c.id);
             return `
                 <div class="conquista-card ${desbloqueada ? '' : 'locked'}">
-                    <span class="icone">${icones[c.id] || '🏅'}</span>
+                    <span class="icone">${icones[c.id] || '*'}</span>
                     <span class="nome">${descricoes[c.id] || c.nome || 'Conquista'}</span>
                     <span class="descricao">${c.descricao || ''}</span>
-                    ${desbloqueada ? '<span class="badge badge-success" style="font-size: 0.6rem;">✅ Desbloqueada</span>' : '<span class="badge badge-inactive" style="font-size: 0.6rem;">🔒 Bloqueada</span>'}
+                    ${desbloqueada ? '<span class="badge badge-success" style="font-size: 0.6rem;">Desbloqueada</span>' : '<span class="badge badge-inactive" style="font-size: 0.6rem;">Bloqueada</span>'}
                 </div>
             `;
         }).join('');
@@ -242,18 +239,18 @@ async function carregarDoacoes() {
         doacoesItens = doacoes;
         
         if (doacoes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma doação realizada</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma doacao realizada</td></tr>';
             return;
         }
         
         tbody.innerHTML = doacoes.map(d => {
             const statusClass = d.status === 'confirmada' ? 'badge-success' : 'badge-warning';
-            const statusText = d.status === 'confirmada' ? '✅ Confirmada' : '⏳ Pendente';
+            const statusText = d.status === 'confirmada' ? 'Confirmada' : 'Pendente';
             return `
                 <tr>
                     <td>${new Date(d.data).toLocaleDateString('pt-BR')}</td>
                     <td>${d.ong_nome || 'Desconhecida'}</td>
-                    <td>${d.item || 'Item não informado'}</td>
+                    <td>${d.item || 'Item nao informado'}</td>
                     <td>${d.quantidade}</td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
                 </tr>
@@ -281,11 +278,10 @@ async function carregarDoacoesFinanceiras() {
         document.getElementById('financeiro-contagem').textContent = count;
         document.getElementById('financeiro-media').textContent = `R$ ${media.toFixed(2)}`;
         document.getElementById('financeiro-recorrentes').textContent = recorrentes;
-        
         document.getElementById('total-financeiro').textContent = `R$ ${total.toFixed(2)}`;
         
         if (doacoes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma doação financeira</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma doacao financeira</td></tr>';
             return;
         }
         
@@ -296,9 +292,9 @@ async function carregarDoacoesFinanceiras() {
                 'cancelado': 'badge-danger'
             };
             const statusText = {
-                'confirmado': '✅ Confirmado',
-                'pendente': '⏳ Pendente',
-                'cancelado': '❌ Cancelado'
+                'confirmado': 'Confirmado',
+                'pendente': 'Pendente',
+                'cancelado': 'Cancelado'
             };
             return `
                 <tr>
@@ -328,7 +324,7 @@ async function carregarPreferenciasNotificacoes() {
         document.getElementById('push-eventos').checked = data.push_eventos !== false;
         document.getElementById('push-mensagens').checked = data.push_mensagens !== false;
     } catch (error) {
-        console.error('Erro ao carregar preferências:', error);
+        console.warn('Preferencias ainda nao configuradas');
     }
 }
 
@@ -355,7 +351,7 @@ document.getElementById('form-notificacoes')?.addEventListener('submit', async (
             method: 'PUT',
             body: JSON.stringify(preferencias)
         });
-        showToast('Preferências salvas com sucesso!', 'success');
+        showToast('Preferencias salvas com sucesso!', 'success');
     } catch (error) {
         showToast(error.message, 'error');
     } finally {
@@ -377,14 +373,14 @@ document.getElementById('form-alterar-senha')?.addEventListener('submit', async 
     }
     
     if (novaSenha !== confirmarSenha) {
-        showToast('As senhas não coincidem', 'error');
+        showToast('As senhas nao coincidem', 'error');
         return;
     }
     
     const requisitos = validarSenhaForte(novaSenha);
-    const validos = requisitos.filter(r => r.startsWith('✅')).length;
+    const validos = requisitos.filter(r => r.startsWith('OK')).length;
     if (validos < requisitos.length) {
-        showToast('Senha não atende a todos os requisitos', 'error');
+        showToast('Senha nao atende a todos os requisitos', 'error');
         return;
     }
     
@@ -452,16 +448,16 @@ async function carregarStatus2FA() {
         const btn = document.getElementById('btn-2fa');
         
         if (ativo) {
-            container.innerHTML = '<p style="color: #27ae60;">✅ 2FA está ATIVO para sua conta</p>';
-            btn.textContent = '🔓 Desativar 2FA';
+            container.innerHTML = '<p style="color: #27ae60;">2FA esta ATIVO para sua conta</p>';
+            btn.textContent = 'Desativar 2FA';
             btn.onclick = desativar2FA;
         } else {
-            container.innerHTML = '<p style="color: #7f8c8d;">❌ 2FA está DESATIVADO</p>';
-            btn.textContent = '🔐 Ativar 2FA';
+            container.innerHTML = '<p style="color: #7f8c8d;">2FA esta DESATIVADO</p>';
+            btn.textContent = 'Ativar 2FA';
             btn.onclick = ativar2FA;
         }
-    } catch (error) {
-        console.error('Erro ao carregar status 2FA:', error);
+    } catch (e) {
+        console.warn('Erro ao carregar status 2FA');
     }
 }
 
@@ -479,7 +475,7 @@ async function ativar2FA() {
 async function confirmar2FA() {
     const codigo = document.getElementById('codigo-2fa').value;
     if (!codigo || codigo.length !== 6) {
-        showToast('Digite o código de 6 dígitos', 'error');
+        showToast('Digite o codigo de 6 digitos', 'error');
         return;
     }
     try {
@@ -513,7 +509,7 @@ async function gerarRelatorioAnual() {
     const modal = document.getElementById('modal-relatorio');
     const statusDiv = document.getElementById('relatorio-status');
     
-    statusDiv.innerHTML = '<p style="color: #f39c12;">⏳ Gerando relatório...</p>';
+    statusDiv.innerHTML = '<p style="color: #f39c12;">Gerando relatorio...</p>';
     
     try {
         const data = await apiRequest('/relatorios/anual/gerar', {
@@ -523,12 +519,12 @@ async function gerarRelatorioAnual() {
         
         container.innerHTML = `
             <div style="padding: 1rem;">
-                <p><strong>✅ Relatório gerado com sucesso!</strong></p>
+                <p><strong>Relatorio gerado com sucesso!</strong></p>
                 <p><strong>Ano:</strong> ${data.ano}</p>
                 <p><strong>Data:</strong> ${new Date().toLocaleString()}</p>
                 <hr style="margin: 1rem 0;">
                 <a href="${data.download_url}" class="btn btn-primary" style="width: 100%; text-align: center;" target="_blank">
-                    📥 Baixar PDF
+                    Baixar PDF
                 </a>
                 <button class="btn btn-outline" onclick="fecharModal('modal-relatorio')" style="width: 100%; margin-top: 0.5rem;">
                     Fechar
@@ -537,10 +533,10 @@ async function gerarRelatorioAnual() {
         `;
         
         modal.style.display = 'flex';
-        statusDiv.innerHTML = '<p style="color: #27ae60;">✅ Relatório gerado com sucesso! Clique em "Baixar PDF" para fazer o download.</p>';
+        statusDiv.innerHTML = '<p style="color: #27ae60;">Relatorio gerado com sucesso!</p>';
         
     } catch (error) {
-        statusDiv.innerHTML = `<p style="color: #e74c3c;">❌ Erro: ${error.message}</p>`;
+        statusDiv.innerHTML = `<p style="color: #e74c3c;">Erro: ${error.message}</p>`;
         showToast(error.message, 'error');
     }
 }
@@ -566,11 +562,11 @@ async function solicitarExportacaoDados() {
 
 // ==================== EXCLUSÃO DE CONTA ====================
 async function solicitarExclusaoConta() {
-    if (!confirm('⚠️ Tem certeza que deseja EXCLUIR sua conta? Esta ação é irreversível!')) return;
-    if (!confirm('🔴 Última confirmação: Deseja realmente excluir sua conta permanentemente?')) return;
+    if (!confirm('Tem certeza que deseja EXCLUIR sua conta? Esta acao e irreversivel!')) return;
+    if (!confirm('Ultima confirmacao: Deseja realmente excluir sua conta permanentemente?')) return;
     try {
         await apiRequest('/usuario/excluir', { method: 'DELETE' });
-        showToast('Solicitação de exclusão recebida. Sua conta será removida em até 30 dias.', 'info');
+        showToast('Solicitacao de exclusao recebida. Sua conta sera removida em ate 30 dias.', 'info');
         localStorage.clear();
         setTimeout(() => { window.location.href = '/'; }, 3000);
     } catch (error) {

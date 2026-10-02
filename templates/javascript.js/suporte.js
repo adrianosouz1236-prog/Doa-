@@ -5,11 +5,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -47,7 +52,7 @@ async function apiRequest(endpoint, options = {}) {
             localStorage.clear();
             window.location.href = '/login.html';
         }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || 'Erro na requisicao');
     }
     return data;
 }
@@ -72,9 +77,8 @@ function updateAuthUI() {
         if (userMenu) {
             userMenu.style.display = 'flex';
             if (userNameSpan) {
-                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
             }
-            // Remove "Dashboard (ONG)" para doadores
             const dashboardLink = userMenu.querySelector('.dropdown-menu a[href="/dashboard_ong.html"]');
             if (dashboardLink) {
                 if (userType === 'doador') {
@@ -113,7 +117,7 @@ async function enviarSuporte(e) {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-        showToast('Faça login para abrir um chamado', 'warning');
+        showToast('Faca login para abrir um chamado', 'warning');
         window.location.href = '/login.html';
         return;
     }
@@ -140,7 +144,7 @@ async function enviarSuporte(e) {
             method: 'POST',
             body: JSON.stringify({ assunto, mensagem, categoria })
         });
-        showToast('Solicitação de suporte enviada com sucesso!', 'success');
+        showToast('Solicitacao de suporte enviada com sucesso!', 'success');
         document.getElementById('suporte-form').reset();
         carregarMeusSuportes();
     } catch (error) {
@@ -155,23 +159,23 @@ async function carregarMeusSuportes() {
     const container = document.getElementById('meus-suportes-container');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<div class="empty-state"><p>Faça login para ver seus chamados</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>Faca login para ver seus chamados</p></div>';
         return;
     }
     try {
         const data = await apiRequest('/suporte/meus');
         const suportes = data.suportes || [];
         if (suportes.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>Você ainda não abriu nenhum chamado</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Voce ainda nao abriu nenhum chamado</p></div>';
             return;
         }
         container.innerHTML = suportes.map(sp => {
             const dataEnvio = new Date(sp.data);
             const statusMap = {
-                'aberto': '🟡 Aberto',
-                'em_andamento': '🟠 Em Andamento',
-                'resolvido': '🟢 Resolvido',
-                'fechado': '⚫ Fechado'
+                'aberto': 'Aberto',
+                'em_andamento': 'Em Andamento',
+                'resolvido': 'Resolvido',
+                'fechado': 'Fechado'
             };
             const statusText = statusMap[sp.status] || sp.status;
             const statusClass = sp.status;
@@ -186,13 +190,13 @@ async function carregarMeusSuportes() {
                     <p class="suporte-mensagem">${escapeHtml(sp.mensagem)}</p>
                     ${sp.resposta ? `
                         <div class="suporte-resposta">
-                            <strong>📌 Resposta:</strong>
+                            <strong>Resposta:</strong>
                             <p>${escapeHtml(sp.resposta)}</p>
                             <small>${sp.data_resposta ? new Date(sp.data_resposta).toLocaleDateString('pt-BR') : ''}</small>
                         </div>
                     ` : `
                         <div class="suporte-aguardando">
-                            <small>⏳ Aguardando resposta da equipe de suporte</small>
+                            <small>Aguardando resposta da equipe de suporte</small>
                         </div>
                     `}
                 </div>

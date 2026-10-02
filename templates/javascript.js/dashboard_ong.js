@@ -5,10 +5,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -36,7 +42,6 @@ function getHeaders() {
 async function apiRequest(endpoint, options = {}) {
     try {
         const url = `${API_BASE_URL}${endpoint}`;
-        console.log(`📡 ${options.method || 'GET'}: ${url}`);
         
         const response = await fetch(url, {
             ...options,
@@ -48,7 +53,7 @@ async function apiRequest(endpoint, options = {}) {
                 localStorage.clear();
                 window.location.href = '/login.html';
             }
-            throw new Error(data.error || 'Erro na requisição');
+            throw new Error(data.error || 'Erro na requisicao');
         }
         return data;
     } catch (error) {
@@ -97,7 +102,6 @@ function mostrarSeguranca() {
     document.getElementById('seguranca-section').style.display = 'block';
 }
 
-// ==================== ALTERAR SENHA ====================
 document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const senhaAtual = document.getElementById('senha-atual-ong').value;
@@ -109,13 +113,13 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
         return;
     }
     if (novaSenha !== confirmarSenha) {
-        showToast('As senhas não coincidem', 'error');
+        showToast('As senhas nao coincidem', 'error');
         return;
     }
     
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
-    submitBtn.textContent = '⏳ Alterando...';
+    submitBtn.textContent = 'Alterando...';
     submitBtn.disabled = true;
     
     try {
@@ -123,7 +127,7 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
             method: 'PUT',
             body: JSON.stringify({ senha_atual: senhaAtual, nova_senha: novaSenha })
         });
-        showToast('✅ Senha alterada com sucesso!', 'success');
+        showToast('Senha alterada com sucesso!', 'success');
         document.getElementById('form-alterar-senha-ong').reset();
     } catch (error) {
         showToast(error.message, 'error');
@@ -133,32 +137,30 @@ document.getElementById('form-alterar-senha-ong')?.addEventListener('submit', as
     }
 });
 
-// ==================== EXCLUIR CONTA ====================
 async function solicitarExclusaoContaOng() {
-    if (!confirm('⚠️ Tem certeza que deseja EXCLUIR sua conta? Esta ação é irreversível!')) return;
-    if (!confirm('🔴 Última confirmação: Deseja realmente excluir sua conta permanentemente?')) return;
+    if (!confirm('Tem certeza que deseja EXCLUIR sua conta? Esta acao e irreversivel!')) return;
+    if (!confirm('Ultima confirmacao: Deseja realmente excluir sua conta permanentemente?')) return;
     
     const statusDiv = document.getElementById('status-exclusao-ong');
-    statusDiv.innerHTML = '<p style="color: #f39c12;">⏳ Processando solicitação...</p>';
+    statusDiv.innerHTML = '<p style="color: #f39c12;">Processando solicitacao...</p>';
     
     try {
         const data = await apiRequest('/usuario/excluir', { method: 'DELETE' });
         statusDiv.innerHTML = `
-            <p style="color: #27ae60;">✅ ${data.message}</p>
+            <p style="color: #27ae60;">${data.message}</p>
             <p style="color: #7f8c8d; font-size: 0.9rem;">Prazo: ${data.prazo}</p>
-            <p style="color: #7f8c8d; font-size: 0.9rem;">ID da solicitação: ${data.solicitacao_id}</p>
+            <p style="color: #7f8c8d; font-size: 0.9rem;">ID da solicitacao: ${data.solicitacao_id}</p>
         `;
-        showToast('Solicitação de exclusão enviada com sucesso!', 'success');
+        showToast('Solicitacao de exclusao enviada com sucesso!', 'success');
         document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').disabled = true;
-        document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').textContent = '✅ Solicitação Enviada';
+        document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').textContent = 'Solicitacao Enviada';
         document.querySelector('.btn-danger[onclick="solicitarExclusaoContaOng()"]').style.opacity = '0.6';
     } catch (error) {
-        statusDiv.innerHTML = `<p style="color: #e74c3c;">❌ Erro: ${error.message}</p>`;
+        statusDiv.innerHTML = `<p style="color: #e74c3c;">Erro: ${error.message}</p>`;
         showToast(error.message, 'error');
     }
 }
 
-// ==================== DASHBOARD ====================
 async function carregarDashboard() {
     try {
         const data = await apiRequest('/ongs/dashboard');
@@ -170,11 +172,10 @@ async function carregarDashboard() {
         document.getElementById('stat-doacoes-financeiras').textContent = data.total_doacoes_financeiras || 0;
         document.getElementById('stat-saldo-carteira').textContent = `R$ ${(data.saldo_carteira || 0).toFixed(2)}`;
     } catch (error) {
-        console.error('Erro ao carregar dashboard:', error);
+        console.warn('Erro ao carregar dashboard');
     }
 }
 
-// ==================== CARTEIRA ====================
 async function carregarCarteira() {
     try {
         const data = await apiRequest('/carteira/saldo');
@@ -194,11 +195,11 @@ async function carregarExtrato() {
         const extrato = data.extrato || [];
         const tbody = document.getElementById('carteira-extrato-tbody');
         if (extrato.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma transação encontrada</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma transacao encontrada</td></tr>';
             return;
         }
         tbody.innerHTML = extrato.map(t => {
-            const tipoIcon = t.tipo === 'entrada' ? '💰 Entrada' : '💸 Saída';
+            const tipoIcon = t.tipo === 'entrada' ? 'Entrada' : 'Saida';
             const valorClass = t.tipo === 'entrada' ? 'text-success' : 'text-danger';
             const statusClass = t.status === 'confirmado' ? 'badge-success' : 'badge-warning';
             return `
@@ -212,7 +213,7 @@ async function carregarExtrato() {
             `;
         }).join('');
     } catch (error) {
-        console.error('Erro ao carregar extrato:', error);
+        console.warn('Erro ao carregar extrato');
     }
 }
 
@@ -230,7 +231,7 @@ document.getElementById('form-saque')?.addEventListener('submit', async (e) => {
     const valor = parseFloat(document.getElementById('valor-saque').value);
     const contaBancaria = document.getElementById('conta-saque').value;
     if (!valor || valor < 10) {
-        showToast('Valor mínimo para saque é R$ 10,00', 'error');
+        showToast('Valor minimo para saque e R$ 10,00', 'error');
         return;
     }
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -255,7 +256,6 @@ document.getElementById('form-saque')?.addEventListener('submit', async (e) => {
     }
 });
 
-// ==================== NECESSIDADES ====================
 async function carregarMinhasNecessidades() {
     try {
         const data = await apiRequest('/ongs/necessidades');
@@ -275,8 +275,8 @@ async function carregarMinhasNecessidades() {
                     <td>${n.quantidade_recebida || 0}</td>
                     <td><span class="badge ${statusClass}">${n.status === 'aberta' ? 'Ativa' : 'Encerrada'}</span></td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="editarNecessidade(${n.id})">✏️</button>
-                        ${n.status === 'aberta' ? `<button class="btn btn-danger btn-sm" onclick="encerrarNecessidade(${n.id})">🔚</button>` : ''}
+                        <button class="btn btn-outline btn-sm" onclick="editarNecessidade(${n.id})">Editar</button>
+                        ${n.status === 'aberta' ? `<button class="btn btn-danger btn-sm" onclick="encerrarNecessidade(${n.id})">Encerrar</button>` : ''}
                     </td>
                 </tr>
             `;
@@ -351,14 +351,13 @@ document.getElementById('necessidade-form')?.addEventListener('submit', async (e
     }
 });
 
-// ==================== DOAÇÕES ====================
 async function carregarDoacoesRecebidas() {
     try {
         const data = await apiRequest('/ongs/doacoes');
         const doacoes = data.doacoes || [];
         const tbody = document.getElementById('doacoes-tbody');
         if (doacoes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma doação recebida</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma doacao recebida</td></tr>';
             return;
         }
         tbody.innerHTML = doacoes.map(d => {
@@ -366,11 +365,11 @@ async function carregarDoacoesRecebidas() {
             return `
                 <tr>
                     <td>${new Date(d.data).toLocaleString()}</td>
-                    <td>${escapeHtml(d.doador_nome || 'Anônimo')}</td>
+                    <td>${escapeHtml(d.doador_nome || 'Anonimo')}</td>
                     <td>${escapeHtml(d.necessidade_titulo)}</td>
                     <td>${d.quantidade}</td>
                     <td><span class="badge ${statusClass}">${d.status || 'Pendente'}</span></td>
-                    <td>${d.status !== 'confirmada' ? `<button class="btn btn-success btn-sm" onclick="confirmarDoacao(${d.id})">✅ Confirmar</button>` : '-'}</td>
+                    <td>${d.status !== 'confirmada' ? `<button class="btn btn-success btn-sm" onclick="confirmarDoacao(${d.id})">Confirmar</button>` : '-'}</td>
                 </tr>
             `;
         }).join('');
@@ -380,10 +379,10 @@ async function carregarDoacoesRecebidas() {
 }
 
 async function confirmarDoacao(id) {
-    if (!confirm('Confirmar esta doação?')) return;
+    if (!confirm('Confirmar esta doacao?')) return;
     try {
         await apiRequest(`/ongs/doacoes/${id}/confirmar`, { method: 'PUT' });
-        showToast('Doação confirmada!', 'success');
+        showToast('Doacao confirmada!', 'success');
         carregarDoacoesRecebidas();
         carregarDashboard();
     } catch (error) {
@@ -391,19 +390,18 @@ async function confirmarDoacao(id) {
     }
 }
 
-// ==================== DOAÇÕES FINANCEIRAS ====================
 async function carregarDoacoesFinanceirasOng() {
     try {
         const data = await apiRequest('/doacoes/financeiras/ong');
         const doacoes = data.doacoes || [];
         const tbody = document.getElementById('doacoes-financeiras-tbody');
         if (doacoes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhuma doação financeira recebida</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhuma doacao financeira recebida</td></tr>';
             return;
         }
         tbody.innerHTML = doacoes.map(d => {
             const statusClass = d.status === 'confirmado' ? 'badge-success' : 'badge-warning';
-            const statusText = d.status === 'confirmado' ? '✅ Confirmado' : '⏳ Pendente';
+            const statusText = d.status === 'confirmado' ? 'Confirmado' : 'Pendente';
             return `
                 <tr>
                     <td>${new Date(d.data_criacao).toLocaleString()}</td>
@@ -418,11 +416,10 @@ async function carregarDoacoesFinanceirasOng() {
             `;
         }).join('');
     } catch (error) {
-        console.error('Erro ao carregar doações financeiras:', error);
+        console.warn('Erro ao carregar doacoes financeiras');
     }
 }
 
-// ==================== EVENTOS ====================
 async function carregarMeusEventos() {
     try {
         const data = await apiRequest('/ongs/eventos');
@@ -438,10 +435,10 @@ async function carregarMeusEventos() {
                 <tr>
                     <td>${escapeHtml(e.titulo)}</td>
                     <td>${new Date(e.data_evento).toLocaleString()}</td>
-                    <td>${escapeHtml(e.local_evento || 'Não informado')}</td>
-                    <td><span class="badge ${statusClass}">${e.status === 'ativo' ? 'Ativo' : 'Concluído'}</span></td>
+                    <td>${escapeHtml(e.local_evento || 'Nao informado')}</td>
+                    <td><span class="badge ${statusClass}">${e.status === 'ativo' ? 'Ativo' : 'Concluido'}</span></td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="cancelarEvento(${e.id})">❌ Cancelar</button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelarEvento(${e.id})">Cancelar</button>
                     </td>
                 </tr>
             `;
@@ -499,7 +496,6 @@ document.getElementById('evento-form')?.addEventListener('submit', async (e) => 
     }
 });
 
-// ==================== PARCERIAS ====================
 async function carregarMinhasParcerias() {
     try {
         const data = await apiRequest('/ongs/parcerias');
@@ -518,7 +514,7 @@ async function carregarMinhasParcerias() {
                     <td>${escapeHtml(p.descricao?.substring(0, 50) || '-')}</td>
                     <td><span class="badge ${statusClass}">${p.status}</span></td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="encerrarParceria(${p.id})">🔚 Encerrar</button>
+                        <button class="btn btn-danger btn-sm" onclick="encerrarParceria(${p.id})">Encerrar</button>
                     </td>
                 </tr>
             `;
@@ -568,7 +564,6 @@ document.getElementById('parceria-form')?.addEventListener('submit', async (e) =
     }
 });
 
-// ==================== FOTOS ====================
 async function carregarFotosOng() {
     try {
         const data = await apiRequest('/ongs/fotos');
@@ -586,8 +581,8 @@ async function carregarFotosOng() {
                     ${fotos.map(f => `
                         <div style="position: relative; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                             <img src="${f.foto_url}" alt="${escapeHtml(f.descricao || 'Foto')}" style="width: 100%; height: 150px; object-fit: cover;">
-                            <p style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">${escapeHtml(f.descricao || 'Sem descrição')}</p>
-                            <button class="btn btn-danger btn-sm" style="position: absolute; top: 5px; right: 5px; padding: 0.2rem 0.5rem;" onclick="removerFoto(${f.id})">✕</button>
+                            <p style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">${escapeHtml(f.descricao || 'Sem descricao')}</p>
+                            <button class="btn btn-danger btn-sm" style="position: absolute; top: 5px; right: 5px; padding: 0.2rem 0.5rem;" onclick="removerFoto(${f.id})">X</button>
                         </div>
                     `).join('')}
                 </div>
@@ -630,7 +625,6 @@ document.getElementById('fotos-form')?.addEventListener('submit', async (e) => {
     }
 });
 
-// ==================== LOCALIZAÇÃO ====================
 function carregarLocalizacaoOng() {
     document.getElementById('localizacao-modal').style.display = 'flex';
 }
@@ -638,32 +632,32 @@ function carregarLocalizacaoOng() {
 function buscarLocalizacao() {
     const endereco = document.getElementById('loc-endereco').value;
     if (!endereco) {
-        showToast('Digite um endereço para buscar', 'warning');
+        showToast('Digite um endereco para buscar', 'warning');
         return;
     }
-    showToast('🔍 Buscando localização...', 'info');
+    showToast('Buscando localizacao...', 'info');
     setTimeout(() => {
         document.getElementById('loc-latitude').value = '-23.550520';
         document.getElementById('loc-longitude').value = '-46.633308';
-        showToast('📍 Localização encontrada!', 'success');
+        showToast('Localizacao encontrada!', 'success');
     }, 1000);
 }
 
 function obterLocalizacaoAtual() {
     if (navigator.geolocation) {
-        showToast('📍 Obtendo localização...', 'info');
+        showToast('Obtendo localizacao...', 'info');
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 document.getElementById('loc-latitude').value = position.coords.latitude;
                 document.getElementById('loc-longitude').value = position.coords.longitude;
-                showToast('📍 Localização obtida com sucesso!', 'success');
+                showToast('Localizacao obtida com sucesso!', 'success');
             },
             (error) => {
-                showToast('❌ Erro ao obter localização: ' + error.message, 'error');
+                showToast('Erro ao obter localizacao: ' + error.message, 'error');
             }
         );
     } else {
-        showToast('❌ Geolocalização não suportada pelo navegador', 'error');
+        showToast('Geolocalizacao nao suportada pelo navegador', 'error');
     }
 }
 
@@ -675,20 +669,20 @@ document.getElementById('localizacao-form')?.addEventListener('submit', async (e
         longitude: parseFloat(document.getElementById('loc-longitude').value)
     };
     if (!dados.latitude || !dados.longitude) {
-        showToast('Localização não definida. Busque ou informe manualmente.', 'warning');
+        showToast('Localizacao nao definida. Busque ou informe manualmente.', 'warning');
         return;
     }
     try {
         await apiRequest('/ongs/localizacao', { method: 'PUT', body: JSON.stringify(dados) });
-        showToast('📍 Localização salva com sucesso!', 'success');
+        showToast('Localizacao salva com sucesso!', 'success');
         fecharModal('localizacao-modal');
         const mapaContainer = document.getElementById('mapa-container');
         if (mapaContainer) {
             mapaContainer.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                    <p style="color: #27ae60; font-size: 1.2rem;">✅ Localização salva!</p>
+                    <p style="color: #27ae60; font-size: 1.2rem;">Localizacao salva!</p>
                     <p style="color: #7f8c8d;">Lat: ${dados.latitude}, Lng: ${dados.longitude}</p>
-                    <p style="color: #7f8c8d;">Endereço: ${dados.endereco}</p>
+                    <p style="color: #7f8c8d;">Endereco: ${dados.endereco}</p>
                 </div>
             `;
         }
@@ -698,7 +692,6 @@ document.getElementById('localizacao-form')?.addEventListener('submit', async (e
     }
 });
 
-// ==================== PERFIL ====================
 async function carregarPerfilOng() {
     try {
         const data = await apiRequest('/ongs/perfil');
@@ -750,7 +743,6 @@ document.getElementById('perfil-form')?.addEventListener('submit', async (e) => 
 function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', async () => {
     await obterCsrfToken();
     const token = getToken();

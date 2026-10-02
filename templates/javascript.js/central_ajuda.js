@@ -31,7 +31,7 @@ async function apiRequest(endpoint, options = {}) {
             localStorage.clear();
             window.location.href = '/login.html';
         }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || 'Erro na requisicao');
     }
     return data;
 }
@@ -54,7 +54,7 @@ function updateAuthUI() {
         if (navButtons) navButtons.style.display = 'none';
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
         }
     } else {
         if (navButtons) navButtons.style.display = 'flex';

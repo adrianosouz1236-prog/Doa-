@@ -6,13 +6,13 @@ async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
         if (!response.ok) {
-            console.warn('CSRF token não disponível, continuando sem token');
+            console.warn('CSRF token indisponivel');
             return;
         }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-    } catch (error) {
-        console.warn('Erro ao obter CSRF token:', error);
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -49,7 +49,6 @@ function getHeaders() {
 
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    console.log(`📡 ${options.method || 'GET'}:`, url);
     
     try {
         const response = await fetch(url, {
@@ -61,13 +60,13 @@ async function apiRequest(endpoint, options = {}) {
             if (response.status === 401) {
                 localStorage.clear();
                 window.location.href = '/login.html';
-                throw new Error('Sua sessão expirou. Faça login novamente.');
+                throw new Error('Sua sessao expirou. Faca login novamente.');
             }
-            throw new Error(data.error || 'Erro na requisição');
+            throw new Error(data.error || 'Erro na requisicao');
         }
         return data;
     } catch (error) {
-        console.error('❌ Erro:', error);
+        console.warn('Erro na requisicao');
         throw error;
     }
 }
@@ -125,7 +124,7 @@ async function verificarComunicacoesNaoLidas() {
             }
         }
     } catch (error) {
-        console.error('Erro ao verificar comunicações:', error);
+        console.warn('Erro ao verificar comunicacoes');
     }
 }
 
@@ -133,14 +132,14 @@ async function carregarComunicacoesUsuario() {
     try {
         const token = getToken();
         if (!token) {
-            document.getElementById('comunicacoes-lista').innerHTML = `<div class="empty-state"><p>Faça login para ver suas comunicações</p></div>`;
+            document.getElementById('comunicacoes-lista').innerHTML = `<div class="empty-state"><p>Faca login para ver suas comunicacoes</p></div>`;
             return;
         }
         const data = await apiRequest('/comunicacoes');
         const comunicacoes = data.comunicacoes || [];
         const container = document.getElementById('comunicacoes-lista');
         if (comunicacoes.length === 0) {
-            container.innerHTML = `<div class="empty-state"><p>📭 Nenhuma comunicação recebida</p></div>`;
+            container.innerHTML = `<div class="empty-state"><p>Nenhuma comunicacao recebida</p></div>`;
             return;
         }
         container.innerHTML = comunicacoes.map(c => {
@@ -154,8 +153,8 @@ async function carregarComunicacoesUsuario() {
                     </div>
                     <p style="color: #555; margin: 0.5rem 0; white-space: pre-wrap;">${escapeHtml(c.mensagem)}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
-                        <small style="color: #7f8c8d;">📅 ${new Date(c.data_envio).toLocaleString()}</small>
-                        <span style="font-size: 0.8rem; color: ${c.lida ? '#27ae60' : '#f39c12'};">${c.lida ? '✅ Lida' : '⏳ Não lida'}</span>
+                        <small style="color: #7f8c8d;">${new Date(c.data_envio).toLocaleString()}</small>
+                        <span style="font-size: 0.8rem; color: ${c.lida ? '#27ae60' : '#f39c12'};">${c.lida ? 'Lida' : 'Nao lida'}</span>
                     </div>
                 </div>
             `;
@@ -195,7 +194,7 @@ async function carregarContatosChat() {
     const container = document.getElementById('chat-contatos');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<div class="empty-state"><p>Faça login para usar o chat</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>Faca login para usar o chat</p></div>';
         return;
     }
     try {
@@ -208,17 +207,17 @@ async function carregarContatosChat() {
             const doadores = await apiRequest('/admin/doadores');
             contatos = doadores.doadores.map(d => ({ id: d.id, nome: d.nome, tipo: 'doador', logo: 'https://via.placeholder.com/50?text=D' }));
         } else {
-            container.innerHTML = '<div class="empty-state"><p>Faça login como doador ou ONG</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Faca login como doador ou ONG</p></div>';
             return;
         }
         if (contatos.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>Nenhum contato disponível</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Nenhum contato disponivel</p></div>';
             return;
         }
         container.innerHTML = contatos.map(contato => `
             <div class="chat-contato" onclick="abrirConversa(${contato.id}, '${contato.tipo}')" style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem; border-bottom: 1px solid #ecf0f1; cursor: pointer; transition: background 0.2s;">
                 <img src="${contato.logo}" alt="${escapeHtml(contato.nome)}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                <div><strong>${escapeHtml(contato.nome)}</strong><span style="display: block; font-size: 0.7rem; color: #7f8c8d;">${contato.tipo === 'ong' ? '🏢 ONG' : '👤 Doador'}</span></div>
+                <div><strong>${escapeHtml(contato.nome)}</strong><span style="display: block; font-size: 0.7rem; color: #7f8c8d;">${contato.tipo === 'ong' ? 'ONG' : 'Doador'}</span></div>
             </div>
         `).join('');
     } catch (error) {
@@ -229,7 +228,7 @@ async function carregarContatosChat() {
 async function abrirConversa(contatoId, contatoTipo) {
     const token = getToken();
     if (!token) {
-        showToast('Faça login para usar o chat', 'warning');
+        showToast('Faca login para usar o chat', 'warning');
         return;
     }
     try {
@@ -241,7 +240,7 @@ async function abrirConversa(contatoId, contatoTipo) {
         modalContent.innerHTML = `
             <div class="modal-content" style="max-width: 500px; max-height: 80vh;">
                 <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3>💬 Conversa</h3>
+                    <h3>Conversa</h3>
                     <span class="modal-close" onclick="fecharConversa()" style="cursor: pointer; font-size: 1.5rem; color: #7f8c8d;">&times;</span>
                 </div>
                 <div id="conversa-mensagens" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
@@ -296,14 +295,14 @@ async function carregarRanking() {
             return;
         }
         container.innerHTML = ranking.map((doador, index) => {
-            const medalhas = ['🥇', '🥈', '🥉'];
+            const medalhas = ['1', '2', '3'];
             const medalha = index < 3 ? medalhas[index] : `#${index + 1}`;
             return `
                 <div class="ranking-card">
                     <span style="font-size: 2rem; min-width: 50px;">${medalha}</span>
                     <div style="flex: 1;">
                         <strong>${escapeHtml(doador.nome)}</strong>
-                        <span style="display: block; font-size: 0.8rem; color: #7f8c8d;">${doador.total_doacoes} doações • ${doador.pontuacao} pontos</span>
+                        <span style="display: block; font-size: 0.8rem; color: #7f8c8d;">${doador.total_doacoes} doacoes - ${doador.pontuacao} pontos</span>
                     </div>
                     <div style="background: #27ae60; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">${doador.pontuacao || 0} pts</div>
                 </div>
@@ -321,7 +320,7 @@ async function carregarVoluntariado() {
         const data = await listarVagasVoluntariado();
         const vagas = data.vagas || [];
         if (vagas.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>Nenhuma vaga de voluntariado disponível.</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Nenhuma vaga de voluntariado disponivel.</p></div>';
             return;
         }
         container.innerHTML = vagas.map(vaga => {
@@ -331,12 +330,12 @@ async function carregarVoluntariado() {
             return `
                 <div class="voluntariado-card">
                     <h3>${escapeHtml(vaga.titulo)}</h3>
-                    <p style="color: #e67e22; font-weight: bold;">🏢 ${escapeHtml(vaga.ong_nome)}</p>
-                    <p style="color: #7f8c8d; font-size: 0.85rem;">📅 ${dataFormatada} • 📍 ${escapeHtml(vaga.local || 'Local não informado')}</p>
+                    <p style="color: #e67e22; font-weight: bold;">${escapeHtml(vaga.ong_nome)}</p>
+                    <p style="color: #7f8c8d; font-size: 0.85rem;">${dataFormatada} - ${escapeHtml(vaga.local || 'Local nao informado')}</p>
                     <p style="color: #555; margin: 0.5rem 0;">${escapeHtml(vaga.descricao?.substring(0, 150))}${vaga.descricao?.length > 150 ? '...' : ''}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                        <span style="background: #e8f5e9; color: #27ae60; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem;">${vagasRestantes} vagas disponíveis</span>
-                        <button class="btn btn-primary" onclick="abrirModalInscricao(${vaga.id})">🤝 Inscrever-se</button>
+                        <span style="background: #e8f5e9; color: #27ae60; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem;">${vagasRestantes} vagas disponiveis</span>
+                        <button class="btn btn-primary" onclick="abrirModalInscricao(${vaga.id})">Inscrever-se</button>
                     </div>
                 </div>
             `;
@@ -364,13 +363,13 @@ async function carregarOngs() {
                         <img src="${ong.logo_url || 'https://via.placeholder.com/60?text=ONG'}" alt="${escapeHtml(ong.nome)}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
                         <div>
                             <h3 style="margin: 0; color: #2c3e50;">${escapeHtml(ong.nome)}</h3>
-                            <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">📍 ${escapeHtml(ong.cidade || 'Local não informado')}${ong.uf ? ` - ${ong.uf}` : ''}</p>
+                            <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">${escapeHtml(ong.cidade || 'Local nao informado')}${ong.uf ? ` - ${ong.uf}` : ''}</p>
                         </div>
                     </div>
                     <p style="color: #555; font-size: 0.9rem; margin-bottom: 0.5rem;">${escapeHtml(ong.descricao?.substring(0, 120))}${ong.descricao?.length > 120 ? '...' : ''}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #f39c12; font-size: 0.9rem;">${estrelas} (${ong.media_avaliacao || 0})</span>
-                        <span style="background: #e8f5e9; color: #27ae60; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem;">${ong.total_avaliacoes || 0} avaliações</span>
+                        <span style="background: #e8f5e9; color: #27ae60; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem;">${ong.total_avaliacoes || 0} avaliacoes</span>
                     </div>
                 </div>
             `;
@@ -422,7 +421,7 @@ function fecharModalAvaliacao() {
 function abrirModalInscricao(vagaId) {
     const token = getToken();
     if (!token) {
-        showToast('Faça login para se inscrever', 'warning');
+        showToast('Faca login para se inscrever', 'warning');
         window.location.href = '/login.html';
         return;
     }
@@ -437,9 +436,6 @@ function fecharModalInscricao() {
     document.getElementById('inscricao-modal').style.display = 'none';
 }
 
-// ============================================================
-// AUTH - CORRIGIDO
-// ============================================================
 const auth = {
     isAuthenticated: !!localStorage.getItem('token'),
     user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -451,45 +447,30 @@ const auth = {
         const chatIcon = document.getElementById('chat-icon');
         const dashboardLink = document.getElementById('dashboard-link-ong');
 
-        console.log('🔄 Atualizando UI...');
-        console.log('🔑 Autenticado:', this.isAuthenticated);
-        console.log('👤 Usuário:', this.user);
-        console.log('📌 Tipo:', this.userType);
+        console.log('Atualizando interface');
 
         if (this.isAuthenticated && this.user) {
-            // Esconde botões de login/cadastro
             if (navButtons) {
                 navButtons.style.display = 'none';
-                console.log('✅ Botões de login escondidos');
             }
             
-            // Mostra menu do usuário
             if (userMenu) {
                 userMenu.style.display = 'flex';
-                console.log('✅ Menu do usuário mostrado');
             }
             
-            // Mostra nome do usuário
             if (userNameSpan) {
-                userNameSpan.textContent = this.user.nome?.split(' ')[0] || 'Usuário';
-                console.log('✅ Nome do usuário:', userNameSpan.textContent);
+                userNameSpan.textContent = this.user.nome?.split(' ')[0] || 'Usuario';
             }
             
-            // Mostra ícone do chat
             if (chatIcon) {
                 chatIcon.style.display = 'block';
             }
             
-            // ============================================================
-            // CORREÇÃO: Remove "Dashboard (ONG)" para doadores
-            // ============================================================
             if (dashboardLink) {
                 if (this.userType === 'doador') {
                     dashboardLink.style.display = 'none';
-                    console.log('✅ Dashboard ONG escondido para doador');
                 } else {
                     dashboardLink.style.display = 'block';
-                    console.log('✅ Dashboard ONG mostrado para ONG');
                 }
             }
             
@@ -498,39 +479,33 @@ const auth = {
                 verificarChatNaoLidas(); 
             }, 500);
         } else {
-            // Mostra botões de login/cadastro
             if (navButtons) {
                 navButtons.style.display = 'flex';
-                console.log('✅ Botões de login mostrados');
             }
             
-            // Esconde menu do usuário
             if (userMenu) {
                 userMenu.style.display = 'none';
-                console.log('✅ Menu do usuário escondido');
             }
             
-            // Esconde ícone do chat
             if (chatIcon) {
                 chatIcon.style.display = 'none';
             }
         }
     },
     setup() {
-        console.log('🔧 Configurando autenticação...');
+        console.log('Configurando autenticacao');
         this.updateUI();
         
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('🚪 Usuário deslogando...');
                 localStorage.clear();
                 this.isAuthenticated = false;
                 this.user = null;
                 this.userType = null;
                 this.updateUI();
-                showToast('Você saiu do sistema', 'info');
+                showToast('Voce saiu do sistema', 'info');
                 setTimeout(() => { window.location.href = '/'; }, 500);
             });
         }
@@ -564,7 +539,7 @@ async function verificarChatNaoLidas() {
             }
         }
     } catch (error) {
-        console.error('Erro ao verificar chat:', error);
+        console.warn('Erro ao verificar chat');
     }
 }
 
@@ -581,7 +556,7 @@ async function carregarEstatisticas() {
         document.getElementById('stat-itens').textContent = stats.total_itens || 0;
         document.getElementById('stat-voluntarios').textContent = stats.total_voluntarios || 0;
     } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
+        console.warn('Erro ao carregar estatisticas');
     }
 }
 
@@ -603,8 +578,8 @@ async function carregarEventos() {
                 <div class="evento-card" onclick="window.location.href='/perfil_ong.html?id=${evento.ong_id}'">
                     <img class="evento-imagem" src="${evento.imagem_url || 'https://via.placeholder.com/400x200?text=Evento'}" alt="${escapeHtml(evento.titulo)}">
                     <h3>${escapeHtml(evento.titulo)}</h3>
-                    <div class="evento-data">📅 ${dataFormatada} • ${horaFormatada}</div>
-                    <div class="evento-local">📍 ${escapeHtml(evento.local_evento || evento.cidade || 'Local não informado')}</div>
+                    <div class="evento-data">${dataFormatada} - ${horaFormatada}</div>
+                    <div class="evento-local">${escapeHtml(evento.local_evento || evento.cidade || 'Local nao informado')}</div>
                     <p class="evento-descricao">${escapeHtml(evento.descricao?.substring(0, 100))}${evento.descricao?.length > 100 ? '...' : ''}</p>
                 </div>
             `;
@@ -639,7 +614,7 @@ function renderizarNecessidades(necessidades) {
     const container = document.getElementById('necessidades-container');
     if (!container) return;
     if (!necessidades || necessidades.length === 0) {
-        container.innerHTML = '<div class="empty-state"><h3>🎯 Nenhuma necessidade encontrada</h3><p>Tente ajustar os filtros de busca.</p></div>';
+        container.innerHTML = '<div class="empty-state"><h3>Nenhuma necessidade encontrada</h3><p>Tente ajustar os filtros de busca.</p></div>';
         return;
     }
     container.innerHTML = necessidades.map(nec => criarCardHtml(nec)).join('');
@@ -657,8 +632,8 @@ function criarCardHtml(nec) {
         <div class="card ${statusClass}">
             ${nec.urgencia === 'alta' ? '<span class="badge-urgente">URGENTE</span>' : ''}
             <h3>${escapeHtml(nec.titulo)}</h3>
-            <p class="ong ong-link" data-ong-id="${nec.ong_id}" style="cursor: pointer;">🏢 ${escapeHtml(nec.ong_nome)}</p>
-            <p class="endereco">📍 ${escapeHtml(nec.cidade || 'Local não informado')}</p>
+            <p class="ong ong-link" data-ong-id="${nec.ong_id}" style="cursor: pointer;">${escapeHtml(nec.ong_nome)}</p>
+            <p class="endereco">${escapeHtml(nec.cidade || 'Local nao informado')}</p>
             <div class="avaliacao" style="font-size: 0.9rem; color: #f39c12; margin: 0.3rem 0;">${estrelas} (${mediaAvaliacao.toFixed(1)})</div>
             <p class="descricao">${escapeHtml(nec.descricao || '')}</p>
             <div class="progress-section">
@@ -667,7 +642,7 @@ function criarCardHtml(nec) {
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                 <button class="btn-doar" data-id="${nec.id}" style="flex: 1;">Quero Doar</button>
-                <button class="btn-avaliar" data-ong-id="${nec.ong_id}" style="flex: 0 1 auto; background: #f39c12; color: white; border: none; padding: 0.8rem 1rem; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">⭐</button>
+                <button class="btn-avaliar" data-ong-id="${nec.ong_id}" style="flex: 0 1 auto; background: #f39c12; color: white; border: none; padding: 0.8rem 1rem; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">Avaliar</button>
             </div>
         </div>
     `;
@@ -683,7 +658,7 @@ function adicionarNecessidades(necessidades) {
 
 function abrirModalDoacao(necessidadeId) {
     if (!auth.isAuthenticated) {
-        showToast('Faça login para realizar uma doação', 'warning');
+        showToast('Faca login para realizar uma doacao', 'warning');
         setTimeout(() => { window.location.href = '/login.html'; }, 1500);
         return;
     }
@@ -703,7 +678,7 @@ async function handleDoacaoSubmit(e) {
     const quantidade = parseInt(document.getElementById('modal-quantidade').value);
     const mensagem = document.getElementById('modal-mensagem').value;
     if (!quantidade || quantidade < 1) {
-        showToast('Informe uma quantidade válida', 'error');
+        showToast('Informe uma quantidade valida', 'error');
         return;
     }
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -712,7 +687,7 @@ async function handleDoacaoSubmit(e) {
     submitBtn.disabled = true;
     try {
         await registrarDoacao({ necessidade_id: necessidadeId, quantidade, mensagem });
-        showToast('Doação registrada com sucesso!', 'success');
+        showToast('Doacao registrada com sucesso!', 'success');
         fecharModal();
         currentPage = 1;
         carregarNecessidades();
@@ -819,7 +794,7 @@ function configurarEventos() {
             }
             try {
                 await apiRequest('/avaliacoes', { method: 'POST', body: JSON.stringify({ ong_id: parseInt(ongId), nota, comentario }) });
-                showToast('Avaliação enviada com sucesso!', 'success');
+                showToast('Avaliacao enviada com sucesso!', 'success');
                 fecharModalAvaliacao();
                 carregarNecessidades();
             } catch (error) {
@@ -835,7 +810,7 @@ function configurarEventos() {
             const vagaId = document.getElementById('inscricao-vaga-id').value;
             try {
                 await apiRequest(`/voluntariado/vagas/${vagaId}/inscrever`, { method: 'POST', body: JSON.stringify({}) });
-                showToast('Inscrição realizada com sucesso!', 'success');
+                showToast('Inscricao realizada com sucesso!', 'success');
                 fecharModalInscricao();
                 carregarVoluntariado();
                 carregarEstatisticas();
@@ -848,8 +823,9 @@ function configurarEventos() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     await obterCsrfToken();
-    console.log('🚀 Página carregada!');
-    console.log('🔑 Token:', getToken() ? 'Presente' : 'Ausente');
+    console.log('Pagina carregada');
+    console.log('Sessao ativa:', getToken() ? 'sim' : 'nao');
+    console.log('Usuario autenticado:', auth.user ? 'sim' : 'nao');
     
     auth.setup();
     carregarEstatisticas();

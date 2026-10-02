@@ -5,11 +5,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -48,11 +53,11 @@ async function apiRequest(endpoint, options = {}) {
                 localStorage.clear();
                 window.location.href = '/login.html';
             }
-            throw new Error(data.error || 'Erro na requisição');
+            throw new Error(data.error || 'Erro na requisicao');
         }
         return data;
     } catch (error) {
-        console.error('Erro na API:', error);
+        console.warn('Erro na API');
         throw error;
     }
 }
@@ -77,7 +82,7 @@ function updateAuthUI() {
         if (userMenu) {
             userMenu.style.display = 'flex';
             if (userNameSpan) {
-                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+                userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
             }
             const dashboardLink = userMenu.querySelector('.dropdown-menu a[href="/dashboard_ong.html"]');
             if (dashboardLink) {
@@ -117,7 +122,7 @@ async function enviarFeedback(e) {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-        showToast('Faça login para enviar feedback', 'warning');
+        showToast('Faca login para enviar feedback', 'warning');
         window.location.href = '/login.html';
         return;
     }
@@ -155,20 +160,20 @@ async function carregarMeusFeedbacks() {
     const container = document.getElementById('meus-feedbacks-container');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<div class="empty-state"><p>Faça login para ver seus feedbacks</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>Faca login para ver seus feedbacks</p></div>';
         return;
     }
     try {
         const data = await apiRequest('/feedback/meus');
         const feedbacks = data.feedbacks || [];
         if (feedbacks.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>Você ainda não enviou nenhum feedback</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>Voce ainda nao enviou nenhum feedback</p></div>';
             return;
         }
         container.innerHTML = feedbacks.map(fb => {
             const dataEnvio = new Date(fb.data);
             const statusClass = fb.status === 'respondido' ? 'respondido' : 'pendente';
-            const statusText = fb.status === 'respondido' ? '✅ Respondido' : '⏳ Pendente';
+            const statusText = fb.status === 'respondido' ? 'Respondido' : 'Pendente';
             return `
                 <div class="feedback-item">
                     <div class="feedback-header">
@@ -179,7 +184,7 @@ async function carregarMeusFeedbacks() {
                     <p class="feedback-mensagem">${escapeHtml(fb.mensagem)}</p>
                     ${fb.resposta ? `
                         <div class="feedback-resposta">
-                            <strong>📌 Resposta:</strong>
+                            <strong>Resposta:</strong>
                             <p>${escapeHtml(fb.resposta)}</p>
                             <small>${fb.data_resposta ? new Date(fb.data_resposta).toLocaleDateString('pt-BR') : ''}</small>
                         </div>

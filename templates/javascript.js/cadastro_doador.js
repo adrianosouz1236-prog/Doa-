@@ -13,25 +13,30 @@ const API_BASE_URL = window.location.origin + '/api';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
-        document.getElementById('csrf-token').value = data.csrf_token || '';
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = data.csrf_token || '';
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
 function validarSenhaForte(senha) {
     const requisitos = [];
-    if (senha.length >= 12) requisitos.push('✅ 12+ caracteres');
-    else requisitos.push('❌ 12+ caracteres');
-    if (/[A-Z]/.test(senha)) requisitos.push('✅ Letra maiúscula');
-    else requisitos.push('❌ Letra maiúscula');
-    if (/[a-z]/.test(senha)) requisitos.push('✅ Letra minúscula');
-    else requisitos.push('❌ Letra minúscula');
-    if (/\d/.test(senha)) requisitos.push('✅ Número');
-    else requisitos.push('❌ Número');
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(senha)) requisitos.push('✅ Caractere especial');
-    else requisitos.push('❌ Caractere especial');
+    if (senha.length >= 12) requisitos.push('OK 12+ caracteres');
+    else requisitos.push('X 12+ caracteres');
+    if (/[A-Z]/.test(senha)) requisitos.push('OK Letra maiuscula');
+    else requisitos.push('X Letra maiuscula');
+    if (/[a-z]/.test(senha)) requisitos.push('OK Letra minuscula');
+    else requisitos.push('X Letra minuscula');
+    if (/\d/.test(senha)) requisitos.push('OK Numero');
+    else requisitos.push('X Numero');
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(senha)) requisitos.push('OK Caractere especial');
+    else requisitos.push('X Caractere especial');
     return requisitos;
 }
 
@@ -44,16 +49,16 @@ function atualizarForcaSenha(senha) {
         return;
     }
     const requisitos = validarSenhaForte(senha);
-    const validos = requisitos.filter(r => r.startsWith('✅')).length;
+    const validos = requisitos.filter(r => r.startsWith('OK')).length;
     const total = requisitos.length;
     const porcentagem = (validos / total) * 100;
     let cor, texto;
-    if (porcentagem === 100) { cor = '#27ae60'; texto = '🟢 Senha Forte'; }
-    else if (porcentagem >= 60) { cor = '#f39c12'; texto = '🟡 Senha Média'; }
-    else { cor = '#e74c3c'; texto = '🔴 Senha Fraca'; }
+    if (porcentagem === 100) { cor = '#27ae60'; texto = 'Senha Forte'; }
+    else if (porcentagem >= 60) { cor = '#f39c12'; texto = 'Senha Media'; }
+    else { cor = '#e74c3c'; texto = 'Senha Fraca'; }
     container.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.3rem;">
-            ${requisitos.map(r => `<span style="font-size: 0.7rem; color: ${r.startsWith('✅') ? '#27ae60' : '#e74c3c'};">${r}</span>`).join('')}
+            ${requisitos.map(r => `<span style="font-size: 0.7rem; color: ${r.startsWith('OK') ? '#27ae60' : '#e74c3c'};">${r}</span>`).join('')}
         </div>
         <div style="width: 100%; height: 4px; background: #ecf0f1; border-radius: 2px; overflow: hidden;">
             <div style="width: ${porcentagem}%; height: 100%; background: ${cor}; transition: width 0.3s;"></div>
@@ -75,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const consentimento = document.getElementById('consentimento-lgpd').checked;
             if (!consentimento) {
-                showToast('É obrigatório concordar com a Política de Privacidade e Termos de Serviço.', 'error');
+                showToast('E obrigatorio concordar com a Politica de Privacidade e Termos de Servico.', 'error');
                 return;
             }
             
@@ -106,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (data.detalhes) throw new Error(data.error + ': ' + data.detalhes.join(', '));
                     throw new Error(data.error || 'Erro no cadastro');
                 }
-                showToast('Cadastro realizado com sucesso! Faça login para continuar.', 'success');
+                showToast('Cadastro realizado com sucesso! Faca login para continuar.', 'success');
                 setTimeout(() => { window.location.href = '/login.html'; }, 2000);
             } catch (error) {
                 showToast(error.message, 'error');

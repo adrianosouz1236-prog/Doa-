@@ -1,18 +1,22 @@
-// admin_plataform.js - COMPLETO COM TODAS AS FUNCIONALIDADES
+// admin_plataform.js - COMPLETO
 const API_BASE_URL = window.location.origin + '/api';
 let csrfToken = '';
 let ongsData = [], doadoresData = [], anunciosData = [], comunicacoesData = [];
 let doacoesFinanceirasData = [], solicitacoesExclusaoData = [];
 
-// ==================== UTILITÁRIOS ====================
-
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -47,7 +51,7 @@ async function requisicaoApi(endpoint, options = {}) {
                 localStorage.clear(); 
                 window.location.href = '/login.html'; 
             } 
-            throw new Error(data.error || 'Erro na requisição'); 
+            throw new Error(data.error || 'Erro na requisicao'); 
         }
         return data;
     } catch (error) {
@@ -84,8 +88,6 @@ function baixarCSV(conteudo, arquivo) {
     URL.revokeObjectURL(a.href); 
 }
 
-// ==================== NAVEGAÇÃO ====================
-
 function mostrarAba(aba) {
     document.querySelectorAll('.tab-content').forEach(t => {
         t.style.display = 'none';
@@ -101,7 +103,6 @@ function mostrarAba(aba) {
         if (l.dataset.aba === aba) l.classList.add('active');
     });
     
-    // Carregar dados da aba
     if (aba === 'dashboard') carregarDashboard();
     if (aba === 'anuncios') carregarAnuncios();
     if (aba === 'ongs') carregarOngs();
@@ -119,8 +120,6 @@ function mostrarAba(aba) {
     if (aba === 'logs') carregarLogs();
     if (aba === 'relatorios') carregarDadosConsentimento();
 }
-
-// ==================== DASHBOARD ====================
 
 async function carregarDashboard() {
     try {
@@ -143,12 +142,10 @@ async function carregarDashboard() {
 
         await carregarCarteiraPlataforma();
     } catch(e) { 
-        console.error('Erro no dashboard:', e);
+        console.warn('Erro no dashboard');
         showToast('Erro ao carregar dashboard', 'error'); 
     }
 }
-
-// ==================== CARTEIRA DA PLATAFORMA ====================
 
 async function carregarCarteiraPlataforma() {
     try {
@@ -157,7 +154,6 @@ async function carregarCarteiraPlataforma() {
         const totalTaxas = data.total_taxas || 0;
         const totalSacado = data.total_sacado || 0;
         
-        // Atualizar elementos do dashboard
         const elementos = [
             'plataforma-saldo', 'plataforma-saldo-financeiro',
             'plataforma-total-taxas', 'plataforma-total-taxas-financeiro',
@@ -179,7 +175,7 @@ async function carregarCarteiraPlataforma() {
         if (saldoModal) saldoModal.textContent = `R$ ${saldo.toFixed(2)}`;
 
     } catch (error) {
-        console.error('Erro ao carregar carteira da plataforma:', error);
+        console.warn('Erro ao carregar carteira da plataforma');
     }
 }
 
@@ -191,25 +187,24 @@ function abrirModalSaquePlataforma() {
         return;
     }
 
-    // Criar modal se não existir
     const modalHTML = `
         <div id="modal-saque-plataforma" class="modal" style="display: flex;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>💸 Saque da Carteira da Plataforma</h3>
+                    <h3>Saque da Carteira da Plataforma</h3>
                     <span class="modal-close" onclick="fecharModal('modal-saque-plataforma')">&times;</span>
                 </div>
                 <form id="form-saque-plataforma">
                     <div class="form-group">
                         <label>Valor (R$) *</label>
-                        <input type="number" id="valor-saque-plataforma" min="10" step="0.01" required placeholder="Mínimo R$ 10,00">
-                        <small style="color: #7f8c8d;">Saldo disponível: <span id="saque-plataforma-saldo">R$ 0,00</span></small>
+                        <input type="number" id="valor-saque-plataforma" min="10" step="0.01" required placeholder="Minimo R$ 10,00">
+                        <small style="color: #7f8c8d;">Saldo disponivel: <span id="saque-plataforma-saldo">R$ 0,00</span></small>
                     </div>
                     <div class="form-group">
-                        <label>Conta Bancária *</label>
-                        <input type="text" id="conta-saque-plataforma" required placeholder="Banco - Agência - Conta">
+                        <label>Conta Bancaria *</label>
+                        <input type="text" id="conta-saque-plataforma" required placeholder="Banco - Agencia - Conta">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">💸 Solicitar Saque</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Solicitar Saque</button>
                 </form>
             </div>
         </div>
@@ -224,12 +219,12 @@ function abrirModalSaquePlataforma() {
         const contaBancaria = document.getElementById('conta-saque-plataforma').value;
 
         if (!valor || valor < 10) {
-            showToast('Valor mínimo para saque é R$ 10,00', 'error');
+            showToast('Valor minimo para saque e R$ 10,00', 'error');
             return;
         }
 
         if (!contaBancaria) {
-            showToast('Informe a conta bancária', 'error');
+            showToast('Informe a conta bancaria', 'error');
             return;
         }
 
@@ -255,16 +250,14 @@ function abrirModalSaquePlataforma() {
     });
 }
 
-// ==================== ANÚNCIOS ====================
-
 async function carregarAnuncios() {
     try {
         const data = await requisicaoApi('/admin/anuncios');
         anunciosData = data.anuncios || [];
         renderizarAnuncios(anunciosData);
     } catch(e) { 
-        console.error('Erro ao carregar anúncios:', e);
-        showToast('Erro ao carregar anúncios', 'error'); 
+        console.warn('Erro ao carregar anuncios');
+        showToast('Erro ao carregar anuncios', 'error'); 
     }
 }
 
@@ -273,7 +266,7 @@ function renderizarAnuncios(anuncios) {
     if (!tbody) return;
     
     if (anuncios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum anúncio encontrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum anuncio encontrado</td></tr>';
         return;
     }
     
@@ -281,10 +274,10 @@ function renderizarAnuncios(anuncios) {
         let statusBadge = '', statusText = '';
         if (a.excluido) { 
             statusBadge = 'badge-inactive'; 
-            statusText = 'Excluído'; 
+            statusText = 'Excluido'; 
         } else if (a.total_advertencias > 0) { 
             statusBadge = 'badge-warning'; 
-            statusText = `⚠️ ${a.total_advertencias} advertência(s)`; 
+            statusText = `${a.total_advertencias} advertencia(s)`; 
         } else { 
             statusBadge = 'badge-active'; 
             statusText = 'Ativo'; 
@@ -295,14 +288,14 @@ function renderizarAnuncios(anuncios) {
                 <td>${escapeHtml(a.ong_nome)}</td>
                 <td>${escapeHtml(a.titulo)}</td>
                 <td><span class="badge badge-info">${a.categoria}</span></td>
-                <td>${a.urgencia === 'alta' ? '<span class="text-danger">🔴 Alta</span>' : a.urgencia === 'media' ? '<span class="text-warning">🟡 Média</span>' : '🟢 Baixa'}</td>
+                <td>${a.urgencia === 'alta' ? '<span class="text-danger">Alta</span>' : a.urgencia === 'media' ? '<span class="text-warning">Media</span>' : 'Baixa'}</td>
                 <td><span class="badge ${statusBadge}">${statusText}</span></td>
                 <td>${a.total_advertencias || 0}</td>
                 <td>${new Date(a.data_criacao).toLocaleDateString()}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="verAnuncio(${a.id})">👁️</button>
-                    <button class="btn btn-warning btn-sm" onclick="abrirModalAdvertenciaParaId(${a.id}, ${a.ong_id})">⚠️</button>
-                    ${!a.excluido ? `<button class="btn btn-danger btn-sm" onclick="excluirAnuncioPorId(${a.id})">🗑️</button>` : ''}
+                    <button class="btn btn-outline btn-sm" onclick="verAnuncio(${a.id})">Ver</button>
+                    <button class="btn btn-warning btn-sm" onclick="abrirModalAdvertenciaParaId(${a.id}, ${a.ong_id})">Aviso</button>
+                    ${!a.excluido ? `<button class="btn btn-danger btn-sm" onclick="excluirAnuncioPorId(${a.id})">X</button>` : ''}
                 </td>
             </tr>
         `;
@@ -330,22 +323,21 @@ async function verAnuncio(id) {
         
         document.getElementById('anuncio-detalhes').innerHTML = `
             <p><strong>ONG:</strong> ${escapeHtml(anuncio.ong_nome)}</p>
-            <p><strong>Título:</strong> ${escapeHtml(anuncio.titulo)}</p>
+            <p><strong>Titulo:</strong> ${escapeHtml(anuncio.titulo)}</p>
             <p><strong>Categoria:</strong> ${anuncio.categoria}</p>
-            <p><strong>Descrição:</strong> ${escapeHtml(anuncio.descricao)}</p>
-            <p><strong>Quantidade Necessária:</strong> ${anuncio.quantidade_necessaria} itens</p>
+            <p><strong>Descricao:</strong> ${escapeHtml(anuncio.descricao)}</p>
+            <p><strong>Quantidade Necessaria:</strong> ${anuncio.quantidade_necessaria} itens</p>
             <p><strong>Recebidos:</strong> ${anuncio.quantidade_recebida || 0} itens</p>
-            <p><strong>Urgência:</strong> ${anuncio.urgencia}</p>
-            <p><strong>Status:</strong> ${anuncio.excluido ? 'Excluído' : (anuncio.total_advertencias > 0 ? `${anuncio.total_advertencias} advertência(s)` : 'Ativo')}</p>
+            <p><strong>Urgencia:</strong> ${anuncio.urgencia}</p>
         `;
         
         if (anuncio.advertencias && anuncio.advertencias.length > 0) {
             document.getElementById('anuncio-advertencias').innerHTML = `
-                <div class="advertencia-list"><strong>📋 Histórico de Advertências:</strong><br>
+                <div class="advertencia-list"><strong>Historico de Advertencias:</strong><br>
                 ${anuncio.advertencias.map(adv => `<div class="advertencia-item"><strong>${new Date(adv.data).toLocaleDateString()}</strong> - ${adv.motivo}<br><small>${adv.descricao}</small></div>`).join('')}</div>
             `;
         } else {
-            document.getElementById('anuncio-advertencias').innerHTML = '<p class="text-muted">Nenhuma advertência registrada.</p>';
+            document.getElementById('anuncio-advertencias').innerHTML = '<p class="text-muted">Nenhuma advertencia registrada.</p>';
         }
         abrirModal('modal-anuncio');
     } catch (error) {
@@ -367,14 +359,14 @@ function abrirModalAdvertencia() {
 }
 
 async function excluirAnuncio() {
-    if (!confirm('⚠️ Tem certeza que deseja EXCLUIR este anúncio?')) return;
+    if (!confirm('Tem certeza que deseja EXCLUIR este anuncio?')) return;
     await excluirAnuncioPorId(anuncioAtualId);
 }
 
 async function excluirAnuncioPorId(id) {
     try {
         await requisicaoApi(`/admin/anuncios/${id}/excluir`, { method: 'DELETE' });
-        showToast('Anúncio excluído com sucesso!', 'success');
+        showToast('Anuncio excluido com sucesso!', 'success');
         fecharModal('modal-anuncio');
         fecharModal('modal-advertencia');
         carregarAnuncios();
@@ -384,15 +376,13 @@ async function excluirAnuncioPorId(id) {
     }
 }
 
-// ==================== ONGs ====================
-
 async function carregarOngs() {
     try { 
         const data = await requisicaoApi('/admin/ongs'); 
         ongsData = data.ongs || []; 
         renderizarOngs(ongsData);
     } catch(e) { 
-        console.error('Erro ao carregar ONGs:', e);
+        console.warn('Erro ao carregar ONGs');
         showToast('Erro ao carregar ONGs', 'error'); 
     }
 }
@@ -428,10 +418,10 @@ function renderizarOngs(ongs) {
                 <td>R$ ${(o.saldo_carteira || 0).toFixed(2)}</td>
                 <td>${new Date(o.data_cadastro).toLocaleDateString()}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="verOng(${o.id})">👁️</button>
-                    ${o.status !== 'bloqueado' ? `<button class="btn btn-danger btn-sm" onclick="bloquearOngPorId(${o.id})">🔒</button>` : ''}
-                    ${o.status === 'bloqueado' ? `<button class="btn btn-success btn-sm" onclick="desbloquearOng(${o.id})">🔓</button>` : ''}
-                    ${o.status === 'pendente_verificacao' ? `<button class="btn btn-primary btn-sm" onclick="verificarOng(${o.id})">✅</button>` : ''}
+                    <button class="btn btn-outline btn-sm" onclick="verOng(${o.id})">Ver</button>
+                    ${o.status !== 'bloqueado' ? `<button class="btn btn-danger btn-sm" onclick="bloquearOngPorId(${o.id})">Bloquear</button>` : ''}
+                    ${o.status === 'bloqueado' ? `<button class="btn btn-success btn-sm" onclick="desbloquearOng(${o.id})">Desbloquear</button>` : ''}
+                    ${o.status === 'pendente_verificacao' ? `<button class="btn btn-primary btn-sm" onclick="verificarOng(${o.id})">Verificar</button>` : ''}
                 </td>
             </tr>
         `;
@@ -454,32 +444,21 @@ async function verOng(id) {
             <p><strong>CNPJ:</strong> ${ong.cnpj || '-'}</p>
             <p><strong>Email:</strong> ${ong.email}</p>
             <p><strong>Telefone:</strong> ${ong.telefone || '-'}</p>
-            <p><strong>Endereço:</strong> ${ong.endereco || '-'}</p>
+            <p><strong>Endereco:</strong> ${ong.endereco || '-'}</p>
             <p><strong>Cidade:</strong> ${ong.cidade || '-'}</p>
-            <p><strong>⭐ Avaliação:</strong> ${estrelas} (${ong.media_avaliacao || 0} de 5)</p>
-            <p><strong>💰 Saldo:</strong> R$ ${(ong.saldo_carteira || 0).toFixed(2)}</p>
+            <p><strong>Avaliacao:</strong> ${estrelas} (${ong.media_avaliacao || 0} de 5)</p>
+            <p><strong>Saldo:</strong> R$ ${(ong.saldo_carteira || 0).toFixed(2)}</p>
             <p><strong>Status:</strong> <span class="badge ${ong.status === 'verificado' ? 'badge-active' : 'badge-pending'}">${ong.status}</span></p>
-            <p><strong>Total de Advertências:</strong> ${ong.total_advertencias || 0}</p>
-            <p><strong>Data de Cadastro:</strong> ${new Date(ong.data_cadastro).toLocaleString()}</p>
-            ${ong.motivo_rejeicao ? `<p><strong>Motivo da Rejeição:</strong> ${ong.motivo_rejeicao}</p>` : ''}
+            <p><strong>Total de Advertencias:</strong> ${ong.total_advertencias || 0}</p>
         `;
-        
-        if (ong.advertencias && ong.advertencias.length > 0) {
-            document.getElementById('ong-advertencias').innerHTML = `
-                <div class="advertencia-list"><strong>📋 Histórico de Advertências:</strong><br>
-                ${ong.advertencias.map(adv => `<div class="advertencia-item"><strong>${new Date(adv.data).toLocaleDateString()}</strong> - Anúncio #${adv.anuncio_id}<br><strong>Motivo:</strong> ${adv.motivo}<br><small>${adv.descricao}</small></div>`).join('')}</div>
-            `;
-        } else {
-            document.getElementById('ong-advertencias').innerHTML = '<p>Nenhuma advertência registrada.</p>';
-        }
         
         const btnBloquear = document.getElementById('btn-bloquear-ong');
         if (ong.status === 'bloqueado') {
-            btnBloquear.textContent = '🔓 Desbloquear ONG';
+            btnBloquear.textContent = 'Desbloquear ONG';
             btnBloquear.onclick = () => desbloquearOng(ong.id);
             btnBloquear.className = 'btn btn-success';
         } else {
-            btnBloquear.textContent = '🔒 Bloquear ONG';
+            btnBloquear.textContent = 'Bloquear ONG';
             btnBloquear.onclick = () => bloquearOngPorId(ong.id);
             btnBloquear.className = 'btn btn-danger';
         }
@@ -490,7 +469,7 @@ async function verOng(id) {
 }
 
 async function verificarOng(id) {
-    if (!confirm('Confirmar verificação desta ONG?')) return;
+    if (!confirm('Confirmar verificacao desta ONG?')) return;
     try {
         await requisicaoApi(`/admin/ongs/${id}/verificar`, { method: 'PUT' });
         showToast('ONG verificada com sucesso!', 'success');
@@ -502,7 +481,7 @@ async function verificarOng(id) {
 }
 
 async function bloquearOngPorId(id) {
-    if (!confirm('⚠️ Tem certeza que deseja BLOQUEAR esta ONG?')) return;
+    if (!confirm('Tem certeza que deseja BLOQUEAR esta ONG?')) return;
     try {
         await requisicaoApi(`/admin/ongs/${id}/bloquear`, { method: 'PUT' });
         showToast('ONG bloqueada com sucesso!', 'warning');
@@ -537,15 +516,13 @@ function exportarOngs() {
     baixarCSV(csv, 'ongs.csv'); 
 }
 
-// ==================== DOADORES ====================
-
 async function carregarDoadores() {
     try { 
         const data = await requisicaoApi('/admin/doadores'); 
         doadoresData = data.doadores || []; 
         renderizarDoadores(doadoresData);
     } catch(e) { 
-        console.error('Erro ao carregar doadores:', e);
+        console.warn('Erro ao carregar doadores');
         showToast('Erro ao carregar doadores', 'error'); 
     }
 }
@@ -562,8 +539,8 @@ function renderizarDoadores(doadores) {
     tbody.innerHTML = doadores.map(d => {
         const conquistas = d.conquistas || [];
         const iconesConquistas = conquistas.map(c => {
-            const icones = { 'primeira_doacao': '🌟', 'doador_frequente': '⭐', 'doador_master': '🏆', '100_pontos': '💎', '500_pontos': '👑', '1000_pontos': '🔥' };
-            return icones[c] || '🎯';
+            const icones = { 'primeira_doacao': '1', 'doador_frequente': '2', 'doador_master': '3', '100_pontos': '4', '500_pontos': '5', '1000_pontos': '6' };
+            return icones[c] || '*';
         }).join(' ');
         return `
             <tr>
@@ -577,8 +554,8 @@ function renderizarDoadores(doadores) {
                 <td><span class="badge ${d.status === 'ativo' ? 'badge-active' : 'badge-inactive'}">${d.status}</span></td>
                 <td>${new Date(d.data_cadastro).toLocaleDateString()}</td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="verDoador(${d.id})">👁️</button>
-                    ${d.status !== 'bloqueado' ? `<button class="btn btn-danger btn-sm" onclick="bloquearDoadorPorId(${d.id})">🔒</button>` : ''}
+                    <button class="btn btn-outline btn-sm" onclick="verDoador(${d.id})">Ver</button>
+                    ${d.status !== 'bloqueado' ? `<button class="btn btn-danger btn-sm" onclick="bloquearDoadorPorId(${d.id})">Bloquear</button>` : ''}
                 </td>
             </tr>
         `;
@@ -601,11 +578,11 @@ async function verDoador(id) {
         const doador = await requisicaoApi(`/admin/doadores/${id}`);
         const conquistas = doador.conquistas || [];
         const iconesConquistas = conquistas.map(c => {
-            const icones = { 'primeira_doacao': '🌟 Primeira Doação', 'doador_frequente': '⭐ Doador Frequente', 'doador_master': '🏆 Doador Master', '100_pontos': '💎 100 Pontos', '500_pontos': '👑 500 Pontos', '1000_pontos': '🔥 1000 Pontos' };
+            const icones = { 'primeira_doacao': 'Primeira Doacao', 'doador_frequente': 'Doador Frequente', 'doador_master': 'Doador Master', '100_pontos': '100 Pontos', '500_pontos': '500 Pontos', '1000_pontos': '1000 Pontos' };
             return icones[c] || c;
         }).join('\n');
         
-        alert(`📋 DOADOR\n\nNome: ${doador.nome}\nEmail: ${doador.email}\nTelefone: ${doador.telefone}\nTotal doações: ${doador.total_doacoes}\nPontuação: ${doador.pontuacao}\nConquistas: ${iconesConquistas || 'Nenhuma'}\nStatus: ${doador.status}`);
+        alert(`DOADOR\n\nNome: ${doador.nome}\nEmail: ${doador.email}\nTelefone: ${doador.telefone}\nTotal doacoes: ${doador.total_doacoes}\nPontuacao: ${doador.pontuacao}\nConquistas: ${iconesConquistas || 'Nenhuma'}\nStatus: ${doador.status}`);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -622,8 +599,6 @@ async function bloquearDoadorPorId(id) {
     }
 }
 
-// ==================== DOAÇÕES ====================
-
 async function carregarDoacoes() {
     try { 
         const data = await requisicaoApi('/admin/doacoes'); 
@@ -631,12 +606,10 @@ async function carregarDoacoes() {
             `<tr><td>${new Date(d.data).toLocaleString()}</td><td>${escapeHtml(d.doador_nome)}</td><td>${escapeHtml(d.ong_nome)}</td><td>${escapeHtml(d.item)}</td><td>${d.quantidade}</td><td><span class="badge ${d.status === 'confirmada' ? 'badge-active' : 'badge-pending'}">${d.status}</span></td></tr>`
         ).join('');
     } catch(e) { 
-        console.error('Erro ao carregar doações:', e);
-        showToast('Erro ao carregar doações', 'error'); 
+        console.warn('Erro ao carregar doacoes');
+        showToast('Erro ao carregar doacoes', 'error'); 
     }
 }
-
-// ==================== DOAÇÕES FINANCEIRAS ====================
 
 async function carregarDoacoesFinanceiras() {
     try {
@@ -653,8 +626,8 @@ async function carregarDoacoesFinanceiras() {
         document.getElementById('financeiro-recorrentes').textContent = recorrentes;
         renderizarDoacoesFinanceiras(doacoesFinanceirasData);
     } catch(e) { 
-        console.error('Erro ao carregar doações financeiras:', e);
-        showToast('Erro ao carregar doações financeiras', 'error'); 
+        console.warn('Erro ao carregar doacoes financeiras');
+        showToast('Erro ao carregar doacoes financeiras', 'error'); 
     }
 }
 
@@ -667,13 +640,13 @@ function renderizarDoacoesFinanceiras(doacoes) {
     if (!tbody) return;
     
     if (filtradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">Nenhuma doação financeira encontrada</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">Nenhuma doacao financeira encontrada</td></tr>';
         return;
     }
     
     tbody.innerHTML = filtradas.map(d => {
         const statusMap = { 'confirmado': 'badge-success', 'pendente': 'badge-pending', 'cancelado': 'badge-danger' };
-        const statusText = { 'confirmado': '✅ Confirmado', 'pendente': '⏳ Pendente', 'cancelado': '❌ Cancelado' };
+        const statusText = { 'confirmado': 'Confirmado', 'pendente': 'Pendente', 'cancelado': 'Cancelado' };
         return `
             <tr>
                 <td>${d.id}</td>
@@ -684,7 +657,7 @@ function renderizarDoacoesFinanceiras(doacoes) {
                 <td>R$ ${(d.taxa_servico || 0).toFixed(2)}</td>
                 <td>R$ ${(d.valor_liquido || d.valor || 0).toFixed(2)}</td>
                 <td><span class="badge badge-info">${d.metodo_pagamento}</span></td>
-                <td>${d.recorrente ? '🔄 Sim' : '❌ Não'}</td>
+                <td>${d.recorrente ? 'Sim' : 'Nao'}</td>
                 <td><span class="badge ${statusMap[d.status] || 'badge-pending'}">${statusText[d.status] || d.status}</span></td>
                 <td>${new Date(d.data_criacao).toLocaleString()}</td>
             </tr>
@@ -704,14 +677,14 @@ async function gerarRelatorioFinanceiro() {
         if (modalContent) {
             modalContent.innerHTML = `
                 <div style="padding: 1rem;">
-                    <h4>📊 Relatório Financeiro</h4>
+                    <h4>Relatorio Financeiro</h4>
                     <p><strong>Gerado em:</strong> ${new Date(relatorio.data_geracao).toLocaleString()}</p>
                     <hr>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="stat-card"><h3>Total Doações</h3><div class="stat-value">${relatorio.total_doacoes_financeiras || 0}</div></div>
-                        <div class="stat-card"><h3>💰 Valor Total</h3><div class="stat-value">R$ ${(relatorio.valor_total || 0).toFixed(2)}</div></div>
-                        <div class="stat-card"><h3>📊 Valor Médio</h3><div class="stat-value">R$ ${(relatorio.valor_medio || 0).toFixed(2)}</div></div>
-                        <div class="stat-card"><h3>💰 Taxas Arrecadadas</h3><div class="stat-value">R$ ${(relatorio.total_taxas || 0).toFixed(2)}</div></div>
+                        <div class="stat-card"><h3>Total Doacoes</h3><div class="stat-value">${relatorio.total_doacoes_financeiras || 0}</div></div>
+                        <div class="stat-card"><h3>Valor Total</h3><div class="stat-value">R$ ${(relatorio.valor_total || 0).toFixed(2)}</div></div>
+                        <div class="stat-card"><h3>Valor Medio</h3><div class="stat-value">R$ ${(relatorio.valor_medio || 0).toFixed(2)}</div></div>
+                        <div class="stat-card"><h3>Taxas Arrecadadas</h3><div class="stat-value">R$ ${(relatorio.total_taxas || 0).toFixed(2)}</div></div>
                     </div>
                     <button class="btn btn-primary" onclick="fecharModal('modal-relatorio-financeiro')" style="margin-top: 1rem;">Fechar</button>
                 </div>
@@ -719,8 +692,8 @@ async function gerarRelatorioFinanceiro() {
         }
         abrirModal('modal-relatorio-financeiro');
     } catch(e) { 
-        console.error('Erro ao gerar relatório:', e);
-        showToast('Erro ao gerar relatório', 'error'); 
+        console.warn('Erro ao gerar relatorio');
+        showToast('Erro ao gerar relatorio', 'error'); 
     }
 }
 
@@ -747,12 +720,10 @@ async function carregarCarteiras() {
             </tr>
         `).join('');
     } catch(e) { 
-        console.error('Erro ao carregar carteiras:', e);
+        console.warn('Erro ao carregar carteiras');
         showToast('Erro ao carregar carteiras', 'error'); 
     }
 }
-
-// ==================== COMUNICAÇÃO ====================
 
 function abrirModalComunicacao() {
     const form = document.getElementById('form-comunicacao');
@@ -781,8 +752,8 @@ async function carregarComunicacoesAdmin() {
         document.getElementById('total-nao-lidas').textContent = naoLidas;
         renderizarComunicacoes(comunicacoesData);
     } catch(e) { 
-        console.error('Erro ao carregar comunicações:', e);
-        showToast('Erro ao carregar comunicações', 'error'); 
+        console.warn('Erro ao carregar comunicacoes');
+        showToast('Erro ao carregar comunicacoes', 'error'); 
     }
 }
 
@@ -791,16 +762,16 @@ function renderizarComunicacoes(comunicacoes) {
     if (!tbody) return;
     
     if (comunicacoes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma comunicação enviada</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma comunicacao enviada</td></tr>';
         return;
     }
     
     tbody.innerHTML = comunicacoes.map(c => {
-        const prioridadeLabels = { 'normal': '<span class="badge badge-active">Normal</span>', 'alta': '<span class="badge badge-warning">🟡 Alta</span>', 'urgente': '<span class="badge badge-danger">🔴 Urgente</span>' };
-        const tipoLabels = { 'todos': 'Todos', 'doadores': 'Doadores', 'ongs': 'ONGs', 'especifico': 'Específico' };
+        const prioridadeLabels = { 'normal': '<span class="badge badge-active">Normal</span>', 'alta': '<span class="badge badge-warning">Alta</span>', 'urgente': '<span class="badge badge-danger">Urgente</span>' };
+        const tipoLabels = { 'todos': 'Todos', 'doadores': 'Doadores', 'ongs': 'ONGs', 'especifico': 'Especifico' };
         let destinatario = tipoLabels[c.tipo] || c.tipo;
         if (c.tipo === 'especifico' && c.destinatario_nome) destinatario += `: ${c.destinatario_nome} (ID: ${c.destinatario_id})`;
-        const statusLido = c.lida ? '✅ Lida' : '⏳ Não lida';
+        const statusLido = c.lida ? 'Lida' : 'Nao lida';
         const statusClass = c.lida ? 'badge-active' : 'badge-pending';
         return `
             <tr>
@@ -811,8 +782,8 @@ function renderizarComunicacoes(comunicacoes) {
                 <td>${prioridadeLabels[c.prioridade] || c.prioridade}</td>
                 <td><span class="badge ${statusClass}">${statusLido}</span></td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="verComunicacao(${c.id})">👁️</button>
-                    <button class="btn btn-danger btn-sm" onclick="deletarComunicacao(${c.id})">🗑️</button>
+                    <button class="btn btn-outline btn-sm" onclick="verComunicacao(${c.id})">Ver</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletarComunicacao(${c.id})">X</button>
                 </td>
             </tr>
         `;
@@ -823,21 +794,19 @@ async function verComunicacao(id) {
     const comunicacao = comunicacoesData.find(c => c.id == id);
     if (comunicacao) {
         const prioridadeColors = { 'normal': '#27ae60', 'alta': '#f39c12', 'urgente': '#e74c3c' };
-        const tipoLabels = { 'todos': 'Todos (Doadores + ONGs)', 'doadores': 'Apenas Doadores', 'ongs': 'Apenas ONGs', 'especifico': 'Usuário Específico' };
+        const tipoLabels = { 'todos': 'Todos (Doadores + ONGs)', 'doadores': 'Apenas Doadores', 'ongs': 'Apenas ONGs', 'especifico': 'Usuario Especifico' };
         let destinatario = tipoLabels[comunicacao.tipo] || comunicacao.tipo;
         if (comunicacao.tipo === 'especifico' && comunicacao.destinatario_nome) destinatario += `: ${comunicacao.destinatario_nome} (ID: ${comunicacao.destinatario_id})`;
         
         document.getElementById('comunicacao-detalhes').innerHTML = `
             <div style="border-left: 4px solid ${prioridadeColors[comunicacao.prioridade] || '#27ae60'}; padding-left: 1rem;">
-                <p><strong>📌 Título:</strong> ${escapeHtml(comunicacao.titulo)}</p>
-                <p><strong>📨 Enviado por:</strong> ${comunicacao.admin_email}</p>
-                <p><strong>📅 Data:</strong> ${new Date(comunicacao.data_envio).toLocaleString()}</p>
-                <p><strong>👥 Destinatários:</strong> ${escapeHtml(destinatario)}</p>
-                <p><strong>⚡ Prioridade:</strong> <span style="color: ${prioridadeColors[comunicacao.prioridade] || '#27ae60'}; font-weight: bold;">${comunicacao.prioridade.toUpperCase()}</span></p>
-                <p><strong>📊 Status:</strong> ${comunicacao.lida ? '✅ Lida' : '⏳ Não lida'}</p>
-                ${comunicacao.data_leitura ? `<p><strong>📖 Data de leitura:</strong> ${new Date(comunicacao.data_leitura).toLocaleString()}</p>` : ''}
+                <p><strong>Titulo:</strong> ${escapeHtml(comunicacao.titulo)}</p>
+                <p><strong>Enviado por:</strong> ${comunicacao.admin_email}</p>
+                <p><strong>Data:</strong> ${new Date(comunicacao.data_envio).toLocaleString()}</p>
+                <p><strong>Destinatarios:</strong> ${escapeHtml(destinatario)}</p>
+                <p><strong>Prioridade:</strong> <span style="color: ${prioridadeColors[comunicacao.prioridade] || '#27ae60'}; font-weight: bold;">${comunicacao.prioridade.toUpperCase()}</span></p>
                 <hr style="margin: 1rem 0;">
-                <p><strong>📝 Mensagem:</strong></p>
+                <p><strong>Mensagem:</strong></p>
                 <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; white-space: pre-wrap;">${escapeHtml(comunicacao.mensagem)}</div>
             </div>
         `;
@@ -846,18 +815,16 @@ async function verComunicacao(id) {
 }
 
 async function deletarComunicacao(id) {
-    if (!confirm('⚠️ Tem certeza que deseja deletar esta comunicação?')) return;
+    if (!confirm('Tem certeza que deseja deletar esta comunicacao?')) return;
     try {
         await requisicaoApi(`/admin/comunicacoes/${id}`, { method: 'DELETE' });
-        showToast('Comunicação deletada com sucesso!', 'success');
+        showToast('Comunicacao deletada com sucesso!', 'success');
         carregarComunicacoesAdmin();
         carregarDashboard();
     } catch(e) { 
         showToast(e.message, 'error'); 
     }
 }
-
-// ==================== FEEDBACK ====================
 
 async function carregarFeedbacksAdmin() {
     try {
@@ -881,13 +848,13 @@ async function carregarFeedbacksAdmin() {
                 <td>${escapeHtml(fb.mensagem.substring(0, 80))}${fb.mensagem.length > 80 ? '...' : ''}</td>
                 <td><span class="badge ${fb.status === 'respondido' ? 'badge-active' : 'badge-pending'}">${fb.status}</span></td>
                 <td>
-                    <button class="btn btn-outline btn-sm" onclick="verFeedback(${fb.id})">👁️</button>
-                    ${fb.status !== 'respondido' ? `<button class="btn btn-primary btn-sm" onclick="abrirResponderFeedback(${fb.id})">✉️</button>` : ''}
+                    <button class="btn btn-outline btn-sm" onclick="verFeedback(${fb.id})">Ver</button>
+                    ${fb.status !== 'respondido' ? `<button class="btn btn-primary btn-sm" onclick="abrirResponderFeedback(${fb.id})">Responder</button>` : ''}
                 </td>
             </tr>
         `).join('');
     } catch(e) { 
-        console.error('Erro ao carregar feedbacks:', e);
+        console.warn('Erro ao carregar feedbacks');
         showToast('Erro ao carregar feedbacks', 'error'); 
     }
 }
@@ -898,7 +865,7 @@ async function verFeedback(id) {
         const feedback = data.feedbacks?.find(f => f.id == id);
         if (feedback) {
             document.getElementById('feedback-detalhes').innerHTML = `
-                <p><strong>Usuário:</strong> ${escapeHtml(feedback.user_nome)}</p>
+                <p><strong>Usuario:</strong> ${escapeHtml(feedback.user_nome)}</p>
                 <p><strong>Email:</strong> ${feedback.user_email}</p>
                 <p><strong>Tipo:</strong> ${feedback.tipo}</p>
                 <p><strong>Data:</strong> ${new Date(feedback.data).toLocaleString()}</p>
@@ -922,8 +889,6 @@ function abrirResponderFeedback(id) {
     verFeedback(id);
 }
 
-// ==================== SUPORTE ====================
-
 async function carregarSuportesAdmin() {
     try {
         const status = document.getElementById('filtro-status-suporte')?.value || 'todos';
@@ -934,7 +899,7 @@ async function carregarSuportesAdmin() {
         if (!tbody) return;
         
         if (suportes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitação encontrada</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitacao encontrada</td></tr>';
             return;
         }
         
@@ -949,14 +914,14 @@ async function carregarSuportesAdmin() {
                     <td>${escapeHtml(sp.assunto)}</td>
                     <td><span class="badge ${statusClass}">${sp.status}</span></td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="verSuporte(${sp.id})">👁️</button>
-                        ${sp.status !== 'fechado' ? `<button class="btn btn-primary btn-sm" onclick="abrirResponderSuporte(${sp.id})">✉️</button>` : ''}
+                        <button class="btn btn-outline btn-sm" onclick="verSuporte(${sp.id})">Ver</button>
+                        ${sp.status !== 'fechado' ? `<button class="btn btn-primary btn-sm" onclick="abrirResponderSuporte(${sp.id})">Responder</button>` : ''}
                     </td>
                 </tr>
             `;
         }).join('');
     } catch(e) { 
-        console.error('Erro ao carregar suportes:', e);
+        console.warn('Erro ao carregar suportes');
         showToast('Erro ao carregar suportes', 'error'); 
     }
 }
@@ -967,7 +932,7 @@ async function verSuporte(id) {
         const suporte = data.suportes?.find(s => s.id == id);
         if (suporte) {
             document.getElementById('suporte-detalhes').innerHTML = `
-                <p><strong>Usuário:</strong> ${escapeHtml(suporte.user_nome)}</p>
+                <p><strong>Usuario:</strong> ${escapeHtml(suporte.user_nome)}</p>
                 <p><strong>Email:</strong> ${suporte.user_email}</p>
                 <p><strong>Categoria:</strong> ${suporte.categoria}</p>
                 <p><strong>Status:</strong> ${suporte.status}</p>
@@ -996,8 +961,6 @@ function abrirResponderSuporte(id) {
     verSuporte(id);
 }
 
-// ==================== LOGS ====================
-
 async function carregarLogs() {
     try { 
         const data = await requisicaoApi('/admin/logs'); 
@@ -1016,16 +979,14 @@ async function carregarLogs() {
             return `<tr><td>${new Date(l.data).toLocaleString()}</td><td>${l.evento}</td><td>${l.usuario || '-'}</td><td>${l.ip || '-'}</td><td><span class="badge ${gravidadeClass}">${l.gravidade || 'info'}</span></td></tr>`;
         }).join('');
     } catch(e) { 
-        console.error('Erro ao carregar logs:', e);
+        console.warn('Erro ao carregar logs');
         showToast('Erro ao carregar logs', 'error'); 
     }
 }
 
 function exportarLogs() { 
-    showToast('Exportação em desenvolvimento', 'info'); 
+    showToast('Exportacao em desenvolvimento', 'info'); 
 }
-
-// ==================== EXCLUSÕES ====================
 
 async function carregarSolicitacoesExclusao() {
     try {
@@ -1033,8 +994,8 @@ async function carregarSolicitacoesExclusao() {
         solicitacoesExclusaoData = data.solicitacoes || [];
         renderizarSolicitacoesExclusao(solicitacoesExclusaoData);
     } catch(e) { 
-        console.error('Erro ao carregar solicitações:', e);
-        showToast('Erro ao carregar solicitações de exclusão', 'error'); 
+        console.warn('Erro ao carregar solicitacoes');
+        showToast('Erro ao carregar solicitacoes de exclusao', 'error'); 
     }
 }
 
@@ -1043,7 +1004,7 @@ function renderizarSolicitacoesExclusao(solicitacoes) {
     if (!tbody) return;
     
     if (solicitacoes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitação de exclusão pendente</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma solicitacao de exclusao pendente</td></tr>';
         return;
     }
     
@@ -1057,12 +1018,12 @@ function renderizarSolicitacoesExclusao(solicitacoes) {
                 <td><span class="badge badge-info">${s.usuario_tipo}</span></td>
                 <td>
                     <span class="badge ${diasRestantes > 0 ? 'badge-warning' : 'badge-danger'}">
-                        ${diasRestantes > 0 ? `⏳ ${diasRestantes} dias` : '🔴 Excluir agora'}
+                        ${diasRestantes > 0 ? `${diasRestantes} dias` : 'Excluir agora'}
                     </span>
                 </td>
                 <td>
-                    <button class="btn btn-danger btn-sm" onclick="confirmarExclusaoAdmin(${s.id})">🗑️ Excluir Agora</button>
-                    <button class="btn btn-outline btn-sm" onclick="cancelarExclusao(${s.id})">❌ Cancelar</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmarExclusaoAdmin(${s.id})">Excluir Agora</button>
+                    <button class="btn btn-outline btn-sm" onclick="cancelarExclusao(${s.id})">Cancelar</button>
                 </td>
             </tr>
         `;
@@ -1086,14 +1047,14 @@ function filtrarExclusoes() {
 }
 
 async function confirmarExclusaoAdmin(solicitacaoId) {
-    if (!confirm('⚠️ Tem certeza que deseja EXCLUIR esta conta imediatamente?')) return;
-    if (!confirm('🔴 Esta ação é IRREVERSÍVEL! Todos os dados serão perdidos.')) return;
+    if (!confirm('Tem certeza que deseja EXCLUIR esta conta imediatamente?')) return;
+    if (!confirm('Esta acao e IRREVERSIVEL! Todos os dados serao perdidos.')) return;
     
     try {
         await requisicaoApi(`/admin/solicitacoes/exclusao/${solicitacaoId}/confirmar`, {
             method: 'DELETE'
         });
-        showToast('Conta excluída com sucesso!', 'success');
+        showToast('Conta excluida com sucesso!', 'success');
         carregarSolicitacoesExclusao();
         carregarDashboard();
     } catch(e) { 
@@ -1102,20 +1063,18 @@ async function confirmarExclusaoAdmin(solicitacaoId) {
 }
 
 async function cancelarExclusao(solicitacaoId) {
-    if (!confirm('Deseja cancelar a solicitação de exclusão?')) return;
+    if (!confirm('Deseja cancelar a solicitacao de exclusao?')) return;
     
     try {
         await requisicaoApi(`/admin/solicitacoes/exclusao/${solicitacaoId}/cancelar`, {
             method: 'PUT'
         });
-        showToast('Solicitação cancelada com sucesso!', 'info');
+        showToast('Solicitacao cancelada com sucesso!', 'info');
         carregarSolicitacoesExclusao();
     } catch(e) { 
         showToast(e.message, 'error'); 
     }
 }
-
-// ==================== RELATÓRIO DE CONSENTIMENTO LGPD ====================
 
 function carregarDadosConsentimento() {
     try {
@@ -1138,7 +1097,7 @@ function carregarDadosConsentimento() {
         renderizarConsentimentos(consentidos);
         
     } catch (error) {
-        console.error('Erro ao carregar dados de consentimento:', error);
+        console.warn('Erro ao carregar dados de consentimento');
         showToast('Erro ao carregar dados de consentimento', 'error');
     }
 }
@@ -1158,13 +1117,13 @@ function renderizarConsentimentos(usuarios) {
         
         return `
             <tr>
-                <td><strong>${escapeHtml(u.nome || 'Não informado')}</strong></td>
-                <td>${escapeHtml(u.email || 'Não informado')}</td>
-                <td><span class="badge badge-info">${u.tipo === 'ong' ? '🏢 ONG' : '👤 Doador'}</span></td>
+                <td><strong>${escapeHtml(u.nome || 'Nao informado')}</strong></td>
+                <td>${escapeHtml(u.email || 'Nao informado')}</td>
+                <td><span class="badge badge-info">${u.tipo === 'ong' ? 'ONG' : 'Doador'}</span></td>
                 <td>${dataFormatada}</td>
                 <td>${escapeHtml(u.ip_consentimento || 'N/A')}</td>
                 <td><span class="badge badge-active">${escapeHtml(u.versao_termos || 'v1.0')}</span></td>
-                <td><span class="badge badge-success">✅ Concordou</span></td>
+                <td><span class="badge badge-success">Concordou</span></td>
             </tr>
         `;
     }).join('');
@@ -1183,24 +1142,24 @@ function gerarRelatorioConsentimento() {
         const consentidos = todosUsuarios.filter(u => u.consentimento_lgpd === true);
         
         if (consentidos.length === 0) {
-            showToast('Nenhum consentimento registrado para gerar relatório', 'warning');
+            showToast('Nenhum consentimento registrado para gerar relatorio', 'warning');
             return;
         }
         
         let relatorio = `
 ============================================================
-RELATÓRIO DE CONSENTIMENTO LGPD - Doa+
+RELATORIO DE CONSENTIMENTO LGPD - Doa+
 ============================================================
-Data de geração: ${new Date().toLocaleString('pt-BR')}
+Data de geracao: ${new Date().toLocaleString('pt-BR')}
 
 RESUMO:
-Total de Usuários: ${todosUsuarios.length}
+Total de Usuarios: ${todosUsuarios.length}
 Com Consentimento: ${consentidos.length}
 Sem Consentimento: ${todosUsuarios.length - consentidos.length}
 
-LISTA DE USUÁRIOS QUE CONCORDARAM:
+LISTA DE USUARIOS QUE CONCORDARAM:
 ------------------------------------------------------------
-ID | Nome | Email | Tipo | Data/Hora | IP | Versão
+ID | Nome | Email | Tipo | Data/Hora | IP | Versao
 ------------------------------------------------------------
 `;
         
@@ -1211,7 +1170,7 @@ ID | Nome | Email | Tipo | Data/Hora | IP | Versão
         
         relatorio += `
 ============================================================
-FIM DO RELATÓRIO
+FIM DO RELATORIO
 ============================================================
 `;
         
@@ -1225,10 +1184,10 @@ FIM DO RELATÓRIO
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showToast('✅ Relatório gerado e baixado com sucesso!', 'success');
+        showToast('Relatorio gerado e baixado com sucesso!', 'success');
         
     } catch (error) {
-        showToast('Erro ao gerar relatório: ' + error.message, 'error');
+        showToast('Erro ao gerar relatorio', 'error');
     }
 }
 
@@ -1249,7 +1208,7 @@ function exportarConsentimentosCSV() {
             return;
         }
         
-        let csv = 'Nome,Email,Tipo,Data/Hora Consentimento,IP,Versão Termos\n';
+        let csv = 'Nome,Email,Tipo,Data/Hora Consentimento,IP,Versao Termos\n';
         
         consentidos.forEach(u => {
             const data = u.data_consentimento ? new Date(u.data_consentimento).toLocaleString('pt-BR') : 'N/A';
@@ -1266,10 +1225,10 @@ function exportarConsentimentosCSV() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showToast('✅ CSV exportado com sucesso!', 'success');
+        showToast('CSV exportado com sucesso!', 'success');
         
     } catch (error) {
-        showToast('Erro ao exportar CSV: ' + error.message, 'error');
+        showToast('Erro ao exportar CSV', 'error');
     }
 }
 
@@ -1282,8 +1241,6 @@ function filtrarConsentimentos() {
         row.style.display = text.includes(termo) ? '' : 'none';
     });
 }
-
-// ==================== INICIALIZAÇÃO ====================
 
 document.addEventListener('DOMContentLoaded', async function() {
     await obterCsrfToken();
@@ -1301,7 +1258,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const adminName = document.getElementById('admin-name');
     if (adminName && user.nome) adminName.textContent = user.nome || 'Admin';
     
-    // Configurar navegação
     document.querySelectorAll('.nav-link[data-aba]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -1310,7 +1266,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
     
-    // Configurar dropdown
     document.querySelectorAll('.dropdown-menu a[data-aba]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -1319,17 +1274,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
     
-    // Carregar dashboard inicial
     mostrarAba('dashboard');
     
-    // Logout
     document.getElementById('logout-btn')?.addEventListener('click', function(e) {
         e.preventDefault();
         localStorage.clear();
         window.location.href = '/';
     });
     
-    // Formulário de Advertência
     document.getElementById('form-advertencia')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const dados = {
@@ -1344,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 method: 'POST', 
                 body: JSON.stringify(dados) 
             });
-            showToast('Advertência aplicada com sucesso!', 'warning');
+            showToast('Advertencia aplicada com sucesso!', 'warning');
             fecharModal('modal-advertencia');
             fecharModal('modal-anuncio');
             carregarAnuncios();
@@ -1355,7 +1307,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    // Formulário de Comunicação
     document.getElementById('form-comunicacao')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const tipo = document.getElementById('comunicacao-tipo').value;
@@ -1366,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const destinatarioTipo = document.getElementById('comunicacao-destinatario-tipo').value;
         
         if (!titulo || titulo.length < 3) { 
-            showToast('Título deve ter pelo menos 3 caracteres', 'error'); 
+            showToast('Titulo deve ter pelo menos 3 caracteres', 'error'); 
             return; 
         }
         if (!mensagem || mensagem.length < 5) { 
@@ -1374,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             return; 
         }
         if (tipo === 'especifico' && !destinatarioId) { 
-            showToast('Para envio específico, informe o ID do usuário', 'error'); 
+            showToast('Para envio especifico, informe o ID do usuario', 'error'); 
             return; 
         }
         
@@ -1394,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 method: 'POST',
                 body: JSON.stringify(dados)
             });
-            showToast('Comunicação enviada com sucesso!', 'success');
+            showToast('Comunicacao enviada com sucesso!', 'success');
             fecharModal('modal-comunicacao');
             carregarComunicacoesAdmin();
             carregarDashboard();
@@ -1406,7 +1357,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    // Formulário de Resposta Feedback
     document.getElementById('form-responder-feedback')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('feedback-id').value;
@@ -1429,7 +1379,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    // Formulário de Resposta Suporte
     document.getElementById('form-responder-suporte')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const id = document.getElementById('suporte-id').value;
@@ -1444,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 method: 'PUT', 
                 body: JSON.stringify({ resposta, status }) 
             });
-            showToast('Solicitação de suporte respondida com sucesso!', 'success');
+            showToast('Solicitacao de suporte respondida com sucesso!', 'success');
             fecharModal('modal-responder-suporte');
             carregarSuportesAdmin();
             carregarDashboard();
@@ -1453,8 +1402,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 });
-
-// ==================== EXPORTAÇÕES GLOBAIS ====================
 
 window.mostrarAba = mostrarAba;
 window.carregarDashboard = carregarDashboard;

@@ -5,11 +5,16 @@ let csrfToken = '';
 async function obterCsrfToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/config/csrf-token`);
+        if (!response.ok) {
+            console.warn('CSRF token indisponivel');
+            return;
+        }
         const data = await response.json();
         csrfToken = data.csrf_token || '';
-        document.getElementById('csrf-token').value = csrfToken;
-    } catch (error) {
-        console.error('Erro ao obter CSRF token:', error);
+        const el = document.getElementById('csrf-token');
+        if (el) el.value = csrfToken;
+    } catch (e) {
+        console.warn('Falha ao carregar token de seguranca');
     }
 }
 
@@ -47,7 +52,7 @@ async function apiRequest(endpoint, options = {}) {
             localStorage.clear();
             window.location.href = '/login.html';
         }
-        throw new Error(data.error || 'Erro na requisição');
+        throw new Error(data.error || 'Erro na requisicao');
     }
     return data;
 }
@@ -68,7 +73,7 @@ function updateAuthUI() {
     if (token && user) {
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuário';
+            if (userNameSpan) userNameSpan.textContent = user.nome?.split(' ')[0] || 'Usuario';
         }
     } else {
         if (userMenu) userMenu.style.display = 'none';
@@ -108,7 +113,7 @@ async function enviarDoacaoFinanceira(e) {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-        showToast('Faça login para doar', 'warning');
+        showToast('Faca login para doar', 'warning');
         window.location.href = '/login.html';
         return;
     }
@@ -119,7 +124,7 @@ async function enviarDoacaoFinanceira(e) {
     const recorrente = document.getElementById('doacao-recorrente').checked;
     
     if (!ongId) { showToast('Selecione uma ONG', 'error'); return; }
-    if (!valor || valor < 1) { showToast('Valor mínimo é R$ 1,00', 'error'); return; }
+    if (!valor || valor < 1) { showToast('Valor minimo e R$ 1,00', 'error'); return; }
     
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = submitBtn.textContent;
@@ -138,13 +143,10 @@ async function enviarDoacaoFinanceira(e) {
             })
         });
         
-        // ============================================================
-        // REDIRECIONA PARA O MERCADO PAGO
-        // ============================================================
         if (data.redirect_url) {
             window.location.href = data.redirect_url;
         } else {
-            showToast('Erro: URL de pagamento não disponível', 'error');
+            showToast('Erro: URL de pagamento nao disponivel', 'error');
         }
         
         document.getElementById('form-doacao-financeira').reset();
@@ -163,38 +165,38 @@ async function carregarMinhasDoacoes() {
     const container = document.getElementById('minhas-doacoes-container');
     const token = getToken();
     if (!token) {
-        container.innerHTML = '<p class="empty-state">Faça login para ver suas doações</p>';
+        container.innerHTML = '<p class="empty-state">Faca login para ver suas doacoes</p>';
         return;
     }
     try {
         const data = await apiRequest('/doacoes/financeiras/minhas');
         const doacoes = data.doacoes || [];
         if (doacoes.length === 0) {
-            container.innerHTML = '<p class="empty-state">Você ainda não fez nenhuma doação financeira</p>';
+            container.innerHTML = '<p class="empty-state">Voce ainda nao fez nenhuma doacao financeira</p>';
             return;
         }
         container.innerHTML = doacoes.map(d => {
             const statusClass = d.status === 'confirmado' ? 'status-confirmado' : 'status-pendente';
-            const statusText = d.status === 'confirmado' ? '✅ Confirmado' : '⏳ Pendente';
+            const statusText = d.status === 'confirmado' ? 'Confirmado' : 'Pendente';
             return `
                 <div class="doacao-item">
                     <div class="doacao-header">
-                        <span class="doacao-ong">🏢 ${escapeHtml(d.ong_nome)}</span>
+                        <span class="doacao-ong">${escapeHtml(d.ong_nome)}</span>
                         <span class="doacao-valor">R$ ${d.valor.toFixed(2)}</span>
                     </div>
                     <div class="doacao-detalhes">
-                        <span>📅 ${new Date(d.data_criacao).toLocaleString()}</span>
+                        <span>${new Date(d.data_criacao).toLocaleString()}</span>
                         <span class="doacao-metodo">${d.metodo_pagamento}</span>
-                        ${d.recorrente ? '<span class="badge-recorrente">🔄 Recorrente</span>' : ''}
+                        ${d.recorrente ? '<span class="badge-recorrente">Recorrente</span>' : ''}
                         <span class="doacao-status ${statusClass}">${statusText}</span>
                     </div>
-                    ${d.mensagem ? `<p class="doacao-mensagem">💬 ${escapeHtml(d.mensagem)}</p>` : ''}
+                    ${d.mensagem ? `<p class="doacao-mensagem">${escapeHtml(d.mensagem)}</p>` : ''}
                     ${d.transacao_id ? `<small class="doacao-transacao">ID: ${d.transacao_id}</small>` : ''}
                 </div>
             `;
         }).join('');
     } catch (error) {
-        container.innerHTML = `<p class="error-state">Erro ao carregar doações: ${error.message}</p>`;
+        container.innerHTML = `<p class="error-state">Erro ao carregar doacoes: ${error.message}</p>`;
     }
 }
 
@@ -208,7 +210,7 @@ async function carregarEstatisticas() {
         document.getElementById('media-doacao').textContent = `R$ ${(data.media_valor || 0).toFixed(2)}`;
         document.getElementById('doacoes-recorrentes').textContent = data.doacoes_recorrentes || 0;
     } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
+        console.warn('Erro ao carregar estatisticas');
     }
 }
 
