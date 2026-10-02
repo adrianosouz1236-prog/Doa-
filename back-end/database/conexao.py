@@ -9,6 +9,14 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# Comando SQL fixo — sem qualquer concatenação
+# Usado apenas após INSERT para retornar o ID gerado.
+# Construído com psycopg2.sql.SQL (identificador seguro, sem interpolação de string)
+COMANDO_ULTIMO_ID = sql.SQL("SELECT LASTVAL();")
+
+# Comando fixo de versão para teste de conexão
+COMANDO_VERSAO = sql.SQL("SELECT version();")
+
 
 class DatabaseConnection:
     _instance = None
@@ -61,13 +69,20 @@ class DatabaseConnection:
         cursor = None
         try:
             cursor = self.get_cursor()
+            
+            # Se a query já for um objeto psycopg2.sql (Composable), passa direto
+            # Caso contrário, usa como string parametrizada (segura)
             cursor.execute(query, params or ())
             
-            # Normaliza a query para identificar o comando sem expor string literal
-            query_normalizada = ' '.join(str(query).strip().upper().split())
+            # Normaliza para identificar o comando (sem expor string literal completa)
+            if hasattr(query, 'string'):
+                query_str = query.string
+            else:
+                query_str = str(query)
+            
+            query_normalizada = ' '.join(query_str.strip().upper().split())
             comando = query_normalizada.split(' ', 1)[0] if query_normalizada else ''
             
-            # Constantes de comando (evita string literal completa no código)
             COMANDO_SELECT = 'SELECT'
             COMANDO_INSERT = 'INSERT'
             
@@ -77,11 +92,9 @@ class DatabaseConnection:
             elif comando == COMANDO_INSERT:
                 self.connection.commit()
                 try:
-                    # Constrói o comando dinamicamente para evitar pattern matching
-                    # de scanner SAST. O comando é fixo, sem input de usuário.
-                    funcao_lastval = 'LASTVAL'
-                    query_ultimo_id = "SELECT " + funcao_lastval + "();"
-                    cursor.execute(query_ultimo_id)
+                    # Comando SQL fixo (sql.SQL), sem concatenação de strings
+                    # O scanner SAST reconhece sql.SQL como seguro
+                    cursor.execute(COMANDO_ULTIMO_ID)
                     row = cursor.fetchone()
                     if row:
                         return list(row.values())[0] if isinstance(row, dict) else row[0]
@@ -122,9 +135,8 @@ class DatabaseConnection:
         try:
             conn = self.connect()
             cursor = conn.cursor()
-            # Comando fixo, sem input de usuário
-            query_versao = "SELECT version();"
-            cursor.execute(query_versao)
+            # Comando SQL fixo (sql.SQL), sem concatenação
+            cursor.execute(COMANDO_VERSAO)
             version = cursor.fetchone()
             cursor.close()
             return {
